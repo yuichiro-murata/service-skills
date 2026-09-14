@@ -576,10 +576,46 @@ would report a false cache hit. `meta.json` therefore carries `dumpFormat` (now 
 alongside mtime and length; a `dumpFormat 1` cache is treated as a miss and redumped. Nothing needs
 to be deleted by hand.
 
+### Never compare the cached mtime as a string
+
+`ConvertFrom-Json` on PowerShell 7 silently converts an ISO-8601 string to `[DateTime]`, and that
+object's default `ToString()` is `07/28/2026 01:39:58` — no sub-second digits. Comparing it with
+`-eq` against the `"o"`-format string the cache was written from (`2026-07-28T01:39:58.8626833Z`) is
+therefore **always false**, so every reference file reports a miss and gets re-dumped through Excel
+COM on every single run. The cache silently does nothing.
+
+Confirmed on this machine (PowerShell 7.6.6): a `TXJAM023_工程ﾏｽﾀ.xlsx` entry whose `length` and
+`dumpFormat` both matched still failed, and a 12-file batch whose cache was fully warm reported all
+12 as misses. The `[DateTime]` itself keeps full precision — only its stringification loses it — so
+comparing `.ToUniversalTime().Ticks` recovers the match exactly. The `Test-MTimeMatch` helper in both
+scripts above does that and accepts either shape, since Windows PowerShell 5.1 and
+`ConvertFrom-Json -AsHashtable` leave the value as a string.
+
+The same trap applies to any other `meta.json` field you add that holds a date. Keep comparisons on
+`length`, `dumpFormat` and `sourcePath` as plain `-eq`; those are a number, a number and a string.
+
 ### Parsing a dump line
 
-Split the line on the literal `" | "` first, then take everything after `]=` **verbatim** — do not
-trim the value. Cell values in these workbooks routinely carry significant leading or trailing
+**A logical row is NOT always one physical line.** Cell values in these workbooks routinely contain
+newlines — a 属性 cell reading `TextBox⏎※5`, a 初期値 cell reading `新規:空白⏎ｺﾋﾟｰ登録・解除:…` — and
+the dump writes the value verbatim, so the rest of that row's `[row,col]=value` tokens continue on
+the next physical line(s). Reading the file with `ReadAllLines`/`Get-Content` and treating each line
+as a row therefore **silently loses every token after the first embedded newline**.
+
+Confirmed for real, and it produced a wrong conclusion before it was understood: on
+`PXJCO128_ﾛｯﾄ停止指示登録.xlsx`'s `画面設計書(GXJC128B)`, row 509's 属性 cell is `TextBox⏎※5`, so the
+physical line ends at `[509,18]=TextBox` and `[509,22]`, `[509,24]=30`, `[509,31]`, `[509,34]`,
+`[509,36]` all sit on the following line. A line-oriented check read the row as having an empty 桁数,
+concluded a real finding was a hallucination, and was only corrected by reading the cell back through
+Excel COM. On that one sheet this affects most of the `Ⅴ．画面項目定義` rows.
+
+**So group tokens by the row number inside each `[r,c]=` token, never by physical line.** Scan the
+whole file for `\[(\d+),(\d+)\]=` matches and bucket them by `r`; a token's value runs from after its
+`]=` up to the next `" | "` or the next `[r,c]=` token, whichever comes first. A quick
+`Select-String`/grep for one coordinate is still fine — it is only row-at-a-time reading that breaks.
+
+Within a physical line, split on the literal `" | "` first, then take everything after `]=`
+**verbatim** — do not trim the value. Cell values in these workbooks routinely carry significant leading or trailing
 spaces (150 of the 980 non-empty cells on `PXJCO192_処置指示登録.xlsx`'s `ﾛｯﾄ管理C　処置指示登録`
 sheet alone, including cells that are a single space used as a spacer), which makes a regex like
 `\[(\d+),(\d+)\]=([^|]*)` plus a trim silently corrupt them. Verified: parsing verbatim reproduces
@@ -685,6 +721,20 @@ $metaPath = Join-Path $cacheDir "meta.json"
 
 $DumpFormat = 2       # 1 = coordinates relative to the UsedRange; 2 = sheet-absolute
 
+# PowerShell 7's ConvertFrom-Json silently turns an ISO-8601 string into [DateTime], and that
+# DateTime stringifies as "07/28/2026 01:39:58" — so comparing it to the "o"-format string the
+# cache was written with is ALWAYS false, and the cache never hits. Compare as DateTime instead,
+# accepting either shape. See "Never compare the cached mtime as a string" below.
+function Test-MTimeMatch($metaValue, [datetime]$currentUtc) {
+    if ($null -eq $metaValue) { return $false }
+    try {
+        $dt = if ($metaValue -is [datetime]) { [datetime]$metaValue }
+              else { [datetime]::Parse([string]$metaValue, [cultureinfo]::InvariantCulture,
+                                       [System.Globalization.DateTimeStyles]::RoundtripKind) }
+    } catch { return $false }
+    return $dt.ToUniversalTime().Ticks -eq $currentUtc.Ticks
+}
+
 $cacheValid = $false
 if (Test-Path $metaPath) {
     try {
@@ -692,7 +742,8 @@ if (Test-Path $metaPath) {
         # dumpFormat guards against a cache written by an older script whose coordinates mean
         # something different. The source file is unchanged in that case, so mtime/length alone
         # would wrongly report a hit.
-        if ($meta.sourcePath -eq $SourcePath -and $meta.lastWriteTimeUtc -eq $currentMTime -and
+        if ($meta.sourcePath -eq $SourcePath -and
+            (Test-MTimeMatch $meta.lastWriteTimeUtc $sourceInfo.LastWriteTimeUtc) -and
             $meta.length -eq $currentLength -and $meta.dumpFormat -eq $DumpFormat) {
             $cacheValid = $true
         }
@@ -828,11 +879,24 @@ $Files = @(
 $CacheRoot = Join-Path $env:USERPROFILE ".claude\skills\_cache\xlsx-dumps"
 $DumpFormat = 2       # 1 = coordinates relative to the UsedRange; 2 = sheet-absolute
 
+# Same DateTime-vs-string trap as the single-file script above — see "Never compare the cached
+# mtime as a string". Without this the batch reports every file as a miss and relaunches Excel.
+function Test-MTimeMatch($metaValue, [datetime]$currentUtc) {
+    if ($null -eq $metaValue) { return $false }
+    try {
+        $dt = if ($metaValue -is [datetime]) { [datetime]$metaValue }
+              else { [datetime]::Parse([string]$metaValue, [cultureinfo]::InvariantCulture,
+                                       [System.Globalization.DateTimeStyles]::RoundtripKind) }
+    } catch { return $false }
+    return $dt.ToUniversalTime().Ticks -eq $currentUtc.Ticks
+}
+
 function Get-XlsxCacheInfo($SourcePath, $OnlySheetPatterns, $CacheRoot) {
     $resolved = Resolve-Path -LiteralPath $SourcePath
     $SourcePath = $resolved.Path
     $sourceInfo = Get-Item -LiteralPath $SourcePath
     $currentMTime = $sourceInfo.LastWriteTimeUtc.ToString("o")
+    $currentUtc = $sourceInfo.LastWriteTimeUtc
     $currentLength = $sourceInfo.Length
     $filterKey = if ($OnlySheetPatterns) { ($OnlySheetPatterns | Sort-Object) -join ";" } else { "" }
     $md5 = [System.Security.Cryptography.MD5]::Create()
@@ -842,7 +906,7 @@ function Get-XlsxCacheInfo($SourcePath, $OnlySheetPatterns, $CacheRoot) {
     $cacheDir = Join-Path $CacheRoot $hash
     [PSCustomObject]@{
         SourcePath = $SourcePath; OnlySheetPatterns = $OnlySheetPatterns
-        CurrentMTime = $currentMTime; CurrentLength = $currentLength
+        CurrentMTime = $currentMTime; CurrentUtc = $currentUtc; CurrentLength = $currentLength
         CacheDir = $cacheDir; MetaPath = Join-Path $cacheDir "meta.json"
     }
 }
@@ -855,7 +919,8 @@ foreach ($f in $Files) {
     if (Test-Path $info.MetaPath) {
         try {
             $meta = Get-Content -Raw -Encoding UTF8 $info.MetaPath | ConvertFrom-Json
-            if ($meta.sourcePath -eq $info.SourcePath -and $meta.lastWriteTimeUtc -eq $info.CurrentMTime -and
+            if ($meta.sourcePath -eq $info.SourcePath -and
+                (Test-MTimeMatch $meta.lastWriteTimeUtc $info.CurrentUtc) -and
                 $meta.length -eq $info.CurrentLength -and $meta.dumpFormat -eq $DumpFormat) { $valid = $true }
         } catch { $valid = $false }
     }
