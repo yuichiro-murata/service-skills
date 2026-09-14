@@ -13,6 +13,11 @@
       "name": "test-spec-skills",
       "source": "./plugins/test-spec-skills",
       "description": "総合テスト仕様書作成のスキル集 — 設計書から総合テスト仕様書／報告書(.xlsm)を生成する"
+    },
+    {
+      "name": "test-spec-rev-skills",
+      "source": "./plugins/test-spec-rev-skills",
+      "description": "テスト仕様書レビュー(REV)のスキル集 — 記入済みの単体テスト仕様書／報告書(.xlsx)を検査する"
     }
   ]
 }

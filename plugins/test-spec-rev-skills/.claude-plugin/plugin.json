@@ -1,0 +1,8 @@
+{
+  "name": "test-spec-rev-skills",
+  "description": "テスト仕様書レビュー(REV)のスキル集 — 記入済みの単体テスト仕様書／報告書(.xlsx)を検査する。設計書REV(rev-skills)ともテスト仕様書生成(test-spec-skills)とも別プラグイン",
+  "version": "1.3.0",
+  "author": {
+    "name": "yuichiro-murata"
+  }
+}
