@@ -246,16 +246,22 @@ rule is about, applied correctly. A review that reported the four TextBox names 
 persistence (as one did before this gate was written) is producing false findings on a correct
 design.
 
-Note this also makes `PSJCO304`'s confirmed violation above stronger evidence rather than weaker:
-re-check those pairs' 属性 before citing them, and cite the 属性 in the finding itself so the designer
-can see the gate was applied.
+Always re-check a candidate pair's 属性 before citing it, and cite the 属性 in the finding itself so
+the designer can see the gate was applied.
 
-Confirmed for real on `PSJCO304_着手ﾒｯｾｰｼﾞﾒﾝﾃﾅﾝｽ.xlsx`, 更新条件表(TXJAM100): items 6/7 both persist
-`作業場ｺｰﾄﾞ` *and* `作業場名`, items 10/11 both persist `工程ｺｰﾄﾞ` *and* `工程名`, items 12/13 both
-persist `取引先ｺｰﾄﾞ` *and* `取引先名`, and items 3/8 (non-adjacent, same 更新条件表) persist both
-`品目ｺｰﾄﾞ` and `KC品名` — every one of these is the project's forbidden redundant-name pattern, sitting
-right next to two other items (作業場表示区分/工程表示区分) in the very same table that correctly
-persist "(区分値のみ)" — proving the rule was known and simply not applied consistently.
+**`PSJCO304_着手ﾒｯｾｰｼﾞﾒﾝﾃﾅﾝｽ.xlsx` used to be this document's worked violation example, and it is
+no longer one — the defect was remediated.** As written here, 更新条件表(TXJAM100) persisted
+`作業場ｺｰﾄﾞ`+`作業場名`, `工程ｺｰﾄﾞ`+`工程名`, `取引先ｺｰﾄﾞ`+`取引先名` and `品目ｺｰﾄﾞ`+`KC品名` side by
+side. The 2026/9/4 NCRN-8552 revision removed the three name columns from the persisted set; the
+三つの名称 are now Label 属性 and are restored by read-time JOIN via the ※1 復元表, and the surviving
+`KC品名` is a TextBox — an independent partial-match search condition, which the gate above passes as
+correct. Re-verified on a REV of that workbook on 2026-09-14: **zero** redundant-persistence findings.
+
+Take the general lesson, not just the correction: **a violation example named in a skill file is a
+snapshot of one workbook at one moment, and these design docs are actively revised.** Never cite a
+stored example as a live finding. Re-derive the verdict from the current dump every time, and if you
+find an example here has been fixed, update this file (and bump the plugin `version`, or every
+cached copy stays stale forever).
 
 ### 6. Reporting
 

@@ -336,6 +336,14 @@ their text.
 
 Launch Excel with the PID guard from `xlsx-excel-com-dump.md` ("Record every EXCEL.EXE PID that
 already exists BEFORE launching our own instance") — omitted here only to keep the script readable.
+
+**Put the `Add-Type` for that guard's `GetWindowThreadProcessId` P/Invoke in the SAME PowerShell tool
+call as the builder body.** The PowerShell tool does not persist shell state between calls, so a
+separate `Add-Type` call looks like it succeeded and the next call then throws `Unable to find type`
+on the guard — see the fuller writeup in `xlsx-excel-com-dump.md` under the CS0675 paragraph. When
+building several dictionaries in one run (a program citing both its own WG's items and shared
+`XJZ`/`SJZ` ones), open **one** `Excel.Application` for the whole batch and one workbook per file
+inside it, rather than repeating the whole launch/quit cycle per dictionary.
 `CsvQ`, `IsGray`, `LiveText` and `Test-IndexFresh` above are assumed to be in scope.
 
 ```powershell

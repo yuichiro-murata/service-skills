@@ -140,3 +140,48 @@ reader knows what was and wasn't looked at — e.g.:
 ```
 
 Never imply the workbook passed checks that weren't run.
+
+## Step 5 — Excel 指摘一覧への出力
+
+Reviewers routinely ask for the merged report as a workbook ("Excel一覧に出力して") after reading it
+in chat, so offer it once at the end of Step 4 rather than making them ask. Write it **next to the
+reviewed workbook**, named `<プログラムID>_REV指摘一覧_<YYYYMMDD>.xlsx` — that convention already
+exists in `01_Doc/08_機能定義書/11_工程管理/PHASE3/` (`PSJCO204_…_20260911.xlsx`,
+`PSJCO308_…_20260910.xlsx`, `PSJCO309_…`), and those files are the format of record. **Open the most
+recent one and copy its layout** rather than inventing a shape; what follows is that layout as
+measured on the `PSJCO308` copy, recorded here so a run does not have to rediscover it.
+
+One sheet named `REV指摘一覧`, no others. Row 1 is the title (`<プログラムID>_<プログラム名>  REV指摘
+一覧`), merged `A1:M1`, 游ゴシック 14pt bold, row height 22.5. Row 2 is a merged `A2:M2` note line,
+游ゴシック 9pt, carrying the target path, the checks actually run, the REV date, and the sentence
+`ｾﾙ位置は [行,列] 表記`. Row 3 is blank. Row 4 is the header, Meiryo UI 9pt bold on fill `12419407`,
+centred, wrapped, row height 20:
+
+`No. / 指摘ID / 分類 / 重要度 / 対象シート / セル位置 / 指摘内容 / 想定修正 / 対応要否 / 対応結果 / 対応者 / 対応日 / 備考`
+
+Data starts at row 5, Meiryo UI 9pt, wrapped, top-aligned; columns A-F centred, G-M left (E/F read
+better left-aligned). **Fill only A-H — columns I-M (対応要否 … 備考) are left empty for the reviewer
+to fill in.** Column widths `5,8,13,8,24,30,62,40,11,10,10,11,26`. Thin borders on every cell of
+`A4:M<last>`, `AutoFilter` over the same range, freeze panes below row 4, and `AutoFit` the data
+rows at the end.
+
+`重要度` takes one of 高 / 中 / 低 / 要確認 and is coloured by **direct cell fill, not conditional
+formatting** (the existing files have zero `FormatConditions`): 高 = `13551615` + bold, 中 =
+`14083324`, 要確認 = `15922414`, 低 = left white. `分類` names the check the finding came from
+(入出力定義 / 内部相互参照 / DBｶﾗﾑ / ID採番/記述ﾙｰﾙ / 更新条件表 / 誤字脱字 / 体裁(ﾌｫﾝﾄ) /
+体裁(結合)), and `指摘ID` is `<分類の連番>-<その中の連番>` (`2-13`), with column A a plain 1..N counter.
+
+**`指摘ID` MUST be written as text, or Excel silently turns it into a date.** `1-1` becomes
+`1月1日` and `2-13` becomes `2月13日` — every ID in the column, with no error and no visible warning
+until someone opens the file. Set `NumberFormat = "@"` on the whole ID column **before** assigning
+any value; setting it afterwards keeps the serial number and just reformats it. This is not
+hypothetical — a run wrote all 49 rows this way and it was caught only by rendering the sheet to an
+image afterwards.
+
+**Verify by rendering, not by re-reading cell values.** The date bug is invisible to a `Value2`
+dump. Export the finished range to PNG and actually look at it: `Range.CopyPicture(1,2)`, add a
+`ChartObject` sized to `Range.Width`/`Range.Height`, `Activate()` it, `Chart.Paste()`, then
+`Chart.Export(path,"PNG")` — the `Activate()` is required, without it the export writes a ~2.7KB
+blank image that looks like a successful write. Split a long list into 2-3 ranges so the text stays
+legible. PDF export works too but this machine has no `pdftoppm`/PyMuPDF, so a PDF cannot be viewed
+back — PNG is the only route that closes the loop.
