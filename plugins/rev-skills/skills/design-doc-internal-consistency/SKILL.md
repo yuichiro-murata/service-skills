@@ -218,6 +218,10 @@ exact sheet/cell for every finding so it's actionable.
    context) — don't flag those, they're a different convention entirely and casing carries no meaning
    there. Flag every 表示形式 cell using `YYYY` and/or `DD` (or any other wrongly-cased token relative
    to the `yyyy/MM/dd` convention) as a casing defect to correct.
+   The *absence* of that annotation is a different matter and belongs to a sibling skill: on a
+   更新条件表 sheet a bare `ｼｽﾃﾑ日時` value with no `(YYYY/MM/DD HH24:MI:SS形式)` note is a finding,
+   raised by `update-condition-completeness` C8. Casing inside the annotation is never a finding on
+   either side.
 
 6. **Screen-item ordering consistency between Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 and Ⅴ．画面項目定義.**
    Collect the order in which items appear in 画面設計書 "Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細" (each screen-area

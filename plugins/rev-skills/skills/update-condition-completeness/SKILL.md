@@ -1,6 +1,6 @@
 ---
 name: update-condition-completeness
-description: Check a program's 更新条件表(<TableID>) sheets against the table's actual ﾃｰﾌﾞﾙﾚｲｱｳﾄ — every column of the table present in the right order, no notnull column left unset on INSERT, every primary-key column set on INSERT and carried as [KEY] on UPDATE/DELETE, and the house conventions for the 共通項目 block (登録者/登録日時 only at INSERT, 更新者/更新日時 on both, 排他ﾌﾗｸﾞ 1 / +1, 更新ﾌﾟﾛｸﾞﾗﾑID=画面ID) honored. Distinct from its siblings: `xlsx-db-column-check` asks whether a referenced column exists at all, `design-doc-io-table-check` asks whether the table is declared in the Ⅲ．入出力定義 CRUD list — this skill asks whether the UPDATE/INSERT/DELETE specification for an already-declared table is complete enough to code from. Use when the user asks to check 更新条件表 completeness, NOT NULL/主キー/共通項目の設定漏れ, or 登録日時が更新されていないか. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 8 single-program checks to run, then runs only those as one combined pass. Do not launch all eight yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Check a program's 更新条件表(<TableID>) sheets against the table's actual ﾃｰﾌﾞﾙﾚｲｱｳﾄ — every column of the table present in the right order, no notnull column left unset on INSERT, every primary-key column set on INSERT and carried as [KEY] on UPDATE/DELETE, and the house conventions for the 共通項目 block (登録者/登録日時 only at INSERT, 更新者/更新日時 on both, 排他ﾌﾗｸﾞ 1 / +1, 更新ﾌﾟﾛｸﾞﾗﾑID=画面ID) honored. Distinct from its siblings: `xlsx-db-column-check` asks whether a referenced column exists at all, `design-doc-io-table-check` asks whether the table is declared in the Ⅲ．入出力定義 CRUD list — this skill asks whether the UPDATE/INSERT/DELETE specification for an already-declared table is complete enough to code from. Use when the user asks to check 更新条件表 completeness, NOT NULL/主キー/共通項目の設定漏れ, 登録日時が更新されていないか, or ｼｽﾃﾑ日時の書式注記(YYYY/MM/DD HH24:MI:SS形式)漏れ. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 8 single-program checks to run, then runs only those as one combined pass. Do not launch all eight yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
 ---
 
 # update-condition-completeness
@@ -237,7 +237,39 @@ that block's own `更新概要` cell. A dangling `⑥` (used in `TXJCM501`'s UPD
 tell where the value comes from. Symbols are **block-scoped** — check against the block's own
 更新概要, not the sheet's first one.
 
-### 5. Verify before reporting
+**C8 — 日時系の値に書式注記が付いているか.** Scope this check to `更新条件表(<TableID>)` sheets only.
+A value cell that supplies a system timestamp must read `ｼｽﾃﾑ日時(YYYY/MM/DD HH24:MI:SS形式)` — the
+bare `ｼｽﾃﾑ日時` with no format annotation is a finding. The annotation is what tells the coder which
+`TO_CHAR`/`TO_DATE` format model to write; without it the column's precision (does it carry the time
+part, or only the date?) is left to the implementer to guess, and two programs writing the same
+column can diverge. Typical location is the 共通項目 block's `登録日時`/`更新日時` value cells
+(`[17,18]`, `[17,36]` and their per-block equivalents), but apply it to **every** value cell in the
+sheet whose content is `ｼｽﾃﾑ日時`, common column or not.
+
+Unlike C4, this one is **not** calibrated against the workbook's dominant pattern: the annotated form
+is always correct, so flag every bare `ｼｽﾃﾑ日時` even in a workbook where most sheets omit it. Match
+on the value cell's full content — `ｼｽﾃﾑ日時` is half-width katakana (`ｼ ｽ ﾃ ﾑ`), and a cell already
+carrying any parenthesized 形式 note is fine. A cell that merely *contains* `ｼｽﾃﾑ日時` inside a longer
+sentence (a `※` footnote, a free-text 更新条件) is not a value cell — don't flag it.
+
+Report it as 書式注記漏れ, one line per cell, and say the correct form explicitly so the designer can
+paste it. This is **not** the same as `design-doc-internal-consistency`'s check 5: that one checks
+letter-casing in 画面項目定義's 表示形式 column and explicitly does *not* touch 更新条件表's
+`(YYYY/MM/DD HH24:MI:SS形式)` — the Oracle format model there is case-insensitive. Casing inside the
+annotation is still never a finding; only its absence is.
+
+Measured on `PXJCO192_処置指示登録.xlsx`, where all nine 更新条件表 sheets were scanned: 22 cells carry
+the annotated form and 12 carry the bare one, so this is a live, common defect rather than a
+hypothetical. The split runs almost exactly along the WF/non-WF line — every `*WF` sheet
+(`TXJCM137WF`, `TSJCM139WF`, `TXJAM025WF`, `TXJAM026WF`, `TXJCM838WF`) is fully annotated, while the
+plain sheets `TXJAM025` `[17,36]`/`[19,36]`, `TXJAM026` `[17,36]`/`[19,36]`, `TXJCM838`
+`[17,36]`/`[19,36]` and `TXJCM501` `[17,18]` are bare. `TXJCM501` is the clearest case: its own
+`[19,18]`/`[19,36]`/`[41,18]`/`[42,36]` are annotated and only `[17,18]` is not, so the sheet
+contradicts itself.
+
+**Run this check against the live dump, not a raw cell read.** Five more bare cells sit in
+`更新条件表(TXJCM137)`, whose whole sheet is struck out and withdrawn — a raw `Value2` scan surfaces
+them and a reviewer working from the shared dump will not see them at all. They are not findings.### 5. Verify before reporting
 
 For each candidate finding, re-read the source cells in the dump. The three things that have
 produced wrong findings on this shape of sheet:
