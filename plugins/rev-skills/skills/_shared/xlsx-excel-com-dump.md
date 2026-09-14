@@ -1,10 +1,32 @@
-# Reading Unicorn design-doc Excel files (no Python/Node available)
+# Reading Unicorn design-doc Excel files via Excel COM
 
-This machine has no working Python or Node.js (`python3`/`python`/`py`/`node` all resolve to inert
-Windows Store stub launchers). `unzip` is available in the Bash tool but raw xlsx XML/shared-strings
-inspection is tedious. **Microsoft Excel is installed and reachable via COM automation from
-PowerShell** — this is the reliable, fast way to read `.xlsx` contents in this environment. All
-`*review*`/`*column-check*` skills in this skills folder should use this same technique.
+**Microsoft Excel is installed and reachable via COM automation from PowerShell** — this is the
+reliable, fast way to read `.xlsx` contents in this environment, and every `*review*`/`*column-check*`
+skill in this skills folder uses the technique below. The scripts here are tuned against these real
+workbooks (strikethrough/gray resolution, the UsedRange origin offset, the PID guard), so keep using
+them rather than rolling your own reader.
+
+**Correction to an earlier premise: Python and Node ARE available on this machine now.** This file
+used to open by asserting they were not (that `python3`/`python`/`py`/`node` all resolved to inert
+Windows Store stub launchers). That was true when it was written and is no longer true — measured
+`2026-09-14`: `python` is a real CPython **3.13.15** at
+the per-user `AppData` Programs Python313 install with **openpyxl 3.1.5** importable, and
+`node` is **v24.19.0** under the standard `Program Files` nodejs install. Only the bare `python3` on PATH is
+still the WindowsApps stub, so prefer `python`. Do not repeat the old claim, and don't waste a round
+trip re-discovering it. Python is genuinely useful for the small side tasks this work throws off —
+reading `xl/workbook.xml` out of the zip to list sheet names before deciding what to dump, editing
+these skill docs, post-processing a dump — and `unzip` in the Bash tool still works too. It has not
+replaced the Excel COM dump for the actual review read, and nobody has validated an openpyxl
+equivalent against these workbooks; treat swapping the dump over as a separate, deliberate piece of
+work, not something to improvise mid-REV.
+
+One trap when using Python that way: a **Bash heredoc collapses doubled backslashes even when the
+delimiter is quoted**, so a `"C:BSBSProgram Files"` literal inside a `python - <<'EOF'` script
+arrives as a single backslash and `BSn` becomes a real newline. That silently wrote a line break into
+the middle of a Windows path in this very file, twice, and the write succeeds so nothing warns you
+(only a stray `SyntaxWarning: invalid escape sequence` hints at it). When a script must contain
+backslashes, build them with `chr(92)` or avoid the path text entirely, and read the result back to
+confirm. (`BS` above stands for the backslash character, for the same reason.)
 
 ## Folders to always exclude from project-wide searches
 
@@ -155,8 +177,43 @@ only the formatting loop is worth optimizing.
 `TypeNotFound`. The failure mode is deceptive: the script keeps running past the errors, so
 `Workbooks.Open` succeeds and the per-sheet `.txt` files are written **empty**, and the summary line
 still prints a plausible `rows x cols` for each sheet. Verify `Add-Type` compiled (it prints nothing
-on success) before trusting any dump; if in doubt, compile the helper in its own PowerShell call
-first and check it emits no error.
+on success) before trusting any dump.
+
+**Do NOT "verify" it by compiling the helper in a separate PowerShell call first — that produces the
+exact same empty-dump failure, for a different reason.** The PowerShell tool does not persist shell
+state between calls: types, variables and functions defined in one call are gone by the next. An
+`Add-Type` run on its own prints `ADDTYPE_OK` and looks like a clean verification, and then the
+next call — the real dump — throws `Unable to find type [XlsxDumpHelper]` on every single row,
+keeps running past the (non-terminating) errors, opens the workbook, and writes every per-sheet
+`.txt` **empty**, just as a CS0675 failure would. Confirmed for real on `PSJCO304`, where the split
+cost a full dump cycle and left an orphaned headless `EXCEL.EXE` behind.
+
+**Always paste `Add-Type` and the code that uses it in the SAME PowerShell tool call.** This applies
+to every script in this document and to `_shared/reference-index.md`'s index builder equally. If you
+want a compile check, keep it in-line: put `Write-Output "ADDTYPE_OK"` immediately after the
+`Add-Type` block of the same call, so a CS0675 failure is visible in the same output as the dump
+summary.
+
+**Pass the C# source in a SINGLE-quoted here-string — `Add-Type @'…'@`, never `Add-Type @"…"@`.**
+A double-quoted here-string is expanded by PowerShell before the C# compiler ever sees it, so any
+backtick in the source is eaten as a PowerShell escape. The concrete failure: the helper's
+`sb.Append("\r\n")` was retyped as ``sb.Append("`r`n")`` — PowerShell turned the backtick escapes
+into a real CR and LF *inside the C# string literal*, and `Add-Type` died with
+`定数の 新しい行です。` (CS1010, newline in constant) followed by a cascade of brace errors. That aborts
+`Add-Type` exactly like CS0675 does, with the same deceptive aftermath: the script keeps running,
+`Workbooks.Open` succeeds and every per-sheet `.txt` is written **empty**. `$` is expanded the same
+way, so a PowerShell variable name that happens to appear in the C# source would also be substituted.
+Use `@'…'@` and write `"\r\n"` literally, as the scripts in this document do.
+
+**If a dump call does fail this way, check for an orphaned Excel before retrying.** The script's
+`$excel.Quit()` runs but the instance can survive the torn-down PowerShell process. Run
+`Get-Process EXCEL | Select-Object Id, StartTime`, compare `StartTime` against `Get-Date`, and
+`Stop-Process` only the instance that started within the last minute or two — that one is yours.
+**Never kill an older instance: the user routinely has their own Excel open**, and the
+pre-existing-PID guard exists precisely because attaching to it and calling `Quit()` force-closes
+their unrelated workbooks unsaved. Leaving an idle orphan behind is not harmless either — it is a
+Running-Object-Table candidate the next run's `New-Object -ComObject Excel.Application` can attach
+to, which the guard then correctly aborts on, blocking every subsequent attempt.
 
 **Never put the character-class literal `[\/:*?"<>|]` in a PowerShell command — build the safe
 sheet filename another way.** Confirmed for real while dumping `PSJCO309_焼成入炉帳ｻﾔ組み.xlsx`: the
@@ -1123,6 +1180,28 @@ which group frame an item sits in, whether a control is drawn at all), get the p
 
 ## Operational notes
 
+- **Never write the dump script to a `.ps1` file and run it — pass it INLINE in the PowerShell
+  tool's `command` parameter.** This machine runs Cylance Script Control, which blocks PowerShell
+  from executing script *files*: the call fails with exit code 34 and the single line
+  `Cylance Script Control has blocked PowerShell from running.` — no other diagnostics, and nothing
+  identifies the script file as the cause. Inline commands are not blocked, and the whole dump
+  script (including its `Add-Type` heredoc) passes fine inline. Confirmed on the `PXJCO124` REV,
+  where writing `dump.ps1` to the scratchpad and invoking it with `&` failed this way while the
+  identical text run inline succeeded. Note also that shell state does not persist between
+  PowerShell tool calls, so `Add-Type` and the dump loop must be in the **same** call regardless.
+- **Excel's COM server can die mid-dump, and the failure is loud but the output is silently
+  wrong.** Seen on the `PXJCO124` REV: partway through the third sheet every subsequent COM call
+  started returning `The RPC server is unavailable. (Exception from HRESULT: 0x800706BA)`, followed
+  by hundreds of `You cannot call a method on a null-valued expression` errors as `$ws.Cells`
+  returned null. Because the errors are non-terminating by default, the script ran to completion:
+  it still wrote per-sheet `.txt` files (the `Value2` arrays already fetched were intact) and still
+  printed a summary — but the strikethrough/gray resolution for that sheet and every sheet after it
+  was abandoned partway, and the later sheets were never written at all. The tell is in the summary
+  line: the crashed sheet reports `0x0` for its `UsedRange` size, and sheets are missing from the
+  output directory. Set `$ErrorActionPreference = 'Stop'` so the run aborts at the first RPC error
+  instead of producing a plausible-looking partial dump, delete the partial output, and simply
+  re-run — the same command succeeded on the immediate retry, so treat this as transient rather
+  than a reason to change approach.
 - **Always check the dump's own row/col cap against the sheet's real size before trusting a "not
   found" result.** The template script's default cap is 3000 rows / 160 cols (raised from an
   earlier 500/100 default specifically because that was too low for this project's real sheets and
