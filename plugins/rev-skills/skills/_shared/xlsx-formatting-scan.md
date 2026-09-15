@@ -16,7 +16,7 @@ manually" rather than crashing the scan).
 gray-out are applied while the workbook is open and never reach the agents (see
 `xlsx-excel-com-dump.md`), but font size and merge span have no equivalent — this skill still opens
 Excel itself. Since only this skill reads the result, that is correct: don't try to fold it into the
-shared dump for the other five, which never look at it.
+shared dump for the other seven, which never look at it.
 
 **Font size**: loop the sheet's non-empty cells (reuse the coordinates from the bulk `Value2` dump,
 same as the strikethrough scan — no need to touch empty cells), read `Font.Size` per cell, tally into

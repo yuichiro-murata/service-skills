@@ -12,7 +12,7 @@ rule; it's a pure structural-hygiene sweep, worth surfacing to the designer even
 "wrong" in the same sense as a broken cross-reference.
 
 **Scope selection comes first.** When the user asks to REV a single program's design-doc workbook
-without naming specific checks, `rev-program-review` is the entry point: it presents the 6
+without naming specific checks, `rev-program-review` is the entry point: it presents the 8
 single-program checks as a checkbox list (`AskUserQuestion`, multiSelect), then runs only the
 selected ones as one combined pass, dumping the workbook once up front and sharing the text with
 every check (see `_shared/xlsx-excel-com-dump.md`'s "dump once, share the text" section). Do **not**
@@ -44,7 +44,7 @@ no other REV skill needs it — don't merge it back.)
 claim that the sheet is always empty.** Unlike `design-doc-internal-consistency`/
 `naming-standard-compliance` (which skip it because their specific checks genuinely don't need
 detail-design content), this skill's blanket per-cell scan *can* find real things there — a real
-run against a sub-program (SXJCB147, a ﾌﾞﾌﾟﾛ) found two genuine font-size irregularities inside its
+run against a sub-program (SXJCB147, a ｻﾌﾞﾌﾟﾛ) found two genuine font-size irregularities inside its
 `詳細設計書` sheet (in its ﾊﾟｯｹｰｼﾞ構成 and 引数一覧 sections, which were populated, not
 header-only). The user explicitly chose to exclude it anyway for the token savings, accepting that
 findings of that kind will be missed going forward. If the user asks for a more thorough pass, or

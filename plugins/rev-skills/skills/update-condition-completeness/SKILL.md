@@ -31,8 +31,8 @@ Excel COM dump instead: that doc carries the guard against attaching to — and 
 the user's own live Excel session, the strikethrough-exclusion cascade, and the reference-file cache.
 
 Read `_shared/xlsx-excel-com-dump.md` first — it has the PowerShell + Excel COM script this skill
-(and its sibling review skills) use to read `.xlsx` files, since this machine has no working
-Python/Node to use a library like openpyxl. Its "Folders to always exclude from project-wide
+(and its sibling review skills) use to read `.xlsx` files. Python/openpyxl is installed on
+this machine but has never been validated against these workbooks, so keep using that script. Its "Folders to always exclude from project-wide
 searches" list applies here too.
 
 ## Sheet anatomy (measured, not assumed)
@@ -216,7 +216,7 @@ including `TXJCM501`'s and `TXJCM137`'s, correctly leaves them `-`. Overwriting 
 update destroys the record's creation time. Also check: 排他ﾌﾗｸﾞ set to a non-incrementing literal
 on UPDATE (the optimistic-lock counter never advances), and 更新者/更新日時 left `-` on an UPDATE.
 
-A full run of C1-C7 over `PXJCO192`'s seven live 更新条件表 sheets produced exactly three findings —
+A full run of C1-C7 (measured before C8 existed) over `PXJCO192`'s seven live 更新条件表 sheets produced exactly three findings —
 this one, the `TXJCM501` missing columns under C1, and the `TSJCM139WF` name mismatch — with no
 C2 or C3 hits. That ratio is the target: this check is meant to be quiet on a clean sheet.
 
@@ -269,7 +269,9 @@ contradicts itself.
 
 **Run this check against the live dump, not a raw cell read.** Five more bare cells sit in
 `更新条件表(TXJCM137)`, whose whole sheet is struck out and withdrawn — a raw `Value2` scan surfaces
-them and a reviewer working from the shared dump will not see them at all. They are not findings.### 5. Verify before reporting
+them and a reviewer working from the shared dump will not see them at all. They are not findings.
+
+### 5. Verify before reporting
 
 For each candidate finding, re-read the source cells in the dump. The three things that have
 produced wrong findings on this shape of sheet:

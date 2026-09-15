@@ -18,11 +18,11 @@ concrete diffing steps. The checklist also has purely-manual/subjective items (e
 
 This skill checks **cross-reference consistency** only (does X mentioned here also appear over
 there) — see the frontmatter `description` above for exactly which adjacent checks (I/O table
-completeness, DB-column existence, ID-numbering, formatting, typos) live in the 5 sibling skills
+completeness, DB-column existence, ID-numbering, formatting, typos) live in the 7 sibling skills
 instead.
 
 **Scope selection comes first.** When the user asks to REV a single program's design-doc workbook
-without naming specific checks, `rev-program-review` is the entry point: it presents the 6
+without naming specific checks, `rev-program-review` is the entry point: it presents the 8
 single-program checks as a checkbox list (`AskUserQuestion`, multiSelect), then runs only the
 selected ones as one combined pass, dumping the workbook once up front and sharing the text with
 every check (see `_shared/xlsx-excel-com-dump.md`'s "dump once, share the text" section). Do **not**
@@ -41,13 +41,14 @@ Excel COM dump instead: that doc carries the guard against attaching to — and 
 the user's own live Excel session, the strikethrough-exclusion scan, and the reference-file cache.
 
 Read `_shared/xlsx-excel-com-dump.md` first for how to dump `.xlsx` sheets to text
-via PowerShell + Excel COM (no Python/Node available here) — including its "Excluding
+via PowerShell + Excel COM (the validated reader for these workbooks — Python/openpyxl is
+installed but has never been validated against them, see that doc's opening note) — including its "Excluding
 struck-through / grayed-out rows from review" section. **The dump script already dropped
 struck-through and grayed-out content, so do NOT run a formatting scan of your own** — every row you
 can see is live, which is what makes the "used but not declared" / "missing from dictionary" diffs
 below trustworthy without any extra work.
 
-**Of the six single-program checks, this is the one that genuinely needs `_DELETED_DIGEST.txt`.**
+**Of the eight single-program checks, this is the one that genuinely needs `_DELETED_DIGEST.txt`.**
 Its highest-value findings are asymmetries — one half of a pair edited while the other was left
 behind — and the live dump only ever shows you the survivor. Read the digest when a check turns on
 what was *removed*:

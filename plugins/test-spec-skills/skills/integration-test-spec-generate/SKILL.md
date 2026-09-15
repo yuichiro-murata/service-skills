@@ -1,6 +1,6 @@
 ---
 name: integration-test-spec-generate
-description: Generate a 総合テスト仕様書／報告書 (.xlsm) for one program from its 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表, by copying an already-completed spec workbook as the template and deriving every sheet from the design doc. Covers ﾃｽﾄ仕様 (test-item list), 項目・ｽﾞｰﾑ制御の確認, 画面項目制御の確認, ﾁｪｯｸ処理設計書（各画面）and 更新確認. Use when the user asks to 総合テスト仕様書を作成/作って for a program that has no spec yet, or to regenerate one from an updated design doc. This is a *generation* skill — it does not review an existing design doc (that is `rev-program-review` and its six check skills) and it does not execute tests or capture evidence.
+description: Generate a 総合テスト仕様書／報告書 (.xlsm) for one program from its 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表, by copying an already-completed spec workbook as the template and deriving every sheet from the design doc. Covers ﾃｽﾄ仕様 (test-item list), 項目・ｽﾞｰﾑ制御の確認, 画面項目制御の確認, ﾁｪｯｸ処理設計書（各画面）and 更新確認. Use when the user asks to 総合テスト仕様書を作成/作って for a program that has no spec yet, or to regenerate one from an updated design doc. This is a *generation* skill — it does not review an existing design doc (that is `rev-program-review` and its eight check skills) and it does not execute tests or capture evidence.
 ---
 
 # integration-test-spec-generate
@@ -220,7 +220,7 @@ From Ⅳ, an item whose name contains `ｽﾞｰﾑ` and whose 処理内容 matc
 
 ### 件数の出し方
 
-- 領域ブロックの件数 = 項目制御の `OK` セル数 ＋ ズーム件数 × 4（起動/ﾊﾟﾗﾒｰﾀ反映/戻り値反映/ﾌｫｰｶｽ位置）
+- 領域ブロックの件数 = 項目制御の対象セル数（`-` を書かなかったセル）＋ ズーム件数 × 4（起動/ﾊﾟﾗﾒｰﾀ反映/戻り値反映/ﾌｫｰｶｽ位置）
 - シート冒頭(D1)の全体件数 = 各ブロック件数の合計
 - **セルに入れるのは数値ではなく `COUNTIF` の数式**（「件数セルは数式で入れる」参照）。
   上の数え方は、その数式のキャッシュ値が合っているかを検算するための式と考える。

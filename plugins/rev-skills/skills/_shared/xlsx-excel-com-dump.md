@@ -76,8 +76,9 @@ to split a REV across multiple parallel agents.
 ## Orchestrating session: dump once, share the text, across parallel agents on the same workbook
 
 When several sibling skills (`design-doc-internal-consistency`, `design-doc-io-table-check`,
-`xlsx-db-column-check`, `naming-standard-compliance`, `design-doc-formatting-consistency`,
-`design-doc-typo-check`) run as parallel background agents against the SAME target workbook, don't
+`xlsx-db-column-check`, `naming-standard-compliance`, `update-condition-completeness`,
+`report-design-check`, `design-doc-formatting-consistency`, `design-doc-typo-check`) run as
+parallel background agents against the SAME target workbook, don't
 let each one independently dump it from scratch — up to 6x duplicated Excel COM cycles on an
 identical file. Confirmed real waste: a review of `XJC_ｼｽﾃﾑ共通設計書.xlsx`'s `ﾛｯﾄ停止ﾁｪｯｸ` sheet had
 3 agents each re-dump the same 999-row sheet because their prompts didn't say to reuse an existing
@@ -88,8 +89,9 @@ against every sheet, and pass the resulting `.txt` file paths into each agent's 
 `<path>` for sheet X — don't re-dump it").
 
 **In the same pre-launch step, build the reference-master index if any selected check needs it —
-see `_shared/reference-index.md`.** Today that means `design-doc-internal-consistency`, which reads
-the 画面項目辞書 index. That doc tells the *agent* not to build the index and to stop if it is
+see `_shared/reference-index.md`.** Today that means `design-doc-internal-consistency` (screen-item
+IDs) and `report-design-check` (the `画面項目ID` column on print items) — both read the
+画面項目辞書 index, so build it once when either is selected. That doc tells the *agent* not to build the index and to stop if it is
 missing, so if you skip this step the check simply does not run. Build one index per dictionary file
 the program's IDs route to (that doc's routing table; a program using shared `XJZ`/`SJZ` items needs
 the `_共通` file too), subset each to the program's own IDs, and pass both paths per file in the
@@ -235,7 +237,7 @@ The scripts below already use this form. If you paste a script from anywhere els
 objecting to `Workbooks.Open`, `$wb.Close($false)` or `$excel.Quit()`.
 
 ```powershell
-Add-Type @"
+Add-Type @'
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -284,7 +286,7 @@ public static class XlsxDumpHelper {
         return sb.ToString();
     }
 }
-"@
+'@
 
 $out    = "<scratchpad dir>"
 $path   = "<absolute path to the target workbook>"
@@ -758,7 +760,7 @@ if ($cacheValid) {
 } else {
     New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
 
-    Add-Type @"
+    Add-Type @'
 using System;
 using System.Runtime.InteropServices;
 public class ExcelComWin32Cache {
@@ -791,7 +793,7 @@ public static class XlsxDumpHelperCache {
         return sb.ToString();
     }
 }
-"@
+'@
     $preExistingExcelPids = @((Get-Process EXCEL -ErrorAction SilentlyContinue).Id)
     $excel = New-Object -ComObject Excel.Application
     $excel.Visible = $false
@@ -826,7 +828,7 @@ public static class XlsxDumpHelperCache {
         $file = Join-Path $cacheDir ("$safeName.txt")
         $used = $ws.UsedRange
         $rows = [Math]::Min($used.Rows.Count, 3000)
-        $cols = [Math]::Min($used.Columns.Count, 160)
+        $cols = [Math]::Min($used.Columns.Count, 220)
         $vals = $used.Value2
         $text = [XlsxDumpHelperCache]::FormatSheet($vals, $rows, $cols,
                                                    ($used.Row - 1), ($used.Column - 1))
@@ -861,13 +863,13 @@ one-off entries).
 **Use this instead of the single-file version above whenever you already know you need to check more
 than a couple of reference files up front** — most commonly, every テーブルレイアウト file for the
 tables in a program's Ⅲ．入出力定義 list (`xlsx-db-column-check`, easily 10+ tables), or every
-テーブルレイアウト file in a WG folder (`db-design-cross-consistency`, easily dozens). The single-file
+テーブルレイアウト file a WG-scoped comparison needs (easily dozens). The single-file
 script launches and quits a whole `Excel.Application` COM instance (Add-Type, `New-Object`, the
 pre-existing-PID safety check, `Quit`/`ReleaseComObject`) per file — real, non-trivial overhead that
 multiplies by file count if you paste it once per file. The batch variant checks every file's cache
 validity FIRST, with no Excel interaction at all, and only launches a single shared `Excel.Application`
 for the whole batch if at least one file actually needs a redump — so once the cache is warm (a
-second REV of the same WG, or `xlsx-db-column-check` re-checking a table `db-design-cross-consistency`
+second REV of the same WG, or `xlsx-db-column-check` re-checking a table an earlier run
 already dumped), this typically launches Excel zero times.
 
 ```powershell
@@ -942,7 +944,7 @@ foreach ($p in $plan) {
 
 # Pass 2: only if at least one file is a genuine miss, launch ONE Excel instance for the whole batch
 if ($toRedump.Count -gt 0) {
-    Add-Type @"
+    Add-Type @'
 using System;
 using System.Runtime.InteropServices;
 public class ExcelComWin32Batch {
@@ -975,7 +977,7 @@ public static class XlsxDumpHelperBatch {
         return sb.ToString();
     }
 }
-"@
+'@
     $preExistingExcelPids = @((Get-Process EXCEL -ErrorAction SilentlyContinue).Id)
     $excel = New-Object -ComObject Excel.Application
     $excel.Visible = $false
@@ -1011,7 +1013,7 @@ public static class XlsxDumpHelperBatch {
             $file = Join-Path $info.CacheDir ("$safeName.txt")
             $used = $ws.UsedRange
             $rows = [Math]::Min($used.Rows.Count, 3000)
-            $cols = [Math]::Min($used.Columns.Count, 160)
+            $cols = [Math]::Min($used.Columns.Count, 220)
             $vals = $used.Value2
             $text = [XlsxDumpHelperBatch]::FormatSheet($vals, $rows, $cols,
                                                        ($used.Row - 1), ($used.Column - 1))
@@ -1155,7 +1157,7 @@ reading of the surrounding branch structure. `SXJCB147`'s 部門GRP="SC200"(SMD)
 ## Font-size and cell-merge irregularity detection — moved
 
 That technique is specific to `design-doc-formatting-consistency` and now lives in its own file,
-`_shared/xlsx-formatting-scan.md`, so the other 5 REV skills don't pay the token cost of a section
+`_shared/xlsx-formatting-scan.md`, so the other 7 REV skills don't pay the token cost of a section
 they never use. Only `design-doc-formatting-consistency` needs to read that file.
 
 ## Program structure variants to expect
@@ -1268,13 +1270,14 @@ which group frame an item sits in, whether a control is drawn at all), get the p
   re-run — the same command succeeded on the immediate retry, so treat this as transient rather
   than a reason to change approach.
 - **Always check the dump's own row/col cap against the sheet's real size before trusting a "not
-  found" result.** The template script's default cap is 3000 rows / 160 cols (raised from an
+  found" result.** The template script's default cap is 3000 rows / 220 cols (raised from an
   earlier 500/100 default specifically because that was too low for this project's real sheets and
   caused a recurring wasted round-trip: dump at 500 → a section silently missing past row 500 →
   redump the same sheet at a higher cap → re-read. Confirmed sheet sizes that would have tripped the
   old cap: `PSJCO308`'s 画面設計書 (2092 rows), `XJC_ｼｽﾃﾑ共通設計書.xlsx`'s `実績表項目設定` (2652
   rows) and `ﾛｯﾄ停止ﾁｪｯｸ` (999 rows, 126 cols), `09.区分名称_step2.xlsx`'s `区分名称_STEP2～` (2371
-  rows, 156 cols) — the new default covers all of these in one pass. Still, don't treat 3000/160 as
+  rows, 156 cols), and a 帳票's `ｽﾎﾟｰｼﾝｷﾞﾁﾜｰﾄ(*)` sheet runs ~211 columns wide — the new
+  default covers all of these in one pass. Still, don't treat 3000/160 as
   a guarantee: re-check `$used.Rows.Count`/`$used.Columns.Count` from the sheet (printed when you
   dump it) against the cap, and if a sheet is bigger than even this default, redump just that sheet
   with an explicitly higher cap before concluding a section or ID is actually missing.

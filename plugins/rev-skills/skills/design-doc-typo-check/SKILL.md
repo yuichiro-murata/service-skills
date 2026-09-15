@@ -19,7 +19,7 @@ typo might also be hiding, though, so it's worth cross-referencing that skill's 
 the same pass.
 
 **Scope selection comes first.** When the user asks to REV a single program's design-doc workbook
-without naming specific checks, `rev-program-review` is the entry point: it presents the 6
+without naming specific checks, `rev-program-review` is the entry point: it presents the 8
 single-program checks as a checkbox list (`AskUserQuestion`, multiSelect), then runs only the
 selected ones as one combined pass, dumping the workbook once up front and sharing the text with
 every check (see `_shared/xlsx-excel-com-dump.md`'s "dump once, share the text" section). Do **not**
@@ -38,7 +38,8 @@ Excel COM dump instead: that doc carries the guard against attaching to — and 
 the user's own live Excel session, the strikethrough-exclusion scan, and the reference-file cache.
 
 Read `_shared/xlsx-excel-com-dump.md` first for how to dump `.xlsx` sheets to text
-via PowerShell + Excel COM (no Python/Node available here) — including its "Excluding
+via PowerShell + Excel COM (the validated reader for these workbooks — Python/openpyxl is
+installed but has never been validated against them, see that doc's opening note) — including its "Excluding
 struck-through / grayed-out rows from review" section. **The dump script already removed
 struck-through/grayed text, so do NOT run a formatting scan of your own** — everything in the `.txt`
 is live prose, and deleted-in-spirit text was never handed to you to proofread.

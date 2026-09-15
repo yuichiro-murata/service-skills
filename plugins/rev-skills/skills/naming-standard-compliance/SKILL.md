@@ -10,7 +10,7 @@ documented rules — see the frontmatter `description` above for which sibling s
 cross-references, I/O table completeness, DB-column existence, or typo proofreading instead.
 
 **Scope selection comes first.** When the user asks to REV a single program's design-doc workbook
-without naming specific checks, `rev-program-review` is the entry point: it presents the 6
+without naming specific checks, `rev-program-review` is the entry point: it presents the 8
 single-program checks as a checkbox list (`AskUserQuestion`, multiSelect), then runs only the
 selected ones as one combined pass, dumping the workbook once up front and sharing the text with
 every check (see `_shared/xlsx-excel-com-dump.md`'s "dump once, share the text" section). Do **not**
@@ -39,7 +39,8 @@ Excel COM dump instead: that doc carries the guard against attaching to — and 
 the user's own live Excel session, the strikethrough-exclusion scan, and the reference-file cache.
 
 Read `_shared/xlsx-excel-com-dump.md` first for how to dump `.xlsx` sheets to text
-via PowerShell + Excel COM (no Python/Node available here) — including its "Excluding
+via PowerShell + Excel COM (the validated reader for these workbooks — Python/openpyxl is
+installed but has never been validated against them, see that doc's opening note) — including its "Excluding
 struck-through / grayed-out rows from review" section. **Deleted IDs are already gone from the dump,
 so do NOT run a formatting scan of your own** — every ID string you can see is a live one to
 validate against the numbering rule.
@@ -87,7 +88,7 @@ and so on; the table is in `_shared/reference-index.md`), which is
      doc (e.g. プログラムID says `SJC` but 画面ID says `SJA` for the supposedly-paired screen —
      these two IDs are defined by the rule to share the same JOBコード and sequence).
    - Object-type-letter mismatches for テーブルID (e.g. ID starts with `V` but the workbook's own
-     ﾃｰﾌﾞﾙ名/構造looks like a physical table, not a view, or vice versa).
+     ﾃｰﾌﾞﾙ名/構造 looks like a physical table, not a view, or vice versa).
 4. Header-info check (checklist 1-6): within one workbook, confirm 機能ID/画面ID/システムID/
    計画書No/作成日 are identical across every sheet's header block (表紙, 機能定義書, 画面設計書,
    ﾁｪｯｸ処理設計書, 更新条件表 all repeat this header — they should never disagree). Flag any sheet

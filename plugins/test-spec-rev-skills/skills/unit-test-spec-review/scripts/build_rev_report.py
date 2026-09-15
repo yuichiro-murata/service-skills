@@ -4,7 +4,7 @@
 unit-test-spec-review スキルのチェック1〜7を全ファイルに適用し、
 指摘を「ファイル名でオートフィルタできる1枚の表」として出力する。
 """
-import glob, os, re, sys, datetime, collections, warnings
+import glob, os, re, datetime, collections, warnings
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -112,7 +112,7 @@ for path in files:
                 'S1-3-1 の文面で開き括弧が欠落している：「エラー発生時に後続処理が行われること'
                 'エラーが発生しても…コミットされること)」。',
                 '正しくは「…行われること(エラーが発生しても…コミットされること)」。'
-                'テンプレート由来で全28ファイル共通。', '共通')
+                'テンプレート由来で複数ファイルに共通。', '共通')
         if no in major and head != major[no]:
             add(name, '軽', '4 テスト項目の表記揺れ', 'B%d' % r,
                 '%s の文言が他ファイルと異なる（本書「%s」／多数派「%s」）。'
@@ -124,7 +124,7 @@ for path in files:
     if str(ws['A1'].value) == '総合テスト仕様書／報告書':
         add(name, '中', '5 文書種別とファイル名の不一致', 'A1',
             '表題が「総合テスト仕様書／報告書」だが、ファイル名は「単体テスト仕様_」で始まる。',
-            '40ファイル全件が同じ状態のため、総合テンプレートを流用した運用と思われる。'
+            '同一フォルダの他ファイルも同じ状態であれば、総合テンプレートを流用した運用と思われる。'
             '意図的かどうかの確認のみ。', '共通')
 
     # --- 6. 日付・担当 ---
@@ -153,11 +153,11 @@ for path in files:
         add(name, '中', '7 性能・ﾘｿｰｽ測定の環境記載', 'A14',
             'S5 性能ﾃｽﾄ／S6 ﾘｿｰｽ測定を「要」としているが、テスト環境のOS記載が'
             'クライアントPC（Windows 11 Pro／メモリ8GB）になっている。',
-            '他29ファイルは Windows Server 2022／96GB。測定をサーバ環境で行ったのであれば'
+            '他ファイルの多くは Windows Server 2022／96GB。測定をサーバ環境で行ったのであれば'
             '記載を修正、クライアントPCで行ったのであれば測定結果の妥当性の確認が必要。', '個別')
     if '_T1' in str(ws['A12'].value):
         add(name, '軽', '7 接続先DBサーバ名の表記揺れ', 'A12',
-            'DBサーバ名が「SJX_T1／MPASC1_T1」表記（他22ファイルは「SJX／MPASC1」）。',
+            'DBサーバ名が「SJX_T1／MPASC1_T1」表記（他ファイルは「SJX／MPASC1」表記）。',
             '同じIP・SID（10.25.94.212/SENSC101）を指しているため、別環境なのか'
             '表記揺れなのかの確認が必要。', '個別')
 

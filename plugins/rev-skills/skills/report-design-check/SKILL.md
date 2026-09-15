@@ -31,8 +31,8 @@ substitute the `ﾌｧｲﾙ出力仕様書(F*)` sheet, which is a different doc
 reference below against that folder; if it doesn't resolve, glob
 `**/rev-skills/**/skills/_shared/<filename>` and read the hit.
 
-Read `_shared/xlsx-excel-com-dump.md` first (the Excel COM dump — this machine has no working
-Python/Node), and `_shared/reference-index.md` for the 画面項目辞書 index used by check C5.
+Read `_shared/xlsx-excel-com-dump.md` first (the Excel COM dump — the validated reader for these
+workbooks; Python/openpyxl is installed but unvalidated against them), and `_shared/reference-index.md` for the 画面項目辞書 index used by check C5.
 
 ## Sheet anatomy (measured, not assumed)
 

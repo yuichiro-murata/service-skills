@@ -307,7 +307,7 @@ five files, so **one builder handles all of them and no per-file dump method is 
 
 "Index records" is after dropping strikethrough-retired entries, so it is the size the builder
 writes; "Retired" is what it dropped. Counts drift as the masters are edited — the 2,215-record
-基準情報 figure quoted under *Format* below is an earlier measurement of that same file, not a
+基準情報 figure quoted under *Format* above is an earlier measurement of that same file, not a
 contradiction.
 
 The 品質管理 and 受注出荷 copies also carry sheets named after *other* WGs — `XJZ(共通)`, `XJA(基準)`,
@@ -567,8 +567,8 @@ while ($i -lt $idx.Count) {
 }
 # Count the FULL index here, from the index itself. Do not carry the builder's $nRec over: the
 # builder short-circuits and returns early whenever the cached index is still fresh, so on the
-# common path that variable was never assigned and the line would come out empty — leaving the
-# line come out blank, which reads as a truncated or failed subset.
+# common path that variable was never assigned and the line would come out empty, which reads as a
+# truncated or failed subset.
 $keep.Add("# full-index-record-count: $total")
 [IO.File]::WriteAllLines($subsetPath, $keep, [Text.Encoding]::UTF8)
 ```

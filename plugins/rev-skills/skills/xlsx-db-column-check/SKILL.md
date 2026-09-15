@@ -32,8 +32,9 @@ Excel COM dump instead: that doc carries the guard against attaching to — and 
 the user's own live Excel session, the strikethrough-exclusion scan, and the reference-file cache.
 
 Read `_shared/xlsx-excel-com-dump.md` first — it has the PowerShell + Excel COM
-script this skill (and its sibling review skills) use to read `.xlsx` files, since this machine has
-no working Python/Node to use a library like openpyxl.
+script this skill (and its sibling review skills) use to read `.xlsx` files. Python/openpyxl is
+installed on this machine but has never been validated against these workbooks, so keep using
+that script rather than swapping in a library reader.
 
 ## Procedure
 
@@ -160,8 +161,8 @@ precedence, applied per table), **dump all of them in one pass using the "Batch 
 ﾃｰﾌﾞﾙﾚｲｱｳﾄ, and one or two old JAG_/旧-prefixed superseded copies), and this is the only one this
 check ever reads, so there's no reason to pay the Excel COM/cache cost of the others — and a program
 easily has 10+ tables in its I/O list, so batching means Excel launches at most once for this whole
-step (often zero times, once the cache is warm from an earlier REV or from `db-design-cross-consistency`
-having already dumped the same tables). That sheet has
+step (often zero times, once the cache is warm from an earlier REV that
+already dumped the same tables). That sheet has
 a fixed layout: row 6 = `[6,1]=<TableID>`/`[6,6]=<Table name>`, header at row 7
 (`No. | 項目名 | 項目ID | 属性 | 桁数 | DB桁 | I01... | notnull | 備考`), and one data row per
 column starting at row 8. Column `[r,3]` is the 項目名 (Japanese column name) — this is the
