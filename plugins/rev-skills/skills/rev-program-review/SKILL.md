@@ -157,6 +157,12 @@ review correspondence, not a deliverable design document, so it does not belong 
 tree. Locate the most recent copy by searching `Downloads` before writing, and if the series has
 moved, follow where the existing files are rather than this path.
 
+**`Downloads` can legitimately come back empty** — measured `2026-09-17`, the machine held no
+`*REV指摘一覧*` file anywhere under the user profile, the whole `PSJCO204`/`PSJCO308` series having
+since been cleaned up. That is not a reason to go looking under `01_Doc` (they were never there):
+fall back to the measured spec below, and say in the report that no prior copy was available to
+copy the layout from.
+
 **Open the most recent one and copy its layout** rather than inventing a shape, and rather than
 trusting the numbers below: the recorded layout has already drifted from the files once. What
 follows was re-measured on `PSJCO204_REV指摘一覧_20260911.xlsx` on 2026-09-15; an older revision of
@@ -168,8 +174,19 @@ Measure, then copy.
 One sheet named `REV指摘一覧`, no others. **The whole font is ＭＳ Ｐゴシック.** Row 1 is the title
 (`<プログラムID>_<プログラム名>  REV指摘一覧`) in `A1`, **not merged**, 14pt bold, row height ~18.75.
 Row 2 is the note line in `A2`, **not merged**, 9pt, carrying the target path, the checks actually
-run, the REV date, and the sentence `ｾﾙ位置は [行,列] 表記` — on a re-REV, also say which prior
-findings the list does and does not repeat. Row 3 is blank. Row 4 is the header, 10pt bold on fill
+run, the REV date, and the sentence `ｾﾙ位置はA1形式(列記号+行番号)表記` — on a re-REV, also say which
+prior findings the list does and does not repeat.
+
+**Write `セル位置` in A1 notation (`AC571`, `B128`), not `[行,列]`.** The user asked for this
+explicitly ("セル位置はA1とかの表記で出して欲しい") on the `PSJCO311` REV, and it is a standing
+preference, not a one-off: reviewers navigate the workbook by typing the address into Excel's Name
+Box, and `[571,29]` has to be converted by hand every time. The `[行,列]` form stays correct
+*inside the chat report and in the sub-agents' own findings* — it is only the Excel 指摘一覧 that
+takes A1. Convert at write time (column index → letter: repeatedly `((n-1) % 26)` → letter,
+`n = (n-1) \ 26`), and when a finding spans several cells list them comma-separated
+(`AC571, AC572, AC573`). Keep the sheet name in the separate `対象シート` column as before.
+
+Row 3 is blank. Row 4 is the header, 10pt bold on fill
 `14277593`, centred horizontally, top-aligned, wrapped:
 
 `No. / 指摘ID / 分類 / 重要度 / 対象シート / セル位置 / 指摘内容 / 想定修正 / 対応要否 / 対応結果 / 対応者 / 対応日 / 備考`
@@ -215,6 +232,16 @@ Two PowerShell traps in the builder itself, both of which abort the run:
   is rejected by this environment's destructive-operation guard with the misleading
   `Remove-Item on system path '/' is blocked` — nothing runs at all. `SaveAs` with
   `$excel.DisplayAlerts = $false` overwrites an existing file without any prompt; just call it.
+
+**The LAST `Chart.Export` in a loop comes back blank — always export one throwaway range after the
+one you care about.** Confirmed twice in a single run on `PSJCO307`: a 4-band export loop wrote
+bands 1-3 correctly and band 4 as a ~3KB blank PNG; re-running with three different bands wrote the
+first two correctly and the third (the header band) as a ~1.5KB blank. The `Activate()` was present
+every time, so this is not the missing-Activate failure below — it is the final iteration
+specifically, apparently a clipboard/paste race as the loop unwinds. The fix is trivial: append a
+small dummy range (a couple of rows) as the last entry of the band list and ignore its PNG. Check
+every exported file's byte size before looking at it; anything under ~10KB for a populated range is
+the blank.
 
 **Verify by rendering, not by re-reading cell values.** The date bug is invisible to a `Value2`
 dump. Export the finished range to PNG and actually look at it: `Range.CopyPicture(1,2)`, add a
