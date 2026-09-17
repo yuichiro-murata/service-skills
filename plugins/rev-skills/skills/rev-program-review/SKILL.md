@@ -128,6 +128,33 @@ to the next one unless the user says "同じ観点で" or similar.
 4. Do **not** post a status update as each agent finishes. Wait until every check in the batch has
    completed, then compose and post **one** merged report.
 
+## Step 3.5 — 報告前の裏取り（orchestrator が自分でやる）
+
+The agents hand back findings; the orchestrating session is what stands behind them. Before writing
+the merged report, re-verify every finding **against the original workbook**, in the orchestrator's
+own turn. Two failure modes recur, and the reviewer will ask about both — on the `PXJCO124` REV the
+user's very next message after the report was 「取り消し線加味して誤指摘ないか確認して」:
+
+1. **Strikethrough / gray-out.** For every cell a finding cites — the cited cell **and the cells
+   used as the comparison basis** — re-read the original with openpyxl and classify it
+   `LIVE` / `PARTIAL` / `DEAD`. A finding whose evidence turns out to be struck text is withdrawn.
+   The shared live dump already removes struck text, so agents working from it are usually safe, but
+   an agent that consulted `_DELETED_DIGEST.txt` may have reasoned about dead content, and a
+   `PARTIAL` cell's live remainder can differ from what the agent quoted. Also grep the digest for
+   each finding's key term: if the term appears **only** as deleted content, the "missing X" finding
+   is really "X was deliberately removed". On `PXJCO124` this pass confirmed all 19 findings' cells
+   were live, and it *strengthened* two of them — `[184,8]`/`[184,14]` proved to be `PARTIAL` while
+   the stale `[184,21]` was fully `LIVE` (an obvious delete-the-name-but-not-the-value slip), and
+   `[1054,5]` proved to have been edited recently without adding the events it was missing.
+2. **Template boilerplate.** A finding of the shape "this cell/column/row is blank" on a
+   shared-template sheet must be measured across the sibling workbooks in the same PHASE folder
+   before it is reported. Two `PXJCO124` findings died this way (0 of 28 and 27 of 28 — see
+   `naming-standard-compliance`'s 表紙 section for the specifics). One openpyxl pass over the folder
+   settles it and takes under a minute.
+
+State the outcome of this pass in the report. "取り消し線を加味した結果、誤指摘は0件" is itself
+information the reviewer wants, and it is what lets them trust the rest of the list.
+
 ## Step 4 — 報告
 
 One combined report, findings grouped by check, with the selected scope stated at the top so the

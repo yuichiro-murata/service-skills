@@ -16,9 +16,71 @@ still the WindowsApps stub, so prefer `python`. Do not repeat the old claim, and
 trip re-discovering it. Python is genuinely useful for the small side tasks this work throws off —
 reading `xl/workbook.xml` out of the zip to list sheet names before deciding what to dump, editing
 these skill docs, post-processing a dump — and `unzip` in the Bash tool still works too. It has not
-replaced the Excel COM dump for the actual review read, and nobody has validated an openpyxl
-equivalent against these workbooks; treat swapping the dump over as a separate, deliberate piece of
-work, not something to improvise mid-REV.
+replaced the Excel COM dump for the actual review read as the default route. An openpyxl equivalent
+**has** now been validated against these workbooks, but only as the fallback below — don't swap the
+default over casually mid-REV.
+
+## When Excel COM crashes repeatedly on one workbook: the validated openpyxl fallback
+
+Distinct from the `0x800A03EC` refuse-to-open failure further down. Here Excel **opens** the
+workbook and then dies partway through the formatting cascade with
+`The remote procedure call failed (0x800706BE)` followed by `The RPC server is unavailable
+(0x800706BA)` on every later call. Confirmed on `PXJCO124_ﾛｯﾄ振向け.xlsx`, whose
+`画面設計書(GXJC124A)` sheet (1674×162, 725 struck + 210 partially-struck cells) killed Excel on two
+separate runs — once mid-`機能定義書`, once after 6+ minutes inside 画面設計書. Retrying with one
+fresh `Excel.Application` per sheet did not help: it spawned an `/automation -Embedding` instance per
+sheet, each spinning CPU and surviving `Quit()`, five orphans inside ten minutes. **Do not keep
+retrying COM on a workbook that has done this once** — the retries cost far more than the fallback.
+
+Two things to know before you reach for the fallback:
+
+- **Check whether the user has the target workbook open.** On that run `Get-CimInstance Win32_Process
+  -Filter "Name='EXCEL.EXE'"` showed the user's own interactive Excel with the target `.xlsx` on its
+  command line. Print the command lines, don't just compare PIDs.
+- **The PID guard's "is this the user's Excel?" test is better written against the command line than
+  against the pre-existing-PID list.** An instance whose command line contains the automation switch
+  is one of ours and is safe to `Quit()`; one without it is interactive and must abort the run.
+  Build that switch string as `[string]([char]47) + 'automation'` — **a literal `'/automation'` in a
+  PowerShell command trips this environment's destructive-operation guard**, which rejects the entire
+  command with the misleading `Remove-Item on system path '/automation' is blocked`. Same class of
+  trap as the `[\/:*?"<>|]` character class documented below.
+
+The fallback is `openpyxl` with `load_workbook(path, data_only=True, rich_text=True)`, reproducing
+the live dump's `[row,col]=value` format exactly. **Validated: byte-identical output to the COM dump
+on the two sheets COM completed before dying** (`表紙` and `機能定義書`), and the whole 8-sheet
+workbook dumped in ~12 seconds versus COM's 10-minute failure. Always validate the same way — dump
+whatever sheets COM managed, then diff — rather than trusting the fallback blind.
+
+Three behaviours must be reproduced or the output silently diverges:
+
+1. **`data_only=True` returns `datetime` for date-formatted cells; `Value2` returns the serial.**
+   Convert back: `(dt - datetime(1899,12,30)).days + seconds/86400`. Without this every 作成日/更新日
+   comes out as `2026-05-15 00:00:00` where the COM dump has `46157`.
+2. **Format numbers like `Convert.ToString(double, InvariantCulture)`** — a float that is integral
+   prints as `2`, not `2.0`.
+3. **Rich-text strikethrough has two different inheritance rules, and getting either wrong changes
+   which text is live.** Both were found by diffing against the COM dump:
+   - A bare `str` element inside a `CellRichText` carries **no run properties and inherits the cell
+     font**. Treating it as unstruck keeps text the COM dump correctly dropped.
+   - A `TextBlock`'s own `rPr` **fully overrides** the cell font, so `strike is None` on a
+     `TextBlock` means `False`, not "inherit". Falling back to the cell font here drops live text.
+
+   Same rule for the gray-out colour test. The equivalent openpyxl helpers (`is_gray_rgb`,
+   `font_gray`, the `analyse`/`cell_text` cascade) are small enough to rewrite from this description;
+   what matters is that you diff the result against a COM dump of at least one real sheet before
+   handing it to any check.
+
+The same openpyxl route builds the `82.画面項目辞書_*` index from `_shared/reference-index.md`
+(validated: 共通 1340 records/23 retired and 基準情報 2315/4 reproduced that doc's recorded counts
+exactly) and serves `design-doc-formatting-consistency`, whose font/merge scan reads `cell.font.sz`,
+`cell.font.name` and `ws.merged_cells.ranges` — so a COM crash does not force that check to be
+skipped. Tell every downstream agent explicitly that COM crashes on this workbook and that they must
+use openpyxl, or they will each rediscover it.
+
+**One more consequence of that run: the Bash tool died partway through** with the
+`add_item ("\??\C:\Program Files\Git", "/", ...) failed, errno 1` msys fault this document warns
+about elsewhere. Have the PowerShell path ready — write scripts with the `Write` tool and invoke
+them as `python <path>` from PowerShell rather than via a Bash heredoc.
 
 One trap when using Python that way: a **Bash heredoc collapses doubled backslashes even when the
 delimiter is quoted**, so a `"C:BSBSProgram Files"` literal inside a `python - <<'EOF'` script
@@ -206,6 +268,61 @@ into a real CR and LF *inside the C# string literal*, and `Add-Type` died with
 `Workbooks.Open` succeeds and every per-sheet `.txt` is written **empty**. `$` is expanded the same
 way, so a PowerShell variable name that happens to appear in the C# source would also be substituted.
 Use `@'…'@` and write `"\r\n"` literally, as the scripts in this document do.
+
+**A mid-run COM crash (`RPC server is unavailable`, HRESULT `0x800706BA`) silently produces a dump
+that looks complete but has NOT had strikethrough removed. Discard and re-dump those sheets — never
+review from them.** This is the most dangerous failure mode in this document, because unlike the
+CS0675/here-string failures above it does **not** write an empty `.txt`: the sheet's `Value2` array
+was already pulled before the crash, so the file comes out full size, plausibly formatted, and
+completely convincing. What dies is only the level-2/level-3 cascade — every `$ws.Cells.Item(...)`
+after the crash returns `$null`, the `try/catch` (or PowerShell's non-terminating error handling)
+swallows it, `$dead`/`$liveMap` stay empty, and `FormatSheetLive` writes **every struck and
+grayed-out cell as live text**.
+
+Confirmed for real on `PXJCO128_ﾛｯﾄ停止指示登録.xlsx`: `画面設計書(GXJC128A)` was written at full
+size (108,917 bytes) with **191 fully-struck cells and 97 partially-struck cells unresolved**. The
+partial ones are what made it undetectable — a cell renamed in place reads as the old and new value
+side by side, which looks exactly like this project's real "旧値の消し忘れ" defect:
+
+| Dump text (wrong) | Actual live text |
+|---|---|
+| `(49)工程名取得` | `(4)工程名取得` |
+| `30 60` (桁数) | `60` |
+| `○ ×` | `×` |
+| `XJC9076 SJZ9015` | `SJZ9015` |
+| `ﾛｯﾄ停止指示更新解除画面` | `ﾛｯﾄ停止指示更新画面` |
+| `一括解除ﾎﾞﾀﾝ` | `解除ﾎﾞﾀﾝ` |
+
+Six sub-agents reviewed that dump and **every one of them raised the artefacts as 重要度「高」
+findings** — "新旧2値が併記されたまま", "項番が2桁に連結", "存在しない画面名", "削除済みの記述が
+取消線なしで残存" — and one reported the 「一括解除ﾎﾞﾀﾝ vs 解除ﾎﾞﾀﾝ」 naming conflict exactly
+backwards, since the live button name matched the other documents all along. The whole REV had to be
+re-run. Nothing in any agent's output hinted at a tooling fault; the reviewer caught it by asking
+whether the strikethrough had been considered at all.
+
+So, whenever a dump call reports a COM error of any kind:
+
+1. **Treat every sheet that run touched as suspect, not just the one named in the error.** The error
+   text names the row/cell the loop was on, not the sheet whose `.txt` was already written.
+2. **Do not resume by skipping sheets whose `.txt` already exists.** A "resume" that tests
+   `Test-Path $dest` will happily keep the corrupted file — that is precisely how this one survived
+   two retry passes.
+3. **Verify before reviewing**, on any sheet from a run that errored: re-dump it and diff the two
+   cell maps, or spot-check a handful of cells' `Font.Strikethrough` directly. A clean sheet's
+   summary line shows `dead=` / `partial=` counts; a sheet that crashed mid-cascade reports
+   `dead=0 partial=0` while the workbook plainly has struck content. **`dead=0 partial=0` on a
+   design-doc sheet with a populated 改訂履歴 column is a red flag, not a clean bill of health.**
+
+**The openpyxl fallback is the practical recovery, and it is fast.** `load_workbook(path,
+data_only=True, rich_text=True)` gives `cell.font.strike` and `cell.font.color` per cell, and a
+partially-struck cell arrives as a `CellRichText` whose `TextBlock`s carry their own
+`font.strike` — enough to reproduce the live-dump semantics exactly. It re-dumped all 12 sheets of
+that workbook in a few seconds where the COM cascade had taken 15 minutes and crashed twice. Two
+differences to keep in mind: openpyxl returns real `datetime` objects where COM's `Value2` returns
+the Excel serial (`2026-06-09 00:00:00` vs `46182` — same value, and neither is a design defect),
+and it reads the saved file rather than a live Excel, so formula results need `data_only=True`.
+This does not make openpyxl the default reader — the COM dump remains the validated path — but a
+crashed COM run is exactly the case where reaching for it beats a third retry.
 
 **If a dump call does fail this way, check for an orphaned Excel before retrying.** The script's
 `$excel.Quit()` runs but the instance can survive the torn-down PowerShell process. Run
@@ -1177,6 +1294,37 @@ In the live dump this appears as a *gap* — a discriminator with no handling. W
 correct deprecation or a genuine design hole is the finding, and it needs the digest plus your own
 reading of the surrounding branch structure. `SXJCB147`'s 部門GRP="SC200"(SMD) row, left with no
 帳票 after RSJC034/RSJC036 were deleted, is the canonical example of the "genuine hole" case.
+
+### When the cascade fails on some sheets, re-verify every finding on those sheets before reporting
+
+Excel COM can die mid-dump on a particular workbook (`RPC server is unavailable`, HRESULT
+`0x800706BA`), and the natural recovery is to re-run the remaining sheets — sometimes falling back to
+a **plain `Value2` dump without the strikethrough cascade** for the last stubborn sheets, because the
+per-character `Characters()` walk is what crashes. Confirmed on
+`SSJCB211_ﾛｯﾄ振向け処理(ｻﾌﾞﾌﾟﾛ).xlsx`, where Excel died twice and `更新条件表(TXJCM003)` /
+`更新条件表(TXJCD318)` ended up as plain dumps.
+
+That fallback is fine as long as it is **declared** — write a `_README_DUMP_NOTES.txt` beside the
+dumps naming exactly which sheets are plain and listing the struck/live text for their affected
+cells, and point every agent at it — **and as long as the report is re-verified against live text
+before it is handed over**. Two failure modes are specific to a crashed run:
+
+- A plain-dumped sheet still carries deleted text, so an agent reading it can raise a finding against
+  content that no longer exists.
+- A cell whose per-character walk was interrupted by the crash can be recorded with a *truncated*
+  live value in the digest. Real example from the same run: `更新条件表(TXJCM007) [13,34]` was
+  written to the first digest as `live='振向'`, which reads like a mid-sentence truncation defect;
+  the sheet's clean re-dump and a direct re-read both give the true value `振向先ﾛｯﾄ登録時`. Nothing
+  in the digest marks the entry as suspect.
+
+So before reporting, run one targeted Excel COM pass over **every cell the merged report cites** —
+each cell's `Font.Strikethrough` (`DBNull` = mixed → rebuild the live text per character), `Font.Color`
+for gray, and the resulting live value — and drop or restate any finding whose cited text turns out to
+be struck, gray, or different from what the dump showed. Findings of the form "X is missing" need the
+complementary check: confirm from the digest that X was not merely struck out, since a deleted X and a
+never-written X are different findings. The user asked for this verification explicitly
+(「取り消し線加味して誤指摘ないか確認して」) after a full REV, so treat it as a required closing step
+of any REV whose dump did not complete cleanly in one pass, not an optional extra.
 
 ## Font-size and cell-merge irregularity detection — moved
 

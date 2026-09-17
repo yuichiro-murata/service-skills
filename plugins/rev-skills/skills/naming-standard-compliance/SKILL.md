@@ -125,6 +125,25 @@ and so on; the table is in `_shared/reference-index.md`), which is
    hit rate, don't treat this as a "only if asked for a full pass" item — check it every time, the
    same as the header-info check above.
 
+   **Two parts of 表紙 are template boilerplate and are NOT findings — do not report them.** Both
+   were raised as findings on the `PXJCO124_ﾛｯﾄ振向け` REV and both were withdrawn after measuring
+   the 28 sibling workbooks in `01_Doc/08_機能定義書/11_工程管理/PHASE3`:
+
+   - **The "その他設計書" column of Ⅱ．設計書構成 (column 34, rows 24-33) is empty in every
+     workbook** — 0 of 28 had any entry, while the No. column beside it (column 32) is always
+     pre-numbered 1-10. It is an unused template column, so "sheet X appears nowhere in the
+     構成表" is not a defect just because X is only explainable by that column. The Customer/
+     Developer marker check in the paragraph above is the real check here; the その他 column is not.
+   - **A trailing 改訂履歴 row carrying only the next sequence number, with 改訂日/改訂者/計画書No/
+     改訂内容 all blank, is the project's convention** — 27 of 28 workbooks had one (the lone
+     exception was `PSJCO205_返品処置指示発行`). Rows are pre-numbered for the next revision. Only
+     report a 改訂履歴 row as incomplete when a row **other than the last** is partially filled.
+
+   When a 表紙 observation looks like an omission, measure it across the sibling workbooks in the
+   same PHASE folder before reporting it. Both false positives above would have been caught by one
+   openpyxl pass over the folder, and the same reasoning applies to any other "this cell is blank"
+   observation on a shared template.
+
 6. 表紙 checks that remain lighter-weight/manual-leaning (do these only if asked for a full pass,
    they require reading prose or a slower cross-file lookup): 表紙's 画面ID/画面名 matches the
    program's WG-specific 機能一覧 workbook under
