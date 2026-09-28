@@ -324,6 +324,17 @@ and it reads the saved file rather than a live Excel, so formula results need `d
 This does not make openpyxl the default reader — the COM dump remains the validated path — but a
 crashed COM run is exactly the case where reaching for it beats a third retry.
 
+**PowerShell variable names are case-INSENSITIVE, so never introduce a `$wS`/`$wC` next to the
+worksheet handle `$ws`.** Writing `$wS = $used.Font.Strikethrough` silently overwrites the worksheet
+object, and every later `$ws.Cells.Item(...)` then throws
+`You cannot call a method on a null-valued expression.` — for *every* sheet, with a message that
+names no sheet and no property, so it reads like a COM or workbook fault rather than a one-character
+naming collision. Confirmed on a re-dump of `SSJCB211_ﾛｯﾄ振向け処理(ｻﾌﾞﾌﾟﾛ).xlsx`, where all 13
+sheets failed identically and the per-sheet `try/catch` turned it into 13 identical "FAILED" lines.
+Name the strikethrough/color probes something that cannot collide (`$allStrike`/`$allColor`,
+`$rowStrike`/`$rowColor`), and if a whole-workbook dump fails on every sheet with that message, look
+for a shadowed variable before blaming Excel.
+
 **If a dump call does fail this way, check for an orphaned Excel before retrying.** The script's
 `$excel.Quit()` runs but the instance can survive the torn-down PowerShell process. Run
 `Get-Process EXCEL | Select-Object Id, StartTime`, compare `StartTime` against `Get-Date`, and
