@@ -13,8 +13,9 @@ small index once and let the agents read the index.
 | `<TableID>_<name>.xlsx` (ﾃｰﾌﾞﾙﾚｲｱｳﾄ) | **Not yet indexed** — keep using the `xlsx-dumps` cache. |
 | `06-06_DB一覧_<WG>.xlsx` | **Not yet indexed** — keep using the `xlsx-dumps` cache. |
 | `06-03_帳票一覧_<WG>.xlsm` | **Not yet indexed** — keep using the `xlsx-dumps` cache. |
+| `06-04_ﾌｧｲﾙ一覧_<WG>.xlsm` | **Not yet indexed** — keep using the `xlsx-dumps` cache. |
 
-**Do not generalise the pattern to the other three yourself.** Each was tried and each hid a
+**Do not generalise the pattern to the other four yourself.** Each was tried and each hid a
 structural trap that a hand-rolled index gets wrong silently:
 
 - `06-06_DB一覧_<WG>.xlsx` carries **two overlapping table lists on two visible sheets** with
@@ -27,11 +28,13 @@ structural trap that a hand-rolled index gets wrong silently:
 - The table IDs a program cites include views and suffixed forms (`VXJCM004_31`, `TXJAM061WF`,
   `VXJCM004_31_ALL`); an index built from a `T`-only ID pattern silently omits them.
 
-Two checks read this file today, both because they need `id → 画面項目名`:
-`design-doc-internal-consistency` (screen-item IDs registered in the dictionary) and
+Three checks read this file today, all because they need `id → 画面項目名`:
+`design-doc-internal-consistency` (screen-item IDs registered in the dictionary),
 `report-design-check` (the `画面項目ID` column on a 帳票設計書's print items — same dictionary, same
 prefix routing, and a report's print labels routinely cite shared `XJZ`/`SJZ` items, so the
-per-prefix routing below matters there too). `xlsx-db-column-check` and `design-doc-io-table-check`
+per-prefix routing below matters there too) and `file-output-spec-check` (the `画面項目ID` column on
+a ﾌｧｲﾙ出力仕様書's ﾍｯﾀﾞｰ/段落ﾀｲﾄﾙ items — a 工程管理 file's header IDs are `XJC8xxx`/`SJC8xxx`, while
+a 基準情報 file's are `XJA0xxx`/`SJA0xxx`, and both route by prefix exactly as below). `xlsx-db-column-check` and `design-doc-io-table-check`
 keep using the dump cache until their masters get builders of their own.
 
 ## Who builds the index: the orchestrator, once, before launching agents

@@ -1,6 +1,6 @@
 ---
 name: design-doc-io-table-check
-description: Check whether a program's 機能定義書「Ⅲ．入出力定義」table (the CRUD list of every DB table/file the program touches) is complete and accurate in both directions — every table actually used anywhere in 画面設計書/更新条件表/帳票設計書 (including via delegation to `07.共通項目取得.xlsx`) is declared with the right C/R/U/D flags, and every declared table is genuinely used and has a real DB一覧 entry + テーブルレイアウト file. This is the single most complex, highest-yield check in a program REV — deep delegation-tracing, WG-folder DB-layout lookups with PH2/PH3 precedence, exact-ID-match discipline, and struck-through-block exclusion all apply — so it is split out from its lighter sibling `design-doc-internal-consistency` (event/response/screen-item-ID/message-ID/three-way-match/exclusive-control checks) to get undivided attention. Use when the user asks to check 入出力定義表/CRUD一覧 completeness, or whether a design doc's declared tables match what it actually uses. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 8 single-program checks to run, then runs only those as one combined pass. Do not launch all eight yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Check whether a program's 機能定義書「Ⅲ．入出力定義」table (the CRUD list of every DB table/file the program touches) is complete and accurate in both directions — every table actually used anywhere in 画面設計書/更新条件表/帳票設計書 (including via delegation to `07.共通項目取得.xlsx`) is declared with the right C/R/U/D flags, and every declared table is genuinely used and has a real DB一覧 entry + テーブルレイアウト file. This is the single most complex, highest-yield check in a program REV — deep delegation-tracing, WG-folder DB-layout lookups with PH2/PH3 precedence, exact-ID-match discipline, and struck-through-block exclusion all apply — so it is split out from its lighter sibling `design-doc-internal-consistency` (event/response/screen-item-ID/message-ID/three-way-match/exclusive-control checks) to get undivided attention. Use when the user asks to check 入出力定義表/CRUD一覧 completeness, or whether a design doc's declared tables match what it actually uses. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
 ---
 
 # design-doc-io-table-check
@@ -11,11 +11,11 @@ in this project's own checklist: `01_Doc/99.共通資料/設計書記述ルー�
 in both directions" covers and why this was split out of `design-doc-internal-consistency`.
 
 **Scope selection comes first.** When the user asks to REV a single program's design-doc workbook
-without naming specific checks, `rev-program-review` is the entry point: it presents the 8
+without naming specific checks, `rev-program-review` is the entry point: it presents the 9
 single-program checks as a checkbox list (`AskUserQuestion`, multiSelect), then runs only the
 selected ones as one combined pass, dumping the workbook once up front and sharing the text with
 every check (see `_shared/xlsx-excel-com-dump.md`'s "dump once, share the text" section). Do **not**
-unconditionally launch all 8 yourself, and do not post a per-check status update — the combined
+unconditionally launch all 9 yourself, and do not post a per-check status update — the combined
 report is posted once, after every selected check has finished. This skill runs on its own when it
 was one of the selected checks, or when the user asked for this check by name.
 
@@ -53,7 +53,9 @@ nothing lost.
    the authoritative declaration set, and never resurrect IDs from `_DELETED_DIGEST.txt` as
    declarations.
 2. Collect every table ID/alias from: Ⅲ．入出力定義 itself, 画面設計書's 参照ｴﾝﾃｨﾃｨ blocks (or the
-   batch/report-program equivalents), AND every 更新条件表 sheet's *body* (not just its header) —
+   batch/report-program equivalents, **including a ﾌｧｲﾙ出力仕様書's own inline 参照ｴﾝﾃｨﾃｨ blocks in
+   Ⅰ．ﾌｧｲﾙ出力条件** — 6 of the 工程管理 PHASE1-3 file specs read tables directly there rather than
+   delegating to a 画面設計書 block, and each such table owes the program an R), AND every 更新条件表 sheet's *body* (not just its header) —
    the 取得内容/取得条件 column often cites other tables by Japanese name only, never by ID, so
    search by name too before calling a table unused.
 3. Follow every `※<共通設計書名>.<項目> 参照` delegation line to its actual target sheet (check both
@@ -187,6 +189,12 @@ Diff the two sets:
   on without checking that the R itself was missing from the flags. Flag any letter present in
   actual usage but absent from the row, and vice versa (a flagged letter with no matching
   operation anywhere).
+- **An `F…` ID in Ⅲ．入出力定義 is a file, not a table** (`FXJA020` 取引先ﾏｽﾀﾌｧｲﾙ, `FSJC051`
+  損金一覧ﾃﾞｰﾀ). It has no DB一覧 row and no ﾃｰﾌﾞﾙﾚｲｱｳﾄ by design, so never report it as
+  unregistered or layout-less. Its registration (`06-04_ﾌｧｲﾙ一覧_<WG>.xlsm`) and its agreement with the
+  `ﾌｧｲﾙ出力仕様書(<ID>)` sheet are `file-output-spec-check` F1/F2. What does stay here is the plain
+  both-direction diff: a visible `ﾌｧｲﾙ出力仕様書(<ID>)` sheet whose ID has no 入出力定義 row is "used but
+  not declared", exactly like a table.
 - Also check whether each table ID appears in the DB一覧 and whether its ﾃｰﾌﾞﾙﾚｲｱｳﾄ workbook exists.
   **The DB一覧 is per-WG** — `01_Doc/06_システム設計書（一覧、管理台帳）/06-06_DB一覧_<WG名>.xlsx`
   (e.g. `06-06_DB一覧_工程管理.xlsx`); the `_共通` copy holds only the shared tables, so checking it

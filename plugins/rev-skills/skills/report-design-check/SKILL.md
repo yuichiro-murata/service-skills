@@ -1,6 +1,6 @@
 ---
 name: report-design-check
-description: Review a program's 帳票設計書(<帳票ID>) sheets — the report/print specification that no other REV skill looks at in its own right. Checks that the report is registered in 06-03_帳票一覧_<WG>.xlsm under this program, that Ⅱ．帳票仕様's fixed spec rows (用紙ｻｲｽﾞ/明細部/改ﾍﾟｰｼﾞ条件/0件出力/出力順/抑止項目…) are actually filled in rather than left blank, that every 参照先 alias used in Ⅲ．編集仕様 is defined by a 参照ｴﾝﾃｨﾃｨ in Ⅰ．帳票出力条件, that every printed value traces back to a 取得項目 (and no fetched item goes unprinted), that 画面項目ID values on print items are registered in 82.画面項目辞書, and that the ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(<帳票ID>) layout sheet agrees with the print-item list. Distinct from design-doc-io-table-check (which only asks whether a 帳票設計書's tables reach the CRUD list) and xlsx-db-column-check (column existence). Use when the user asks to REV 帳票設計書/帳票仕様/印字項目. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 8 single-program checks to run, then runs only those as one combined pass. Do not launch all eight yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Review a program's 帳票設計書(<帳票ID>) sheets — the report/print specification that no other REV skill looks at in its own right. Checks that the report is registered in 06-03_帳票一覧_<WG>.xlsm under this program, that Ⅱ．帳票仕様's fixed spec rows (用紙ｻｲｽﾞ/明細部/改ﾍﾟｰｼﾞ条件/0件出力/出力順/抑止項目…) are actually filled in rather than left blank, that every 参照先 alias used in Ⅲ．編集仕様 is defined by a 参照ｴﾝﾃｨﾃｨ in Ⅰ．帳票出力条件, that every printed value traces back to a 取得項目 (and no fetched item goes unprinted), that 画面項目ID values on print items are registered in 82.画面項目辞書, and that the ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(<帳票ID>) layout sheet agrees with the print-item list. Distinct from design-doc-io-table-check (which only asks whether a 帳票設計書's tables reach the CRUD list) and xlsx-db-column-check (column existence). Use when the user asks to REV 帳票設計書/帳票仕様/印字項目. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
 ---
 
 # report-design-check
@@ -21,7 +21,11 @@ per-check status update. This skill runs on its own when it was one of the selec
 the user asked for this check by name.
 
 **A program with no `帳票設計書(*)` sheet is not in scope.** Say so in one line and stop — do not
-substitute the `ﾌｧｲﾙ出力仕様書(F*)` sheet, which is a different document with a different shape.
+substitute the `ﾌｧｲﾙ出力仕様書(F*)` sheet, which is a different document with a different shape and
+has its own check, `file-output-spec-check` (its own registry `06-04_ﾌｧｲﾙ一覧_*`, its own
+common-download conventions). The two share the Ⅲ．編集仕様 table shape, so do not "helpfully" review
+a ﾌｧｲﾙ出力仕様書 here when 帳票設計書 is absent — the report-specific rules below (Ⅱ．帳票仕様's label
+list, ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ) do not apply to it and would only produce noise.
 
 ## Environment constraints (important)
 

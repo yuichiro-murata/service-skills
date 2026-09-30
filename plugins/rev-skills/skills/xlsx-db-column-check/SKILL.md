@@ -1,6 +1,6 @@
 ---
 name: xlsx-db-column-check
-description: Check whether a function-definition Excel doc (機能定義書/画面設計書/更新条件表) references DB columns that don't actually exist in the corresponding table-layout (テーブルレイアウト) Excel files, AND whether each screen item's declared 桁数 matches that column's 桁数 in the layout. Distinct from design-doc-io-table-check, which checks whether a table is *declared* in the Ⅲ．入出力定義 CRUD list at all — this skill instead checks whether the *columns* referenced within an already-used table actually exist, and whether they are declared at the right length: a column can exist and still be wrong, e.g. a 工程名 TextBox declared 桁数=30 against a 工程ﾏｽﾀ column of NVARCHAR2(60) silently truncates on entry and display. Also flags a project-specific anti-pattern in 検索条件保存マスタ-style generic tables (e.g. TXJAM100): persisting both a master-entity code (品目コード等) AND its master-derived display name (KC品名等) together, when only the code should be stored and the name should come from a JOIN at read-time — but ONLY when the screen shows that name as a Label; a name the user types into a TextBox is an independent search condition and persisting it is correct. Use when the user asks to verify a program's design doc against DB/file design docs, e.g. "このファイルが使っているカラムが、DB設計書のファイルに存在するか確認して" or "存在しないカラムを使っていたら教えて". When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 8 single-program checks to run, then runs only those as one combined pass. Do not launch all eight yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Check whether a function-definition Excel doc (機能定義書/画面設計書/更新条件表) references DB columns that don't actually exist in the corresponding table-layout (テーブルレイアウト) Excel files, AND whether each screen item's declared 桁数 matches that column's 桁数 in the layout. Distinct from design-doc-io-table-check, which checks whether a table is *declared* in the Ⅲ．入出力定義 CRUD list at all — this skill instead checks whether the *columns* referenced within an already-used table actually exist, and whether they are declared at the right length: a column can exist and still be wrong, e.g. a 工程名 TextBox declared 桁数=30 against a 工程ﾏｽﾀ column of NVARCHAR2(60) silently truncates on entry and display. Also flags a project-specific anti-pattern in 検索条件保存マスタ-style generic tables (e.g. TXJAM100): persisting both a master-entity code (品目コード等) AND its master-derived display name (KC品名等) together, when only the code should be stored and the name should come from a JOIN at read-time — but ONLY when the screen shows that name as a Label; a name the user types into a TextBox is an independent search condition and persisting it is correct. Use when the user asks to verify a program's design doc against DB/file design docs, e.g. "このファイルが使っているカラムが、DB設計書のファイルに存在するか確認して" or "存在しないカラムを使っていたら教えて". When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
 ---
 
 # xlsx-db-column-check
@@ -13,11 +13,11 @@ codebase (機能定義書 / 画面設計書 / 更新条件表 / ﾃｰﾌﾞﾙ�
 `<機能定義書xlsx>` + `<DB設計書folder>` pair, not just one specific program.
 
 **Scope selection comes first.** When the user asks to REV a single program's design-doc workbook
-without naming specific checks, `rev-program-review` is the entry point: it presents the 8
+without naming specific checks, `rev-program-review` is the entry point: it presents the 9
 single-program checks as a checkbox list (`AskUserQuestion`, multiSelect), then runs only the
 selected ones as one combined pass, dumping the workbook once up front and sharing the text with
 every check (see `_shared/xlsx-excel-com-dump.md`'s "dump once, share the text" section). Do **not**
-unconditionally launch all 8 yourself, and do not post a per-check status update — the combined
+unconditionally launch all 9 yourself, and do not post a per-check status update — the combined
 report is posted once, after every selected check has finished. This skill runs on its own when it
 was one of the selected checks, or when the user asked for this check by name.
 
@@ -61,6 +61,14 @@ Read the dumped sheets with the Read tool (not Bash cat) and look for these stan
   `INSERT`/`UPDATE`/`DELETE` operation-marker column** showing where each value comes from. (There is
   no header reading 取得内容 on these sheets — that label belongs to Ⅲ．画面表示仕様's 取得項目 table.
   See step 5 for the exact column positions.) Collect the full 項目名 list for that table.
+
+- **ﾌｧｲﾙ出力仕様書(<ﾌｧｲﾙID>) sheet(s), "Ⅰ．ﾌｧｲﾙ出力条件"**: most download specs only delegate
+  (`画面設計書(GSJC901A) - (6)明細情報取得 参照 … ①`), and those columns are already collected from the
+  画面設計書 block itself. But some carry their **own inline 参照ｴﾝﾃｨﾃｨ blocks** with the same
+  取得項目/検索条件/結合条件/ｿｰﾄ順 shape — measured on 6 of the 工程管理 PHASE1-3 file specs,
+  `PXJAO701_資源ﾏｽﾀﾒﾝﾃﾅﾝｽ.xlsx`'s `FXJA014` alone has 15. Harvest those exactly like a 画面設計書
+  block; skipping the sheet silently leaves their columns unchecked, and no other check reads them
+  (`file-output-spec-check` resolves 参照先 aliases but does not open table layouts).
 
 Build a per-table list: `{ table_id: [column names referenced] }`.
 

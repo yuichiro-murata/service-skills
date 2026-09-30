@@ -1,16 +1,16 @@
 ---
 name: rev-program-review
-description: Entry point for a full REV of ONE program's design-doc workbook (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/帳票設計書). Instead of unconditionally running every check, it first presents the 8 single-program check skills as a checkbox list (AskUserQuestion, multiSelect) so the user picks which checks to run BEFORE any dumping or analysis starts, then runs only the selected ones as one combined pass and reports their findings as a single merged report. Use whenever the user asks to REV/レビュー a design-doc workbook without naming the specific checks they want — in that case do NOT launch the individual check skills directly. Skip the checkbox prompt only when the user already named the checks, or explicitly asked for 全部/all/フルREV.
+description: Entry point for a full REV of ONE program's design-doc workbook (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/帳票設計書/ﾌｧｲﾙ出力仕様書). Instead of unconditionally running every check, it first presents the 9 single-program check skills as a checkbox list (AskUserQuestion, multiSelect) so the user picks which checks to run BEFORE any dumping or analysis starts, then runs only the selected ones as one combined pass and reports their findings as a single merged report. Use whenever the user asks to REV/レビュー a design-doc workbook without naming the specific checks they want — in that case do NOT launch the individual check skills directly. Skip the checkbox prompt only when the user already named the checks, or explicitly asked for 全部/all/フルREV.
 ---
 
 # rev-program-review
 
-Runs a REV of one program's design-doc workbook with a **user-selected scope**. The 8 checks below
+Runs a REV of one program's design-doc workbook with a **user-selected scope**. The 9 checks below
 are individually expensive (each dumps and re-reads a large workbook, several also read WG-folder
 DB-layout files and the 01_Doc common-design workbooks), so running all of them when the user only
 wanted two wastes a lot of time and tokens. Ask first, then run only what was selected.
 
-## The 8 single-program check skills
+## The 9 single-program check skills
 
 | # | skill | what it checks |
 |---|-------|----------------|
@@ -22,12 +22,13 @@ wanted two wastes a lot of time and tokens. Ask first, then run only what was se
 | 6 | `report-design-check` | 帳票設計書（帳票一覧登録、Ⅱ．帳票仕様の記入漏れ、参照先ｴｲﾘｱｽ、取得項目⇔印字項目） |
 | 7 | `design-doc-formatting-consistency` | ﾌｫﾝﾄｻｲｽﾞ/ｾﾙ結合のブレ（体裁の衛生） |
 | 8 | `design-doc-typo-check` | 日本語の誤字脱字・変換ミス |
+| 9 | `file-output-spec-check` | ﾌｧｲﾙ出力仕様書（ﾌｧｲﾙID一貫性、ﾌｧｲﾙ一覧登録、Ⅱ．ﾌｧｲﾙ出力仕様の記入漏れ、共通ﾀﾞｳﾝﾛｰﾄﾞ注釈、画面項目ID番台/登録、ﾍｯﾀﾞｰ⇔明細、明細の参照先、編集方法、ﾌｧｲﾙﾚｲｱｳﾄ一致） |
 
-Checks 5 and 6 are narrower than the rest in one specific sense: each applies only when the workbook
-has the sheets it reads. A program with no `更新条件表(*)` sheet (a pure 照会 screen) or no
-`帳票設計書(*)` sheet has nothing for that check to do — still offer it, but if the user selects it
-and the sheets aren't there, say so in one line in the merged report rather than running an empty
-analysis.
+Checks 5, 6 and 9 are narrower than the rest in one specific sense: each applies only when the
+workbook has the sheets it reads. A program with no `更新条件表(*)` sheet (a pure 照会 screen), no
+`帳票設計書(*)` sheet, or no visible `ﾌｧｲﾙ出力仕様書(*)` sheet has nothing for that check to do —
+still offer it, but if the user selects it and the sheets aren't there, say so in one line in the
+merged report rather than running an empty analysis.
 
 WG-folder-scoped comparison skills are **not** part of this menu — bundle those in only when the
 user's request is itself folder-scoped, or they explicitly ask for them.
@@ -41,7 +42,7 @@ don't burn a separate round trip.
 ## Step 2 — チェック項目の選択（チェックボックス）
 
 Call `AskUserQuestion` with **three `multiSelect: true` questions** — the tool allows at most 4
-options per question, so the 8 checks are split 4 + 2 + 2. Present them exactly like this (labels in
+options per question, so the 9 checks are split 4 + 3 + 2. Present them exactly like this (labels in
 Japanese, since the reviewers work in Japanese) — keep this grouping and this option order:
 
 - Question 1 — header `整合性`, question「実施するチェックを選択してください（複数選択可）」
@@ -49,18 +50,19 @@ Japanese, since the reviewers work in Japanese) — keep this grouping and this 
   - 「設計書内部の相互参照チェック (推奨)」— `design-doc-internal-consistency`
   - 「DBカラム実在・桁数整合チェック」— `xlsx-db-column-check`
   - 「ID採番・記述ルール準拠チェック」— `naming-standard-compliance`
-- Question 2 — header `更新・帳票`, question「更新条件表・帳票のチェックを選択してください（複数選択可）」
+- Question 2 — header `更新・帳票`, question「更新条件表・帳票・ﾌｧｲﾙ出力のチェックを選択してください（複数選択可）」
   - 「更新条件表の網羅チェック（NOT NULL/主キー/共通項目）」— `update-condition-completeness`
   - 「帳票設計書チェック」— `report-design-check`
+  - 「ﾌｧｲﾙ出力仕様書チェック」— `file-output-spec-check`
 - Question 3 — header `誤字・体裁`, question「実施する誤字・体裁チェックを選択してください（複数選択可）」
   - 「誤字脱字チェック」— `design-doc-typo-check`
   - 「フォントサイズ・セル結合のブレチェック」— `design-doc-formatting-consistency`
 
-All three questions go in **one** `AskUserQuestion` call, so all 8 checkboxes appear in a single
+All three questions go in **one** `AskUserQuestion` call, so all 9 checkboxes appear in a single
 prompt. When the target workbook has already been identified and you can see it has no
-`更新条件表(*)` or no `帳票設計書(*)` sheet, say so in that option's `description`
-(「本ﾌﾞｯｸに帳票設計書ｼｰﾄなし」) rather than dropping the option — the absence is itself information
-the reviewer may want to question.
+`更新条件表(*)`, no `帳票設計書(*)` or no visible `ﾌｧｲﾙ出力仕様書(*)` sheet, say so in that option's
+`description` (「本ﾌﾞｯｸに帳票設計書ｼｰﾄなし」) rather than dropping the option — the absence is itself
+information the reviewer may want to question.
 
 Put the skill name in each option's `description` alongside a one-line summary of what it finds, so
 the user can tell the options apart without knowing the skill names by heart. The user can select
@@ -79,16 +81,16 @@ none in a group — that group's checks are simply skipped.
 
 If **all three** groups end up with no check to run (nothing selected, or empty "Other"), there is
 nothing to review: stop, state plainly that no check was run and that the workbook was not dumped,
-and do not fall back to running all 8.
+and do not fall back to running all 9.
 
 ### プロンプトを省略してよいケース
 
 Skip Step 2 and go straight to Step 3 when:
 
 - The user already named the checks ("入出力定義と誤字だけ見て", "誤字チェックして") — run exactly those.
-- The user explicitly asked for everything ("全部", "フルREV", "8つ全部", "all") — run all 8.
+- The user explicitly asked for everything ("全部", "フルREV", "全チェック", "all") — run all 9.
 - The user invoked one check skill directly by name — that skill runs standalone; this skill isn't involved.
-- `AskUserQuestion` is unavailable (non-interactive / batch / subagent context) — fall back to all 8
+- `AskUserQuestion` is unavailable (non-interactive / batch / subagent context) — fall back to all 9
   and **state in the report** that the full set was run because the scope couldn't be asked.
 
 Re-ask the scope for each **new** REV request; a selection made for one workbook does not carry over
@@ -113,9 +115,10 @@ to the next one unless the user says "同じ観点で" or similar.
    every cached copy stale **forever** — the loader sees a version it already has and never re-copies.
    Bump the version in the same commit as any skill-content change.
 2. **Build the reference-master index in the same pre-launch step, if a selected check needs it** —
-   see `_shared/reference-index.md`. Two checks do: `design-doc-internal-consistency` (screen-item
-   IDs) and `report-design-check` (the `画面項目ID` column on print items) — both want the
-   画面項目辞書 index, so build it once when either is selected. That doc instructs the *agent* to
+   see `_shared/reference-index.md`. Three checks do: `design-doc-internal-consistency` (screen-item
+   IDs), `report-design-check` (the `画面項目ID` column on print items) and `file-output-spec-check`
+   (the `画面項目ID` column on a ﾌｧｲﾙ出力仕様書's ﾍｯﾀﾞｰ items) — all want the 画面項目辞書 index, so
+   build it once when any of them is selected. That doc instructs the *agent* to
    stop rather than build it, so skipping this
    step silently drops those checks' dictionary-registration test. Build **one index per dictionary
    file the program's screen-item IDs route to** — that doc's routing table maps each ID prefix to
@@ -227,7 +230,7 @@ everything else left-aligned. **Fill only A-H and M — columns I-L (対応要�
 `重要度` takes one of 高 / 中 / 低 / 要確認 and is coloured by **direct cell fill, not conditional
 formatting** (the existing files have zero `FormatConditions`): 高 = `13421823` + bold, 中 =
 `13434879`, 要確認 = `16772300`, 低 = left white. `分類` names the check the finding came from
-(入出力定義 / 内部相互参照 / DBｶﾗﾑ / ID採番/記述ﾙｰﾙ / 更新条件表 / 誤字脱字 / 体裁), and `指摘ID` is
+(入出力定義 / 内部相互参照 / DBｶﾗﾑ / ID採番/記述ﾙｰﾙ / 更新条件表 / 帳票 / ﾌｧｲﾙ出力 / 誤字脱字 / 体裁), and `指摘ID` is
 `<分類の連番>-<その中の連番>` (`2-13`), with column A a plain 1..N counter. Use the bare `体裁` the
 existing files use — not `体裁(ﾌｫﾝﾄ)`/`体裁(結合)`, which this file previously specified and which no
 copy of the list actually contains.
