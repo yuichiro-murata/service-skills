@@ -1,6 +1,6 @@
 ---
 name: xlsx-db-column-check
-description: Check whether a function-definition Excel doc (機能定義書/画面設計書/更新条件表) references DB columns that don't actually exist in the corresponding table-layout (テーブルレイアウト) Excel files, AND whether each screen item's declared 桁数 matches that column's 桁数 in the layout. Distinct from design-doc-io-table-check, which checks whether a table is *declared* in the Ⅲ．入出力定義 CRUD list at all — this skill instead checks whether the *columns* referenced within an already-used table actually exist, and whether they are declared at the right length: a column can exist and still be wrong, e.g. a 工程名 TextBox declared 桁数=30 against a 工程ﾏｽﾀ column of NVARCHAR2(60) silently truncates on entry and display. Also flags a project-specific anti-pattern in 検索条件保存マスタ-style generic tables (e.g. TXJAM100): persisting both a master-entity code (品目コード等) AND its master-derived display name (KC品名等) together, when only the code should be stored and the name should come from a JOIN at read-time — but ONLY when the screen shows that name as a Label; a name the user types into a TextBox is an independent search condition and persisting it is correct. Use when the user asks to verify a program's design doc against DB/file design docs, e.g. "このファイルが使っているカラムが、DB設計書のファイルに存在するか確認して" or "存在しないカラムを使っていたら教えて". When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Check whether a function-definition Excel doc (機能定義書/画面設計書/更新条件表) references DB columns that don't actually exist in the corresponding table-layout (テーブルレイアウト) Excel files, AND whether each screen item's declared 桁数 matches that column's 桁数 in the layout. Distinct from design-doc-io-table-check, which checks whether a table is *declared* in the Ⅲ．入出力定義 CRUD list at all — this skill instead checks whether the *columns* referenced within an already-used table actually exist, and whether they are declared at the right length: a column can exist and still be wrong, e.g. a 工程名 TextBox declared 桁数=30 against a 工程ﾏｽﾀ column of NVARCHAR2(60) silently truncates on entry and display. Also flags a project-specific anti-pattern in 検索条件保存マスタ-style generic tables (e.g. TXJAM100): persisting both a master-entity code (品目コード等) AND its master-derived display name (KC品名等) together, when only the code should be stored and the name should come from a JOIN at read-time — but ONLY when the screen shows that name as a Label; a name the user types into a TextBox is an independent search condition and persisting it is correct. Conversely, also flags a search condition the user enters that is NOT saved to TXJAM100 at all (self-check レビュー観点 No.47 "検索条件の項目が全てあるか"). Use when the user asks to verify a program's design doc against DB/file design docs, e.g. "このファイルが使っているカラムが、DB設計書のファイルに存在するか確認して" or "存在しないカラムを使っていたら教えて". When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
 ---
 
 # xlsx-db-column-check
@@ -399,6 +399,77 @@ design.
 
 Always re-check a candidate pair's 属性 before citing it, and cite the 属性 in the finding itself so
 the designer can see the gate was applied.
+
+**This gate is consistent with the self-check workbook — it is not a conflict.** `XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx`
+レビュー観点 No.47 says "TXJAM100_検索条件保存マスタを利用している場合、検索条件の項目が全てあるか。
+名称も保存する。" Confirmed with the user (2026-10-01): **the 名称 there means a name the user enters as
+a search condition (TextBox etc.), and does NOT include a Label name.** So No.47 and this gate say the
+same thing — save every search condition the user enters, names included; never save a Label name
+that is only a display of the code. Do not re-raise it as a skill-vs-checklist conflict.
+
+#### 6b. The other half of No.47 — every search condition is saved
+
+The gate above only catches *too much* being saved. No.47's first half — "検索条件の項目が全てあるか" —
+is the opposite direction, a **missing** save, and nothing else in the REV set checks it. A condition the
+user typed that is not saved comes back blank the next time the screen opens, while its neighbours are
+restored: a quiet, user-visible defect.
+
+For every 更新条件表 that targets `TXJAM100`:
+
+1. **Find the screen.** The `画面ID` row's value (`[KEY]"GXJC128A"`, `KEY:"GXJC131A"`, `"GSJC502A"`)
+   names it. **Union every TXJAM100 block that carries the same 画面ID** before comparing —
+   `PXJCO131` writes `GXJC131A` across three DELETE→INSERT blocks, and comparing block by block
+   reports almost every item as missing.
+2. **Collect the saved names**: the INSERT value cell of each `項目N` row whose source is not `-`.
+   Normalise before matching — strip whitespace, a leading `G1)` / `(1).` area prefix, a trailing `※n`.
+   A grouped name counts as saving each member, in **both** directions: `移動ﾛｯﾄ状態(作業前) ※1` saves
+   the CheckBox `作業前` (group label outside, item inside — `PXJCO131` saves 28 status checkboxes this
+   way), and `ｻﾝﾌﾟﾙ区分(通常)` / `(ｻﾝﾌﾟﾙ)` / `(先行)` save the CheckBox `ｻﾝﾌﾟﾙ区分` (item outside, its
+   options inside — `PXJCO129`). So a saved name matches an item when they are equal, when the item
+   appears inside the saved name's parentheses, or when the saved name minus a trailing `(…)` equals it.
+   Keep the area prefix for one extra comparison before stripping it: a saved `G2)送付先作業場ｺｰﾄﾞ` for
+   an item that lives in `G1)検索条件領域` (`PSJCO502`, where `G2)` is the 明細) is a low-severity
+   prefix error worth a line.
+3. **Collect the search conditions**: in that screen's Ⅴ．画面項目定義, the input items (`TextBox`,
+   `ComboBox`, `CheckBox`, `RadioButton`, `TextArea`, `ListBox`) of every area whose title contains
+   `検索条件`. Never Labels, Buttons, Accordions or zoom buttons — and per the decision above, a Label
+   name is never expected to be saved.
+4. **Exempt an item that is reset on purpose**: its 初期値 is derived from the system date
+   (`ｼｽﾃﾑ日付-(2).日数`, `ｼｽﾃﾑ年月日(YYYY/MM/DD)-1ヶ月`). Not saving it is the design — it starts from
+   today every time. Exempt the **pair**: when 発送日(From) is system-date-initialised, 発送日(To) is
+   not saved either (`PSJCO501`/`PSJCO502`), and that is the same decision.
+5. Report each remaining condition that no saved name covers.
+6. **Cross-check against the restore table.** The screen's 初期値 note (`※1`/`※2` 復元表) maps each
+   restored item to a slot — `KC品名 ← (13).項目19`. For every row of that table, the TXJAM100 INSERT
+   value of `項目K` must be the same item. Also flag one item saved into **two** slots. Confirmed on
+   `PXJCO129`: the restore table `[672,7]`/`[672,21]` reads 項目19 as KC品名, but 項目19 `[46,36]` was
+   rewritten in place to `取引先ｺｰﾄﾞ` (struck `表示順`, live `取引先ｺｰﾄﾞ`), which is already in 項目22
+   `[49,36]` — when the old KC品名 row `[44,36]` was repurposed, KC品名 dropped out. The screen then
+   restores a 取引先ｺｰﾄﾞ into the KC品名 box. **A slot mismatch is 高**: it restores the wrong value,
+   which is worse than a blank. The plain "not saved" finding for the same item merges into it.
+
+Severity for the redundant-persistence gate itself (a Label name saved): **中** — redundant master
+data, usually never read back (`PSJCO502`'s restore table re-fetches `(3).作業場名` from the master
+and ignores the saved 項目4/項目6). Confirmed live on `PSJCO502`: TXJAM100 項目4 `[31,36]`
+`送付先作業場名` and 項目6 `[33,36]` `送付元作業場名` are both Label on `GSJC502A` (`[428,17]`/`[431,17]`).
+
+Scope note: step 3 keys on the area title containing `検索条件`. An input area named otherwise
+(`PXJCO129` `G1)管理者ｺｰﾄﾞ指定領域`) is out of scope unless its items are themselves saved to TXJAM100
+— then treat that area as a search-condition area too.
+
+Measured on 2026-09-30 / 10-01 across the 34 工程管理 PHASE1-3 screens that save to TXJAM100: 439 of
+469 search conditions are saved. Of the 30 left, grade by kind:
+- **code/name inputs → 中** (6): `PXJCO129` `GXJC129A` KC品名 `[637]` (every other condition on that
+  screen is saved), `PSJAO502` `GSJA502A` 単位ｺｰﾄﾞ `[260]`, `PXJCO164` `GXJC164A` 作業者名 `[714]`,
+  `PSJCO309` `GSJC309A` 作業場ｺｰﾄﾞ/作業者ｺｰﾄﾞ/焼成条件 (that screen saves only 3 items, so ask whether
+  the omission is deliberate before calling it a defect);
+- **date/time ranges and range-type numbers (案内書No(From)/(To)) → 要確認** (20): 67 date
+  conditions are saved and 20 are not, so neither is "the rule"; when the item's 初期値 is `※n`, read
+  the note — if it says the value is restored from 検索条件保存ﾏｽﾀ, the missing save is a definite 中;
+- **CheckBox/RadioButton modifiers → 要確認** (4): `作業場条件設定`, `検索範囲`,
+  `出荷選択済のみ表示` — option switches a designer may choose to reset.
+Cite the screen row and the TXJAM100 sheet together, and say which neighbouring conditions *are*
+saved, so the asymmetry is visible.
 
 **`PSJCO304_着手ﾒｯｾｰｼﾞﾒﾝﾃﾅﾝｽ.xlsx` used to be this document's worked violation example, and it is
 no longer one — the defect was remediated.** As written here, 更新条件表(TXJAM100) persisted

@@ -16,7 +16,7 @@ wanted two wastes a lot of time and tokens. Ask first, then run only what was se
 |---|-------|----------------|
 | 1 | `design-doc-internal-consistency` | 内部相互参照（ｲﾍﾞﾝﾄ⇔処理概要、ﾚｽﾎﾟﾝｽ/画面項目ID/ﾁｪｯｸID登録、画面3点一致、排他制御）＋Ⅴ．画面項目定義の記載ﾙｰﾙ（大文字変換、ﾎﾞﾀﾝID 9xxx、選択□、No ZZ9/XJZ0425、TextBoxの桁数・入力可文字種） |
 | 2 | `design-doc-io-table-check` | Ⅲ．入出力定義（CRUD一覧）の双方向網羅性 — 最重量・最高収穫のチェック |
-| 3 | `xlsx-db-column-check` | 参照ｶﾗﾑがﾃｰﾌﾞﾙﾚｲｱｳﾄに実在するか＋**画面の桁数とﾃｰﾌﾞﾙﾚｲｱｳﾄの桁数の整合**＋ｺｰﾄﾞ/名称の二重保持ｱﾝﾁﾊﾟﾀｰﾝ(名称がLabelの場合のみ指摘) |
+| 3 | `xlsx-db-column-check` | 参照ｶﾗﾑがﾃｰﾌﾞﾙﾚｲｱｳﾄに実在するか＋**画面の桁数とﾃｰﾌﾞﾙﾚｲｱｳﾄの桁数の整合**＋ｺｰﾄﾞ/名称の二重保持ｱﾝﾁﾊﾟﾀｰﾝ(名称がLabelの場合のみ指摘)＋検索条件のTXJAM100保存漏れ |
 | 4 | `naming-standard-compliance` | 各ID採番規則・設計書記述ﾙｰﾙ準拠 |
 | 5 | `update-condition-completeness` | 更新条件表の網羅性（NOT NULL/主キー/共通項目の設定漏れ、登録日時のUPDATE上書き） |
 | 6 | `report-design-check` | 帳票設計書（帳票一覧登録、Ⅱ．帳票仕様の記入漏れ、参照先ｴｲﾘｱｽ、取得項目⇔印字項目） |
