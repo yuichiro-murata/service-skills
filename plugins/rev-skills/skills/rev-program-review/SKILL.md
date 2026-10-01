@@ -1,6 +1,6 @@
 ---
 name: rev-program-review
-description: Entry point for a full REV of ONE program's design-doc workbook (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/帳票設計書/ﾌｧｲﾙ出力仕様書). Instead of unconditionally running every check, it first presents the 9 single-program check skills as a checkbox list (AskUserQuestion, multiSelect) so the user picks which checks to run BEFORE any dumping or analysis starts, then runs only the selected ones as one combined pass and reports their findings as a single merged report. Use whenever the user asks to REV/レビュー a design-doc workbook without naming the specific checks they want — in that case do NOT launch the individual check skills directly. Skip the checkbox prompt only when the user already named the checks, or explicitly asked for 全部/all/フルREV.
+description: Entry point for a full REV of ONE program's design-doc workbook (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/帳票設計書/ﾌｧｲﾙ出力仕様書). Instead of unconditionally running every check, it first presents the 10 single-program check skills as a checkbox list (AskUserQuestion, multiSelect) so the user picks which checks to run BEFORE any dumping or analysis starts, then runs only the selected ones as one combined pass and reports their findings as a single merged report. Use whenever the user asks to REV/レビュー a design-doc workbook without naming the specific checks they want — in that case do NOT launch the individual check skills directly. Skip the checkbox prompt only when the user already named the checks, or explicitly asked for 全部/all/フルREV.
 ---
 
 # rev-program-review
@@ -10,19 +10,20 @@ are individually expensive (each dumps and re-reads a large workbook, several al
 DB-layout files and the 01_Doc common-design workbooks), so running all of them when the user only
 wanted two wastes a lot of time and tokens. Ask first, then run only what was selected.
 
-## The 9 single-program check skills
+## The 10 single-program check skills
 
 | # | skill | what it checks |
 |---|-------|----------------|
-| 1 | `design-doc-internal-consistency` | 内部相互参照（ｲﾍﾞﾝﾄ⇔処理概要、ﾚｽﾎﾟﾝｽ/画面項目ID/ﾁｪｯｸID登録、画面3点一致、排他制御）＋Ⅴ．画面項目定義の記載ﾙｰﾙ（大文字変換、ﾎﾞﾀﾝID 9xxx、選択□、No ZZ9/XJZ0425、TextBoxの桁数・入力可文字種）＋処理/ﾁｪｯｸ順⇔ﾎﾞﾀﾝ順、項番の飛び・重複、区分名称の09.区分名称突合 |
+| 1 | `design-doc-internal-consistency` | 内部相互参照（ｲﾍﾞﾝﾄ⇔処理概要、ﾚｽﾎﾟﾝｽ/画面項目ID/ﾁｪｯｸID登録、画面3点一致、排他制御）＋処理/ﾁｪｯｸ順⇔ﾎﾞﾀﾝ順、区分名称の09.区分名称突合 |
 | 2 | `design-doc-io-table-check` | Ⅲ．入出力定義（CRUD一覧）の双方向網羅性 — 最重量・最高収穫のチェック |
 | 3 | `xlsx-db-column-check` | 参照ｶﾗﾑがﾃｰﾌﾞﾙﾚｲｱｳﾄに実在するか＋**画面の桁数とﾃｰﾌﾞﾙﾚｲｱｳﾄの桁数の整合**＋ｺｰﾄﾞ/名称の二重保持ｱﾝﾁﾊﾟﾀｰﾝ(名称がLabelの場合のみ指摘)＋検索条件のTXJAM100保存漏れ |
-| 4 | `naming-standard-compliance` | 各ID採番規則・設計書記述ﾙｰﾙ準拠（取得件数の末行記載、ﾚｽﾎﾟﾝｽ表記、画面名＋画面ID を含む） |
+| 4 | `naming-standard-compliance` | 各ID採番規則・ﾍｯﾀﾞｰ情報・表紙 |
 | 5 | `update-condition-completeness` | 更新条件表の網羅性（NOT NULL/主キー/共通項目の設定漏れ、登録日時のUPDATE上書き、更新概要の書式） |
 | 6 | `report-design-check` | 帳票設計書（帳票一覧登録、Ⅱ．帳票仕様の記入漏れ、参照先ｴｲﾘｱｽ、取得項目⇔印字項目） |
 | 7 | `design-doc-formatting-consistency` | ﾌｫﾝﾄｻｲｽﾞ/ｾﾙ結合のブレ（体裁の衛生） |
 | 8 | `design-doc-typo-check` | 日本語の誤字脱字・変換ミス |
 | 9 | `file-output-spec-check` | ﾌｧｲﾙ出力仕様書（ﾌｧｲﾙID一貫性、ﾌｧｲﾙ一覧登録、Ⅱ．ﾌｧｲﾙ出力仕様の記入漏れ、共通ﾀﾞｳﾝﾛｰﾄﾞ注釈、画面項目ID番台/登録、ﾍｯﾀﾞｰ⇔明細、明細の参照先、編集方法、ﾌｧｲﾙﾚｲｱｳﾄ一致） |
+| 10 | `design-doc-writing-rules` | ｾﾙﾌﾁｪｯｸ記述ﾙｰﾙ（Ⅴ項目定義：大文字変換/ﾎﾞﾀﾝID 9xxx/選択□/No/TextBox桁数・文字種、項番の飛び・重複、取得件数の末行記載、ﾚｽﾎﾟﾝｽ表記、画面名＋画面ID） |
 
 Checks 5, 6 and 9 are narrower than the rest in one specific sense: each applies only when the
 workbook has the sheets it reads. A program with no `更新条件表(*)` sheet (a pure 照会 screen), no
@@ -42,7 +43,7 @@ don't burn a separate round trip.
 ## Step 2 — チェック項目の選択（チェックボックス）
 
 Call `AskUserQuestion` with **three `multiSelect: true` questions** — the tool allows at most 4
-options per question, so the 9 checks are split 4 + 3 + 2. Present them exactly like this (labels in
+options per question, so the 10 checks are split 4 + 3 + 3. Present them exactly like this (labels in
 Japanese, since the reviewers work in Japanese) — keep this grouping and this option order:
 
 - Question 1 — header `整合性`, question「実施するチェックを選択してください（複数選択可）」
@@ -54,11 +55,12 @@ Japanese, since the reviewers work in Japanese) — keep this grouping and this 
   - 「更新条件表の網羅チェック（NOT NULL/主キー/共通項目）」— `update-condition-completeness`
   - 「帳票設計書チェック」— `report-design-check`
   - 「ﾌｧｲﾙ出力仕様書チェック」— `file-output-spec-check`
-- Question 3 — header `誤字・体裁`, question「実施する誤字・体裁チェックを選択してください（複数選択可）」
+- Question 3 — header `記述・体裁`, question「実施する記述ルール・誤字・体裁チェックを選択してください（複数選択可）」
   - 「誤字脱字チェック」— `design-doc-typo-check`
   - 「フォントサイズ・セル結合のブレチェック」— `design-doc-formatting-consistency`
+  - 「記述ルールチェック（ｾﾙﾌﾁｪｯｸ観点）」— `design-doc-writing-rules`
 
-All three questions go in **one** `AskUserQuestion` call, so all 9 checkboxes appear in a single
+All three questions go in **one** `AskUserQuestion` call, so all 10 checkboxes appear in a single
 prompt. When the target workbook has already been identified and you can see it has no
 `更新条件表(*)`, no `帳票設計書(*)` or no visible `ﾌｧｲﾙ出力仕様書(*)` sheet, say so in that option's
 `description` (「本ﾌﾞｯｸに帳票設計書ｼｰﾄなし」) rather than dropping the option — the absence is itself
@@ -81,16 +83,16 @@ none in a group — that group's checks are simply skipped.
 
 If **all three** groups end up with no check to run (nothing selected, or empty "Other"), there is
 nothing to review: stop, state plainly that no check was run and that the workbook was not dumped,
-and do not fall back to running all 9.
+and do not fall back to running all 10.
 
 ### プロンプトを省略してよいケース
 
 Skip Step 2 and go straight to Step 3 when:
 
 - The user already named the checks ("入出力定義と誤字だけ見て", "誤字チェックして") — run exactly those.
-- The user explicitly asked for everything ("全部", "フルREV", "全チェック", "all") — run all 9.
+- The user explicitly asked for everything ("全部", "フルREV", "全チェック", "all") — run all 10.
 - The user invoked one check skill directly by name — that skill runs standalone; this skill isn't involved.
-- `AskUserQuestion` is unavailable (non-interactive / batch / subagent context) — fall back to all 9
+- `AskUserQuestion` is unavailable (non-interactive / batch / subagent context) — fall back to all 10
   and **state in the report** that the full set was run because the scope couldn't be asked.
 
 Re-ask the scope for each **new** REV request; a selection made for one workbook does not carry over
@@ -132,7 +134,7 @@ to the next one unless the user says "同じ観点で" or similar.
      `design-doc-internal-consistency` is selected (check 11). Build it exactly as that check
      describes (multi-group titles split on `、`, sub-headings not treated as groups).
    - **Screen-name list** (`画面名 → 画面ID` from the 3C header `[4,15]`/`[4,10]` of every 画面設計書 in
-     the WG's `PHASE*` folders) — when `naming-standard-compliance` is selected (step 7c).
+     the WG's `PHASE*` folders) — when `design-doc-writing-rules` is selected (W5).
    A check run standalone builds what it needs itself.
 3. Run the selected checks as one combined pass — in parallel background agents when there are
    several. Follow each selected skill's own SKILL.md as the authority for how that check is done;

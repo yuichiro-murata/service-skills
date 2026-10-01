@@ -242,7 +242,7 @@ That reasoning has been tried and explicitly overruled.
 
 ### When to read `_DELETED_DIGEST.txt`
 
-**Its line format depends on who produced it.** The COM dump writes contiguous row blocks with a
+**An empty (0-byte) digest means nothing on those sheets was struck or gray.** **Its line format depends on who produced it.** The COM dump writes contiguous row blocks with a
 `=== <sheet> rows a-b (n cells) ===` header and **omits structural filler** — a bare number, a hyphen,
 an operator — counting it in `(+ N filler cells omitted)`. An openpyxl fallback may write one line per
 cell (`<sheet> [r,c] DEL|GRAY|PART: value`) and keep the numbers. Never rely on a struck *number* being
@@ -437,7 +437,7 @@ which group frame an item sits in, whether a control is drawn at all), get the p
 
 ## Workbook template notes
 
-- Then read the dumped `.txt` files with the Read tool (not `cat`/Bash) — the `[row,col]=value`
+- Read the dumped `.txt` files with the Read tool (not `cat`/Bash) — the `[row,col]=value`
   format is compact enough to scan quickly and lets you cite exact cells back to the user.
 - Table/column-layout workbooks in `07_データベース・ファイル設計書(仮)`-style folders follow a
   fixed template: a **"ﾃｰﾌﾞﾙﾚｲｱｳﾄ"** sheet with the table ID/name at row 6

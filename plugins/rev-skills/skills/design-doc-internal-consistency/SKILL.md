@@ -1,6 +1,6 @@
 ---
 name: design-doc-internal-consistency
-description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency — e.g. every screen event is reflected in the processing overview, response definitions are registered, every screen-item ID / message ID is registered in its master list, screen layout/item-definition/control-spec agree (including item ORDER matching between Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 and Ⅴ．画面項目定義, not just which items are present), exclusive-control is present when a program updates a table, and the per-item writing rules of Ⅴ．画面項目定義 from the self-check workbook (upper-case conversion note on code inputs, button IDs in the 9xxx band, 選択 = □ without ID, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea always carry 桁数 and 入力可文字種), process/check order vs button order, 項番 gaps/duplicates, and 区分名称 references resolving in 09.区分名称_step2.xlsx. Grounded in this project's own official review checklist. Does NOT cover the Ⅲ．入出力定義 (I/O table) completeness check — that's the more involved `design-doc-io-table-check` skill, split out separately. Use when the user asks to レビュー/REV a program's 機能定義書 or 画面設計書, or asks whether a design doc is "internally consistent" / "漏れがないか", or whether screen-item ordering matches across sections. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency — e.g. every screen event is reflected in the processing overview, response definitions are registered, every screen-item ID / message ID is registered in its master list, screen layout/item-definition/control-spec agree (including item ORDER matching between Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 and Ⅴ．画面項目定義, not just which items are present), exclusive-control is present when a program updates a table, process/check order vs button order, and 区分名称 references resolving in 09.区分名称_step2.xlsx. The self-check writing rules (Ⅴ per-item rules, 項番) live in `design-doc-writing-rules`. Grounded in this project's own official review checklist. Does NOT cover the Ⅲ．入出力定義 (I/O table) completeness check — that's the more involved `design-doc-io-table-check` skill, split out separately. Use when the user asks to レビュー/REV a program's 機能定義書 or 画面設計書, or asks whether a design doc is "internally consistent" / "漏れがないか", or whether screen-item ordering matches across sections. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-internal-consistency
@@ -18,7 +18,8 @@ concrete diffing steps. The checklist also has purely-manual/subjective items (e
 
 This skill checks **cross-reference consistency** only (does X mentioned here also appear over
 there) — see the frontmatter `description` above for exactly which adjacent checks (I/O table
-completeness, DB-column existence, ID-numbering, formatting, typos) live in the 8 sibling skills
+completeness, DB-column existence, ID-numbering, formatting, typos) live in the 9 sibling skills (the self-check writing rules — Ⅴ per-item rules, 項番 — in
+`design-doc-writing-rules`)
 instead.
 
 ## Environment
@@ -30,7 +31,7 @@ reporting conventions common to every check. The masters this check dumps itself
 dump is live, every row you see is live — which is what makes the "used but not declared" / "missing
 from dictionary" diffs below trustworthy without extra work.
 
-**Of the nine single-program checks, this is the one that genuinely needs `_DELETED_DIGEST.txt`.**
+**Of the ten single-program checks, this is the one that genuinely needs `_DELETED_DIGEST.txt`.**
 Its highest-value findings are asymmetries — one half of a pair edited while the other was left
 behind — and the live dump only ever shows you the survivor. Read the digest when a check turns on
 what was *removed*:
@@ -220,100 +221,10 @@ exact sheet/cell for every finding so it's actionable.
    ﾁｪｯｸ処理設計書 mentions a 排他ﾁｪｯｸ, and confirm "Ⅴ．画面項目定義" has a hidden 排他ﾌﾗｸﾞ item. Flag
    if a program updates a table but has neither.
 
-8. **Ⅴ．画面項目定義 — per-item writing rules from the self-check workbook.**
-   These come from `01_Doc\08_機能定義書\11_工程管理\XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx` (sheet `レビュー観点`
-   No.43/44/48/49 and the call-outs on its `画面設計書(GXJA802A)` sample), not from the 05 checklist.
-   Unlike checks 1-7 they look at one row at a time, so they are cheap — but every threshold below was
-   calibrated on 2026-09-30 against 200 `画面設計書(*)` sheets / 10,321 Ⅴ rows in the 工程管理
-   `PHASE1`-`PHASE3` workbooks, because the literal rule text over-fires on this corpus in each case.
-   Re-derive every verdict from the dump; the counts and examples are one snapshot.
+8. **(moved)** The Ⅴ．画面項目定義 per-item writing rules (upper-case note, button-ID band, 選択, No,
+   TextBox 桁数/入力可文字種) are now `design-doc-writing-rules` W1.
 
-   **Parse Ⅴ by header label, per area.** Ⅴ is split into areas (`共通`, `G1)検索条件領域`, …) whose
-   titles sit in col 3; each area has its own header row. Locate columns by normalised label
-   (strip whitespace/newlines — the headers read `入力可⏎文字種` and `説明/⏎表示時参照ﾃｰﾌﾞﾙ`): `画面項目名`,
-   `表示`, `属性`, `TAB`, `桁数`, `表示形式`, `入力可文字種` (some sheets: `入力可`), `必須`, `初期値`, `説明`,
-   `画面項目ID` (commonly cols 5/11/17/21/23/25/30/33/35/43/54 — resolve by label, never by these).
-   Item rows are those whose No. (col 3) is a number. Strip a leading full-width space before
-   comparing an ID (the self-check sample itself has `　XJA0130`).
-
-   **8a — 小文字→大文字変換の記載 (レビュー観点 No.43).** For an **input** item (`TextBox`, `TextArea`,
-   `ComboBox` — never `Label`/`ReadOnly`/`Hidden`/`LinkLabel`) whose 画面項目名 is one of
-   `管理No` / `在庫No` / `作業者ｺｰﾄﾞ` / `作業場ｺｰﾄﾞ` / `品目ｺｰﾄﾞ` / `工程ｺｰﾄﾞ` / `資源ｺｰﾄﾞ` / `ﾃｰﾌﾟﾛｯﾄNo` /
-   `KC品名` — after stripping a `(FROM)`/`(TO)`, a trailing digit, `(1-N)` — the 説明 column must say the
-   input is upper-cased. The house wording is `値入力時：小文字ｱﾙﾌｧﾍﾞｯﾄを大文字に変換` (329 of 366
-   occurrences); `ﾛｽﾄﾌｫｰｶｽ時：…`, a half-width colon or a `・`/`①` prefix are the same rule — match on
-   `大文字`. Measured: 207 of 227 exact-name TextBoxes comply; the 20 that don't are findings, and half
-   of them are `KC品名` search fields. A **compound** name ending in one of these
-   (`送付元作業場ｺｰﾄﾞ`, `開始工程ｺｰﾄﾞ`, `取消作業者ｺｰﾄﾞ`) complies 100 : 19 — report the 19 as 要確認 only,
-   because a prefix can make it a different entity (`生管理No`, `ｲﾝｸ管理No`, `部材管理No` are not
-   管理No). An upper-case note on an item *outside* the list (`加工手順ｺｰﾄﾞ`, `製造ﾛｯﾄNo`) is fine.
-   **Also compare within the workbook:** an input item that carries the note on one screen and not on
-   another is a gap even when its name is outside the list or drifts — match by 画面項目ID when both
-   have one, else by name with a trailing `ｺｰﾄﾞ` removed. Confirmed on `PSJCO805`: `出庫先作業場ｺｰﾄﾞ`
-   has the note on `GSJC805A`/`E`/`F`, while the same input named `出庫先作業場` on `GSJC805B` `[123]`
-   and `GSJC805C` `[385]` has none — the literal list cannot see it. Report these as 要確認.
-
-   **8b — ﾎﾞﾀﾝの画面項目ID (No.44).** The self-check says "共通のﾎﾞﾀﾝは9xxx番台" and a call-out says
-   "ﾎﾞﾀﾝは全て共通のXJZ9xxx(SJZ9xxx)を利用/採番". **Check the `9xxx` band, not the `XJZ`/`SJZ` prefix.**
-   Measured on non-zoom `Button` rows in `共通` areas: 721 use `XJZ9xxx`/`SJZ9xxx`, but 149 use a
-   WG-prefixed `9xxx` (`SJA9018` 基本情報ﾎﾞﾀﾝ, `SJC9004` ﾜｰｸﾌﾛｰﾎﾞﾀﾝ) — program-specific buttons numbered
-   in their own WG per the same workbook's other call-out "新規採番はSJC/SJAで採番する". Flagging
-   those would be ~150 false findings. Flag, for a non-zoom Button in a `共通` area:
-   - ID blank or `-` (59 blank — e.g. `PSJCO805` `GSJC805A` has no ID on any of its 12 共通 buttons);
-   - the placeholder `XXXXXXX` (`PSJCO402`, `PSJCO403`);
-   - a malformed prefix (`PSJAO704` `GSJA704I` 行削除ﾎﾞﾀﾝ `XZJ9031` — `XZJ` for `XJZ`);
-   - an ID outside `9xxx` (14 — `XJC0323` 削除ﾎﾞﾀﾝ, `SJA0349` 削除ﾎﾞﾀﾝ, `XJZ0079` 返却ﾎﾞﾀﾝ). When a
-     standard button (検索/画面ｸﾘｱ/削除/戻る/更新…) has a non-`9xxx` ID, name the `XJZ9xxx` the other
-     sheets use for the same button as the fix. A cell holding two IDs (`SJA0873⏎SJA9048`) passes if
-     one of them is `9xxx`.
-   Two checks the band test cannot catch, both worth a line:
-   - **the same ID on two different buttons of one sheet** — `PSJAO205` `GSJA205D` gives 処理状況ﾎﾞﾀﾝ
-     `[86,54]` the ID `XJZ9009`, which is its own 戻るﾎﾞﾀﾝ's `[85,54]`; a duplicate ID means one label
-     is wrong at runtime;
-   - **a standard button whose ID differs from the one the rest of the corpus uses** for that button
-     name (処理状況 = `XJZ9017` on 5 other sheets). Build the name → most-used-ID table from the other
-     screens you have and report a deviation as 要確認, naming the usual ID.
-   **When a sheet's whole 画面項目ID column is empty** (`PSJCO805`: all six screens, every row), do
-   not list every button, No and input separately — report "画面項目ID 未採番" once per sheet, with the
-   standard IDs you can already suggest (検索 `XJZ9002`, 画面ｸﾘｱ `XJZ9003`, ﾀﾞｳﾝﾛｰﾄﾞ `XJZ9004`, 新規登録
-   `XJZ9028`, 削除 `XJZ9008`, 戻る `XJZ9009`, No `XJZ0425`) and which buttons need a new number.
-   Outside `共通`, zoom buttons (`表示` = `Z`, or a `…ｽﾞｰﾑ` name — 460 rows, all `-`), calendar buttons
-   (`ｶﾚﾝﾀﾞｰ(…)`) and tab controls legitimately carry `-`: report only a placeholder or a non-`9xxx` ID
-   there, never a `-`.
-
-   **8c — 選択 (No.48).** A `選択` item in a 明細-type area should be `表示` = `□` (`CheckBox`) with
-   画面項目ID `-`. Measured: 72 comply. Flag `表示` `-`/blank on a CheckBox 選択 (6 — e.g.
-   `PSJCO302` `GSJC302A` `[567]`; `PSJCO502` `GSJC502B` has two with every column blank), and a
-   画面項目ID on 選択 (10 — 6 of them `XJC8032`, so the designer may say it is a deliberate convention;
-   report it low and let them decide). A `RadioButton` 選択 (single
-   selection, `表示` `○` or `-`) is a different control: don't apply the `□` rule to it. A
-   `選択(ﾍｯﾀﾞｰ)` (the select-all checkbox in the list header) follows the same rule as `選択`.
-
-   **8d — No (No.49).** A `No` / `No.` item in a 明細 area should be `Label`, 表示形式 `ZZ9`, 初期値
-   `1から連番`, 画面項目ID `XJZ0425`. Measured over 159 No rows: 51 fully comply, and the literal rule
-   over-fires on all three fields:
-   - **表示形式**: `-` in 74 rows, nearly as common as `ZZ9`. Still a finding (the rule is explicit and
-     the value is needed for the display), but group it: one low-severity line per sheet, not per row.
-     `ZZZ9` (a list allowed past 999 rows) is not a finding when the area note says so.
-   - **初期値**: `1からの連番`, and a value sourced from data (`(5).表示順`, `新規:1から連番⏎変更:(6)…`)
-     are correct. Flag only `-`/blank, or `右記参照` with nothing to the right.
-   - **画面項目ID**: `XJA0042` is the 基準情報 dictionary's own No item and appears across 基準情報
-     screens — report it as 要確認 (XJZ0425 is the common one), not as a defect. A different ID, or
-     none, is a finding.
-
-   **8e — TextBox/TextArea の桁数・入力可文字種 (call-out "属性がTextBox、TextAreaの場合は必ず
-   入力可能文字種、桁数を記載する").** Every `TextBox`/`TextArea` row needs a number in 桁数 and a value
-   in 入力可文字種. Measured: 1,555 of 1,688 comply. **Do not exempt date/time types**: `年月日(8桁)`
-   has 213 rows with 桁数 `8` and exactly 1 with `-`, so a `-` beside `年月日(8桁)` / `時間(4桁)` /
-   `数値(整数)正数` is the same omission as anywhere else. Report 桁数 `-` and 入力可文字種 `-`/blank
-   separately; a row missing both is one finding. `ﾊﾟｽﾜｰﾄﾞ` is a 入力可文字種 value and still needs 桁数.
-   A placeholder in 桁数 (`?`, `XX` — `PSJCO805` has six `?`) is the same as `-`: a length nobody has
-   decided yet.
-   This is stricter than, and complementary to, `xlsx-db-column-check` step 5 (which reports a `-` only
-   when another screen gives the same item a number): report here regardless, and don't repeat that
-   skill's DB-length comparison.
-
-Checks 9-11 also come from the self-check workbook (レビュー観点 No.3/56, No.11/41, No.6). They were
+Checks 9 and 11 also come from the self-check workbook (レビュー観点 No.3/56, No.11/41). They were
 calibrated on 2026-10-01 against every visible 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表 sheet of
 120 工程管理 `PHASE1`-`PHASE3` workbooks (`PXJCO130` excluded — openpyxl cannot open it). Re-derive
 every verdict; counts and examples are one snapshot.
@@ -325,7 +236,7 @@ every verdict; counts and examples are one snapshot.
    - **機能定義書 Ⅳ．機能処理概要**: section titles `A-①.初期処理`, `A-②.検索処理`, … (col 3); the letter
      is the screen (`A` → `G…A`). Assign each title to the screen by the **block heading** it sits under
      (`E.ﾜｰｸﾌﾛｰ承認ﾌﾛｰ一覧`), not by its own letter — a mislettered title (`F-⑥` inside the E block) belongs
-     to E, and its wrong letter is check 10's finding. **ﾁｪｯｸ処理設計書(<画面ID>)**: event headings `【検索ﾎﾞﾀﾝ押下時】` (col 3).
+     to E, and its wrong letter is `design-doc-writing-rules` W2's finding. **ﾁｪｯｸ処理設計書(<画面ID>)**: event headings `【検索ﾎﾞﾀﾝ押下時】` (col 3).
    - Match names after stripping `ﾎﾞﾀﾝ` / `押下時` / `押下処理` / `処理` / `【】`. A heading written as a
      sentence still matches when it **contains** a button name (`I-⑥.承認ｸﾞﾙｰﾌﾟ…へ挿入する処理　(<< ﾎﾞﾀﾝ押下時)`
      → `<<`, `I-⑦.承認ｸﾞﾙｰﾌﾟ(ﾕｰｻﾞｰ)行削除処理` → `行削除`). Resolve a contained name in this order: (1) the
@@ -348,40 +259,7 @@ every verdict; counts and examples are one snapshot.
      (`PXJAO243` `B-①` = 更新, `PSJAO501` `B`-`E`) — 低, unless the screen genuinely has no initial
      processing, which the designer should then say.
 
-10. **項番の飛び・重複 (No.6).** Every numbered list in the four sheet types — a column (≤ col 8) whose
-    header cell is `No.`/`No`/`項番`, followed by integer cells — must run 1, 2, 3 … Also the circled
-    section numbers of 機能定義書 Ⅳ (`A-①`, `A-②` … per letter). **ﾁｪｯｸ処理設計書 is the exception to the
-    header rule**: its number column is col 1 under the header `ﾁｪｯｸ項目` (`[8,1]`), and each
-    `【…押下時】` heading starts a new list — scan it explicitly or its defects are missed (`PXJCO129`
-    `ﾁｪｯｸ処理設計書(GXJC129A)` `[16,1]`-`[18,1]` = 5, 6, 7 after 1-6; `GXJC129B` `[96,1]`/`[98,1]` both 84).
-    **End a list only on a heading in col ≤ 3** (an area title, `Ⅳ．…`, `【…】`) — the Ⅴ 説明 column (col 43)
-    routinely holds `Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 参照`, and treating that as a section break hides duplicates
-    (`GSJA704J` `[255,3]`). **Judge the sequence on live numbers only**; a struck row that still shows its
-    old number (`ﾁｪｯｸ処理設計書(GSJA704B)`: live 1, struck 2 and 3, live 2) is not part of the sequence and
-    must not produce a "backwards" finding — consult the struck numbers only to explain a gap.
-    Normalise before flagging — measured, the naive check fires ~150 times on 94,445 numbered cells and
-    most of it is structure:
-    - **A drop back to 1 is a new list**, not an error (ﾁｪｯｸ処理 restarts per `【…押下時】` event; 39 such).
-    - **A gap explained by a struck row is the project's convention** — deleted rows keep their number in
-      strikethrough (26 gaps, e.g. `PSJAO241` `更新条件表(TXJAM002)` 45→47 with a struck `46`). Before
-      reporting a gap, look in `_DELETED_DIGEST.txt` for **deleted content on the rows between** the two
-      live numbers — the COM dump's digest omits a bare struck number as filler, so don't wait for the
-      number itself to appear. A row whose content is struck but whose number is **not** (`GSJA704B`
-      【引戻ﾎﾞﾀﾝ押下時】 `[26,1]`-`[28,1]` live 2/3/4 over struck checks) is an empty live item — 要確認.
-    - **A constant step of 2 over three or more items** (`PXJCO906` `GXJC906A` 1, 3, 5, 7 in col 6) is a
-      two-row item layout, not missing numbers.
-    - A sub-number (`A-②-1`, `A-②(1)`) belongs to its own series; don't fold it into the circled list.
-    What survives is real: **duplicate** (16 — `PSJAO704` `GSJA704J` `[255,3]` 9→9, `PSJCOA09`
-    `GSJCA09C` four `3`s in a row), **gap** (33 — `PSJAO704` `GSJA704F` `[174,3]` 4→6), **typo / backwards**
-    (16 — `PXJAO701` `GXJA701A` `[625,3]` 11→**123**→13, i.e. `12` mistyped; `GSJA704F` is in Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細,
-    not Ⅴ — say which section), **list not starting at 1** (4),
-    and in 機能処理概要 (11 lists) — a skipped circled number (`PXJCO152` `A`: ①②⑥⑦⑧), a duplicate
-    (`PSJCO402` `A`/`B`: ④④), and a section filed under the wrong letter (`PSJAO704`: inside the `E` block,
-    `[143,3]` reads `F-⑥.戻る処理`, so E jumps ⑤→⑦ — the `E-⑥` was written as `F-⑥`; F itself is fine). Severity 低, except a duplicate/misfiled
-    circled section that another doc cites by number (`A-⑥ 参照`), which is 中 — the citation now points at
-    the wrong section. Some lists interleave two sequences in one column (`PXJAO243`
-    `更新条件表(TXJAM023)` col 2: 22, 25, 23, 29, 24, 35 …); report it once as "番号が二系統混在" rather than
-    as a cascade of gaps and backward steps.
+10. **(moved)** 項番の飛び・重複 is now `design-doc-writing-rules` W2.
 
 11. **区分名称の参照が 09.区分名称_step2.xlsx と一致するか (No.11 / No.41).** Design docs cite a 区分 by
     group name: `ｼｽﾃﾑ共通設計書.区分名称.仕入先区分 参照`, `区分名称.ﾛｯﾄ停止区分(ﾛｯﾄ停止指示登録) 参照`, and
@@ -403,9 +281,8 @@ every verdict; counts and examples are one snapshot.
       Measured: roughly 350-375 groups depending on how sub-headings are folded — the exact count is not
       a correctness signal. A title is a group when a `区分`/`区分名称` header follows it within 3 rows,
       **or** when the col-4 rows under it are themselves headings that each lead to such a header (then
-      those are sub-headings). Under `rev-program-review` the index is handed to you prebuilt (path in your
-      prompt; JSON `{group: {区分: 区分名称}}`) — use it; build it yourself when the prompt says none was
-      prebuilt or you run standalone.
+      those are sub-headings). Use the prebuilt index your prompt names (JSON `{group: {区分: 区分名称}}`); build it
+      yourself when none was handed to you.
     - **Parsing the reference**: take the text after `区分名称.` up to `参照`/whitespace; drop an
       unbalanced trailing `)` (it closes an outer `区分名称(ｼｽﾃﾑ共通設計書.区分名称.製造ｵｰﾀﾞｰ状態)`); keep a
       `(qualifier)` as part of the name; resolve `group.value` (value must be one of the group's names) and

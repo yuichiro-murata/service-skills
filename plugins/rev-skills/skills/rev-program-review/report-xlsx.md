@@ -59,7 +59,7 @@ everything else left-aligned. **Fill only A-H and M — columns I-L (対応要�
 `重要度` takes one of 高 / 中 / 低 / 要確認 and is coloured by **direct cell fill, not conditional
 formatting** (the existing files have zero `FormatConditions`): 高 = `13421823` + bold, 中 =
 `13434879`, 要確認 = `16772300`, 低 = left white. `分類` names the check the finding came from
-(入出力定義 / 内部相互参照 / DBｶﾗﾑ / ID採番/記述ﾙｰﾙ / 更新条件表 / 帳票 / ﾌｧｲﾙ出力 / 誤字脱字 / 体裁), and `指摘ID` is
+(入出力定義 / 内部相互参照 / DBｶﾗﾑ / ID採番/記述ﾙｰﾙ / 更新条件表 / 帳票 / ﾌｧｲﾙ出力 / 記述ﾙｰﾙ / 誤字脱字 / 体裁), and `指摘ID` is
 `<分類の連番>-<その中の連番>` (`2-13`), with column A a plain 1..N counter. Use the bare `体裁` the
 existing files use — not `体裁(ﾌｫﾝﾄ)`/`体裁(結合)`, which this file previously specified and which no
 copy of the list actually contains.

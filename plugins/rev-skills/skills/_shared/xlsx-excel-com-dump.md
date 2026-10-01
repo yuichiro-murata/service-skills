@@ -104,8 +104,8 @@ confirm. (`BS` above stands for the backslash character, for the same reason.)
 
 When several sibling skills (`design-doc-internal-consistency`, `design-doc-io-table-check`,
 `xlsx-db-column-check`, `naming-standard-compliance`, `update-condition-completeness`,
-`report-design-check`, `file-output-spec-check`, `design-doc-formatting-consistency`,
-`design-doc-typo-check`) run as
+`report-design-check`, `file-output-spec-check`, `design-doc-writing-rules`,
+`design-doc-formatting-consistency`, `design-doc-typo-check`) run as
 parallel background agents against the SAME target workbook, don't
 let each one independently dump it from scratch — up to 6x duplicated Excel COM cycles on an
 identical file. Confirmed real waste: a review of `XJC_ｼｽﾃﾑ共通設計書.xlsx`'s `ﾛｯﾄ停止ﾁｪｯｸ` sheet had
