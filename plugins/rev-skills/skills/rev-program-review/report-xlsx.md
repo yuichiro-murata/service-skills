@@ -109,3 +109,8 @@ dump. Export the finished range to PNG and actually look at it: `Range.CopyPictu
 blank image that looks like a successful write. Split a long list into 2-3 ranges so the text stays
 legible. PDF export works too but this machine has no `pdftoppm`/PyMuPDF, so a PDF cannot be viewed
 back — PNG is the only route that closes the loop.
+
+**When COM is unavailable** (the user's Excel is open and the PID guard aborts, or COM keeps dying):
+build the workbook with openpyxl to the same layout — write 指摘ID and dates as text, set fills,
+filter and freeze panes explicitly — read it back with openpyxl to check every cell, and tell the
+user the PNG render check was skipped. Never attach to or drive the user's own Excel to render.

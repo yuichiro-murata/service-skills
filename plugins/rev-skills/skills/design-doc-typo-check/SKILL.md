@@ -42,15 +42,22 @@ normal project vocabulary. Only free-running Japanese sentences and phrases are 
 program workbook, that means:
 
 - **表紙**: Ⅲ．改訂履歴 の 改訂内容 column (what each revision actually changed).
-- **機能定義書**: Ⅰ．機能概要 (prose bullets), Ⅱ．機能要求事項, Ⅲ．入出力定義 の 用途 column
-  (short prose), Ⅳ．機能処理概要 (the main narrative — numbered steps, ※ footnotes, and any prose
-  woven into 検索条件/取得内容 descriptions), Ⅵ．前提条件, Ⅷ．その他特記事項.
-- **画面設計書**: Ⅲ．画面表示仕様 の ※ footnotes, Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 (event-behavior
-  descriptions — often long paragraphs), Ⅴ．画面項目定義 の 説明 column (col 43 — there is no 備考
-  column), Ⅵ．画面項目制御・出力仕様 の 条件 prose.
-- **ﾁｪｯｸ処理設計書**: the `ﾁｪｯｸ詳細` and `ﾁｪｯｸ補足` columns, error-message body text.
+- **機能定義書**: Ⅰ．機能概要 (prose bullets), Ⅲ．入出力定義 の 用途 column (short prose),
+  Ⅳ．機能処理概要 (the main narrative — numbered steps, ※ footnotes, sub-program 設定値/戻り値 notes,
+  pattern captions, and any prose woven into 検索条件/取得内容 descriptions), Ⅴ．ﾌﾟﾛｸﾞﾗﾑ構成 (ｴﾗｰ時処理),
+  Ⅵ．前提条件, Ⅷ．その他特記事項. (Ⅱ is `Ⅱ．I/O関連図`, a picture — nothing to read.)
+- **画面設計書**: all prose in Ⅱ．画面補足説明・表示ﾊﾟﾀｰﾝ概要 through Ⅵ — Ⅲ．画面表示仕様's numbered
+  steps as well as its ※ footnotes, Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 (event-behavior descriptions — often long
+  paragraphs), Ⅴ．画面項目定義 の 説明 column (col 43 — there is no 備考 column), and the ※-notes under
+  each Ⅵ．画面項目制御・出力仕様 table (cols 3/5, e.g. `PXJCO125` `GXJC125A` `[582,5]`; Ⅵ's own columns
+  are only No./画面項目/one per event).
+- **ﾁｪｯｸ処理設計書**: the `ﾁｪｯｸ内容・経緯` column (col 14, header `[8,14]` — most of the sheet's
+  prose; `PXJCO125` `[35,14]`/`[37,14]` findings), the `ﾁｪｯｸ詳細` (col 59) and `ﾁｪｯｸ補足` (col 86)
+  columns, error-message body text.
 - **ﾌｧｲﾙ出力仕様書** (if present): 出力条件 / 編集内容 / 備考 prose.
-- **更新条件表**: the 更新概要 prose at the top of the sheet, and ※-numbered footnotes (these are
+- **更新条件表**: the 更新概要 cell `[9,16]` (a ①②③ source list, where wrong screen IDs hide —
+  `PXJCO125` `TSJCD014` `①画面(GSJC201B)`), the **更新条件** narrative `[12,16]` (label `[12,2]`), ※-notes
+  in col 18 (the value half of the `INSERT`/`UPDATE` column — `TSJCA057` `[28,18]`), and ※-numbered footnotes (these are
   written in full sentences, unlike the 項目名/取得内容 columns which are mostly structured tokens).
   A structured token is still in scope for an **obvious** misspelling (`ﾛｸﾞｲﾝ画面.` with a stray
   period, `作場名` for `作業場名`) — skip only style and abbreviation questions there.

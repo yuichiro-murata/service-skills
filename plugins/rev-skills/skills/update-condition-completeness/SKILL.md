@@ -18,8 +18,9 @@ another's, behind only 処理フロー・I/O.
 ## Environment
 
 **Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, folder
-exclusions, reporting conventions. The ﾃｰﾌﾞﾙﾚｲｱｳﾄ files this check reads go through the cache section
-(Batch variant) that guide points to.
+exclusions, reporting conventions. Read the ﾃｰﾌﾞﾙﾚｲｱｳﾄ files live with `live_dump.py` (step 2) — never
+through the COM cross-session cache "Batch variant", which keeps struck text (PXJCO125's 35 layouts,
+2026-10-01: `TXJCM006` `[81,40]` dead, `TXJCA317` `[23,40]`/`[34,40]` partial).
 
 ## Sheet anatomy (measured, not assumed)
 
@@ -47,9 +48,12 @@ Rules that make the parse reliable:
   更新条件 and operation set. Stopping at the first block silently skips most of the specification.
 - **Operation columns are read off the header row, not hardcoded.** Observed label columns: 16, 28,
   34, 40. Accept a header-row cell as an operation when it **starts with** an operation word —
-  `re.match(r"^\s*(?:\d+\.|【)?\s*(INSERT|UPDATE|DELETE|MERGE)", text)` — and take its kinds from
-  **every** operation word in it (`re.findall`). **Never anchor the end of the label.** Measured on
-  the 122 工程管理 PHASE1-3 workbooks (2026-10-01): of 1,444 header labels, an end-anchored
+  `re.match(r"^[\s　]*(?:\d+\.|【)?[\s　]*(INSERT|UPDATE|DELETE|MERGE)", text)` — and take its kinds from
+  **every** operation word in it (`re.findall`). Keep the explicit full-width space `　`: Python 3's
+  `\s` happens to cover U+3000, but an ASCII/`re.ASCII`/PowerShell `[ \t]` port does not, and silently
+  drops `[14,16]=　INSERT` (`PXJCO125` `TXJCA205`/`TXJCA318`/`TXJCA407` — three whole blocks). **Never anchor the end of the label.** Measured on
+  the raw text (struck and hidden-sheet labels included) of the 122 工程管理 PHASE1-3 workbooks
+  (2026-10-01): of 1,444 header labels, an end-anchored
   `^(INSERT|…)[0-9０-９①-⑳]*$` silently dropped **98** — `UPDATE ※1`, `INSERT※1`, `DELETE　※1`,
   `INSERT① ※1`, `INSERT-1`, `INSERT_1`, `1.DELETE`, `【DELETE】※1`, `DELETE　(※1)`,
   `INSERT(新規入力の場合)`, `UPDATE(1)⏎(削除された…明細)` — each a whole block left unreviewed. The
@@ -57,7 +61,9 @@ Rules that make the parse reliable:
   (`[115,74]=更新条件表(TXJCM006)のUPDATE①でｷｰにした枝番`). **Read the suffix**: a `※n` or a
   parenthetical says when the operation runs, which C3/C6 need. A column naming two operations
   (`DELETE　INSERT`, `UPDATEDELETE`, `UPDATE(存在すれば) INSERT`) gets both rule sets: C2 for its
-  INSERT side and the `[KEY]` rule of C3 for its UPDATE/DELETE side. Circled and ASCII digits both
+  INSERT side and the `[KEY]` rule of C3 for its UPDATE/DELETE side — **judged on the live label**.
+  Those three `PXJCO125` blocks read `DELETE　INSERT` raw, but the DELETE is struck (digest: `[14,16]
+  PART`), so the live label `　INSERT` is a plain INSERT. Circled and ASCII digits both
   occur (`TXJAM026WF` `INSERT①`/`INSERT②`, `TXJAM027` `INSERT1`/`INSERT2`), and repeated plain labels
   (two bare `INSERT` columns) are real too. The start anchor matters: several sheets put an
   unrelated
@@ -106,8 +112,12 @@ re-deriving it. The rules that bite hardest here: the search root is the top-lev
 **exactly** (a `WF` suffix is a different table, and `更新条件表` sheets are full of `*WF` tables), the
 `ﾃｰﾌﾞﾙﾚｲｱｳﾄ` sheet's `A6` cell must confirm the ID, and precedence is PH3 > PH2 > top-level.
 
-Dump all of them in one pass with the **Batch variant** script in the cross-session cache section of
-`_shared/xlsx-excel-com-dump.md`, `OnlySheetPatterns = @("ﾃｰﾌﾞﾙﾚｲｱｳﾄ")`.
+Dump each one live, one out_dir per file — the same call as `xlsx-db-column-check` step 3, so a REV
+running both reuses one set of dumps (the default prefix collides for `TXJCM007` vs `TXJCM007_B`):
+`python _shared/scripts/live_dump.py <layout.xlsx> <out>/<TableID> --sheets "^ﾃｰﾌﾞﾙﾚｲｱｳﾄ$" --prefix <TableID>`
+— anchor the regex: unanchored, it also matches `旧`/`JAG_`/`JAGUR_`/`CP2_` copies and dated snapshots
+such as `ﾃｰﾌﾞﾙﾚｲｱｳﾄ_20251002時点`, which share the live sheet's `A6` (that skill's step 3 rule 2 lists
+them). ~1–7 s each.
 
 The layout sheet's header is at row 7 and the columns this check needs are:
 
@@ -116,9 +126,19 @@ The layout sheet's header is at row 7 and the columns this check needs are:
 | 1 | `No.` | column order |
 | 3 | `項目名` | the name the 更新条件表 uses |
 | 12 | `項目ID` | for reporting |
-| 28-35 | `I01`…`I08` | index membership; **`I01` is the primary key** — the digit in the cell is that column's position within the key |
+| 28-35 | `I01`…`I08` | index membership — the digit in the cell is that column's position within the index |
 | 36 | `default` | a DB-side default, relevant to C2 |
 | 38 | `notnull` | `Y` = NOT NULL |
+
+- **The column list ends at the first empty 項目名 or at `＜ｲﾝﾃﾞｯｸｽ情報＞`.** Numbered blank rows often
+  follow the last column (`TXJCD404` Nos 43-48, `TXJCM057` Nos 41-51, `TSJCA057` Nos 44-45); counted as
+  columns they produced empty-named C1 "missing column" findings on 8 blocks.
+- **`I01` is the primary key only when the `＜ｲﾝﾃﾞｯｸｽ情報＞` label says so** — `PRIMARY KEY I01`
+  (`TXJCD404` `[57,1]`) or `ﾕﾆｰｸｷｰ　I01` (`TXJCM057` `[60,1]`). `ﾕﾆｰｸｷｰ　無し` / `ﾕﾆｰｸｲﾝﾃﾞｯｸｽ I01`
+  (`TSJCA057` `[54,1]`/`[55,1]`, `TXJCA205` PH3 `[43,1]`/`[44,1]`) means **no key**: skip C3 for that table.
+- **Phase.** PH3 > PH2 still picks the file, but when the layout is from a later phase than the
+  workbook's own `PHASE` folder, a column that exists only in the later layout is 要確認
+  ("PH3ﾚｲｱｳﾄで追加/変更 — 設計書の反映要否を確認"), not 中 (`xlsx-db-column-check` step 3 rule 3).
 
 ### 3. Calibrate the house convention from the workbook itself
 
@@ -163,11 +183,16 @@ not advance the counter defeats optimistic locking.
 更新条件表 (the sheet was written against an older table definition — the coder has no instruction
 for that column); a row whose 項目名 exists in **no** layout column; and a row order that diverges
 from the layout (low confidence on its own — report only when it coincides with added/removed
-columns, since it is then evidence the sheet was patched by hand rather than regenerated).
+columns, since it is then evidence the sheet was patched by hand rather than regenerated). A missing
+non-key column in a **DELETE-only** block is 低 (the statement never writes it). Skip notes-only
+sheets such as `更新条件表(その他)` (no `No.`/`項目名` header row).
 
 **Pair the two directions before reporting.** When a "missing" layout name and an "extra" sheet name
-are near-matches — one is a prefix or substring of the other — they are one finding (a rename, or a
-key written only in part), not two. `TSJCM139WF` is the live example: the layout's PK7 NOT NULL
+are near-matches — one is a prefix or substring of the other, they are within **Damerau distance ≤ 2**
+(an adjacent transposition counts as one edit: `UNICORN採番ﾌﾗｸﾞ` vs the layout's typo `UNICRON採番ﾌﾗｸﾞ`,
+`PXJCO125` `TSJCM999` `[31,4]` / layout `[24,3]`, is distance 1 but plain Levenshtein 2), or the row's 項目ID
+matches — they are one finding (a rename, or a key written only in part), not two, **and the pair
+is then treated as one column for C2/C3** (an unpaired typo silently skips the NOT NULL check). `TSJCM139WF` is the live example: the layout's PK7 NOT NULL
 column is `工程ｺｰﾄﾞ工程No` and the 更新条件表 row says `工程ｺｰﾄﾞ`. Reported as two lines it reads like
 an unrelated deletion plus an unrelated addition; reported as one it says what the reviewer needs to
 decide — either the doc carries a stale name, or the sheet is only setting the 工程ｺｰﾄﾞ half of a
@@ -186,12 +211,27 @@ produces. Two exemptions, both verifiable from the layout: the column has a `def
 or it is the target of a DB-side trigger/sequence noted in 備考 (col 40). State the exemption rather
 than staying silent — "notnull だが default 設定あり" is useful to the reviewer.
 
-**C3 — 主キーの扱い.** From `I01` (col 28), build the table's primary key in position order.
+**C3 — 主キーの扱い.** From `I01` (col 28), build the table's primary key in position order — only when
+the `＜ｲﾝﾃﾞｯｸｽ情報＞` label makes `I01` a key (step 2); a table with `ﾕﾆｰｸｷｰ 無し` has no C3.
 - INSERT: every PK column must be set. A missing one means the row can't be identified afterwards.
-- UPDATE / DELETE: every PK column must carry `[KEY]`. **A partial key is the important finding
-  here** — `[KEY]` on 3 of a 5-column PK means the statement updates or deletes a *range* of rows,
-  which is nearly always unintended; if it is intended, the 更新条件 text should say so, so check the
-  trigger text before flagging and quote it either way.
+- Normalise `【KEY】` / `［KEY］` to `[KEY]` before matching (report the notation once at 低) —
+  `PXJCO161` `TXJCD104` block 4 writes `【KEY】`, and a literal match calls all 7 PK columns unkeyed.
+- An `I01` member whose `notnull` is blank cannot be in an Oracle PK (a ※ may say `PKから削除`,
+  `TXJCD104` `[26,105]`); don't require it on INSERT or in `[KEY]`.
+- UPDATE / DELETE: every PK column should carry `[KEY]`; a partial key updates or deletes a *range*.
+  **A cascade delete is the normal case, not a finding.** Measured on `PXJCO161`/`163`/`125`
+  (2026-10-01): ~45 standalone DELETEs keyed only on the parent key (会社/部門/管理No/枝番[/工程ｺｰﾄﾞ])
+  and omitting child columns (SEQ, 作業者, 資源, ﾌｪｰｽﾞID…) — every one a 取消/削除 cascade, most with
+  the 更新条件 saying so (`TXJCD102` `[12,16]` `①.G1).管理No、枝番を条件に削除する`). **A standalone DELETE
+  whose 更新条件 names exactly its `[KEY]` columns (会社ｺｰﾄﾞ/部門GRP may go unnamed) is a documented
+  range delete — not a finding, whichever PK columns it omits.** On `PXJCO125` (2026-10-01) a looser
+  reading flagged 39 PK columns over 20 such DELETEs, all false. Without that text, still exempt it when
+  the omitted columns are trailing/child PK columns and the trigger is a 取消/削除 button. **Report**
+  (中) when the `[KEY]` set contradicts the columns the 更新条件 names (`TXJCM008` block@147: text says
+  `管理No、枝番`, keys add `[172,18]=[KEY]G5).工程ｺｰﾄﾞ`), or when a leading/parent PK column is missing
+  and nothing documents the range.
+  For a partial-key **UPDATE**, report at 要確認 unless the 更新条件 states the range is intended
+  (`次工程ｺｰﾄﾞで作業着手をUPDATE` explains it), quoting that text.
   **Exception — suppress it for the DELETE half of a DELETE⇒INSERT block.** Where a block pairs a
   DELETE with one or more INSERTs on the same table, deleting by a partial key is the whole point:
   the statement clears every child row for a parent key and the INSERTs rewrite them. Flagging it
@@ -201,13 +241,22 @@ than staying silent — "notnull だが default 設定あり" is useful to the r
   INSERT does **not** set the full PK. **The exemption does not cover a PK column the paired INSERT
   sets to a fixed literal** (a discriminator such as `区分="1"`): leaving it out of the DELETE's
   `[KEY]` also wipes the rows of every *other* discriminator value, which the INSERT never rewrites
-  (`PSJCO501` `TSJCD215` `[35,18]`). Report that one at 中, quoting the literal.
-- **Differential notation in the 2nd+ column of the same operation.** When a block has `UPDATE1` /
-  `UPDATE2`, the later column often writes only what differs and leaves the rest `-`. Do not read
-  those `-` as "not set" for C2/C3; report the notation once per block at 低 ("差分記法 — 共通列の
-  扱いが明記されていない") only if no footnote explains it.
-- A `[KEY]` on a column that is **not** in `I01` is also worth a line: either the doc means a
-  non-unique filter (fine, but then see the range warning above) or the PK in the layout is wrong.
+  (`PSJCO501` `TSJCD215` `[35,18]`). Report that one at 中, quoting the literal. **Also compare the
+  DELETE's `[KEY]` values with the paired INSERT's values for the same columns**: `PXJCO161`
+  `TXJCD407` deletes by `[114,18]=[KEY]G1).工程ｺｰﾄﾞ` but inserts `[114,30]=G5).ﾌｪｰｽﾞ工程ｺｰﾄﾞ` — if they
+  differ, rows are re-inserted that were never deleted (PK violation). Report a mismatch at 中.
+- **A column naming two operations** (`DELETE　INSERT`): apply the `[KEY]` rule to it only if some
+  value in it carries `[KEY]`. Usually none does — the column holds the INSERT values and the
+  DELETE's WHERE is in 更新条件; read it there, and report once (中) only if it is not stated. (The
+  example formerly cited here, `PXJCO125` `TXJCA205` `[12,16]`, is not one: its DELETE is struck and the
+  live label is `　INSERT`. No live example re-verified — 要確認.)
+- **Repeated operation columns are independent statements by default** (`INSERT(更新ﾎﾞﾀﾝ押下時)` /
+  `INSERT(削除ﾎﾞﾀﾝ押下時)`, `DELETE①`/`DELETE②`, `TXJCM007` DELETE1/DELETE2 each with its own key) —
+  review each fully. Treat a 2nd+ column as **differential** only when a label/footnote says so, or it
+  leaves `-` in common columns (会社ｺｰﾄﾞ/更新者/更新日時) that the first column sets; then don't read
+  those `-` as "not set", and report the notation once per block at 低 if no footnote explains it.
+- A `[KEY]` on a column that is **not** in `I01` is a filter (often a literal discriminator such as
+  `[KEY]"1"(分割)`) — fold it into the partial-key judgement above; don't report it on its own.
 
 **C4 — 共通項目の慣習違反.** Compare each block's common-column rows against the calibration from
 step 3. The finding shape that actually shows up: **`登録者`/`登録日時` being set on UPDATE.** This is
@@ -215,15 +264,23 @@ not hypothetical — `更新条件表(TXJCM137WF)` in `PXJCO192` sets both on it
 (`[16,36]=作業者ｺｰﾄﾞ`, `[17,36]=ｼｽﾃﾑ日時(...)`) while every other UPDATE block in the same workbook,
 including `TXJCM501`'s and `TXJCM137`'s, correctly leaves them `-`. Overwriting 登録日時 on every
 update destroys the record's creation time. Also check: 排他ﾌﾗｸﾞ set to a non-incrementing literal
-on UPDATE (the optimistic-lock counter never advances), and 更新者/更新日時 left `-` on an UPDATE.
+on UPDATE (the optimistic-lock counter never advances), 更新者/更新日時 left `-` on an UPDATE, and
+**更新ﾌﾟﾛｸﾞﾗﾑID** set to anything but the workbook's dominant value (`PXJCO125` `TSJCA006` `[21,18]` uses
+`ﾌﾟﾛｸﾞﾗﾑID` where the other 9 INSERT blocks use `画面ID` — 低, 要確認).
 
 A full run of C1-C7 (measured before C8 existed) over `PXJCO192`'s seven live 更新条件表 sheets produced exactly three findings —
 this one, the `TXJCM501` missing columns under C1, and the `TSJCM139WF` name mismatch — with no
 C2 or C3 hits. That ratio is the target: this check is meant to be quiet on a clean sheet.
 
 **C5 — 排他制御が更新と噛み合っているか.** If the table has an `排他ﾌﾗｸﾞ` column and the block has an
-UPDATE, the 更新条件 (or the 機能定義書's processing overview) should describe the optimistic-lock
-comparison, not just the `+1`. `design-doc-internal-consistency`'s check 7 asks whether exclusive
+UPDATE, the optimistic-lock comparison should be specified somewhere, not just the `+1`. **In this
+project it lives in ﾁｪｯｸ処理設計書** (`排他ﾁｪｯｸ`, message `XJZ-000020`) — accept that, or the 更新条件, or
+the 機能定義書 overview; reading only the 更新条件 produced 42 false findings over three workbooks.
+**Apply C5 only when the screen holds (or re-reads) that table's `排他ﾌﾗｸﾞ` for the rows the UPDATE
+keys on** — typically a Hidden item in 画面項目定義 (`GXJC125A` `[525,5]=排他ﾌﾗｸﾞ`, 検索時 `(6)②.排他ﾌﾗｸﾞ`,
+backing `TXJCM006` UPDATE①). A server-side UPDATE of rows the screen never loaded has nothing to
+compare: on `PXJCO125` 8 such blocks (`TXJCM003`×3, `TXJCM004`×2, `TSJCD101`, `TXJAM068`×2) would all
+have been false. `design-doc-internal-consistency`'s check 7 asks whether exclusive
 control is mentioned *at all* for a program that updates; this check is the column-level follow-up —
 report only what that check wouldn't already have said, and say plainly that it's the 更新条件表 side
 of the same concern so the reviewer doesn't see it as two separate defects.

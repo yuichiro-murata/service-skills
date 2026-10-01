@@ -2,7 +2,7 @@
 
 A cell value can contain a newline, so one sheet row can span several physical lines of the dump;
 reading line by line silently drops every token after the first embedded newline (this produced a
-false "missing join condition" finding on PSJCO501 TSJCA311 row 70). Values are returned verbatim —
+false "missing join condition" finding on PSJCO501 TSJCA311 row 70). Values are returned verbatim -
 never trim them; leading/trailing spaces are significant in these workbooks.
 
     import sys; sys.path.insert(0, r"<plugin>/skills/_shared/scripts")

@@ -25,9 +25,9 @@ list, ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ) do not apply to it and would only pr
 ## Environment
 
 **Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, reading the
-画面項目辞書 index (check C5), reporting conventions. The `06-03_帳票一覧_*` registry goes through the
-cache section that guide points to; resolve its struck/renamed rows with the `LiveText` cascade in
-`_shared/reference-index.md` ("Struck-through and grayed-out entries").
+画面項目辞書 index (check C5), reporting conventions. Read the `06-03_帳票一覧_*` registry and `07.共通項目取得` **live** with
+`_shared/scripts/live_dump.py` (never the COM cache — it keeps struck text); the script already
+applies the struck/renamed-row rules.
 
 ## Sheet anatomy (measured, not assumed)
 
@@ -51,7 +51,7 @@ the column numbers below are the common case, not a contract.
     [92,4]=(1)段落ﾀｲﾄﾙ / (2)ﾍｯﾀﾞｰ / (3)明細
       [94,5]=No. [94,7]=出力項目名 [94,17]=出力内容
       [95,17]=参照先 [95,23]=項目名・出力値 [95,45]=編集方法 [95,54]=画面項目ID
-      [96,5]=1 [96,7]=品目ｺｰﾄﾞ … [96,17]=- [96,23]="品目ｺｰﾄﾞ" [96,45]=文字列 [96,54]=SJC0794\nXJC8049
+      [96,5]=1 [96,7]=品目ｺｰﾄﾞ [96,17]=- [96,23]="品目ｺｰﾄﾞ" [96,45]=文字列 [96,54]=\nXJC8049
 ```
 
 Parsing rules that matter:
@@ -59,12 +59,13 @@ Parsing rules that matter:
 - **The print-item table has a two-row header**: `No./出力項目名/出力内容` on the first, and
   `参照先/項目名・出力値/編集方法/画面項目ID` underneath, splitting 出力内容. Anchor on the second row
   for the value columns.
-- **`出力項目名` spans merged cells** and therefore repeats across ~10 columns (7 through 16) in the
-  dump. That is a merge artifact, not ten values — take the first and ignore the rest. Do not report
-  it as a formatting irregularity either; that is
-  `design-doc-formatting-consistency`'s call to make, and this shape is the norm here.
-- **A `画面項目ID` cell often holds two IDs separated by a newline** (`SJC0794\nXJC8049` — the label
-  item and the value item). Split on newline and check each.
+- **`出力項目名` spans merged cells** (cols 7–16); the live dump keeps only the anchor `[r,7]`.
+- **A `画面項目ID` cell can hold two IDs separated by a newline.** Split on newline and drop empty
+  parts — the first ID is often struck, leaving a leading newline (`[96,54]` live = `\nXJC8049`;
+  `SJC0794` is struck). Likewise strip whitespace/newlines from any name before comparing it
+  (registry `[52,3]` live = `\n処置指示書(前工程)`).
+- **A print-table-shaped grid can sit inside a ※ note** (`RSJC033` ※6, rows 1031–1037, value in col 21
+  not 23). Only tables under a `(n)段落ﾀｲﾄﾙ/ﾍｯﾀﾞｰ/明細` heading of Ⅲ are print tables.
 - **The ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ sheets are separate sheets**, named `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(<帳票ID>)` and sometimes with
   a variant suffix (`ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(RSJC033)CP1,CMOS`, `…(RSJC033)識別CP1,CMOS`). They are wide
   (~211 columns) grid mock-ups of the printed page.
@@ -77,7 +78,7 @@ Parsing rules that matter:
 
 ### 1. Get the workbook dump, and enumerate the reports
 
-From the shared dump (or dump per `_shared/xlsx-excel-com-dump.md`), list every live
+From the shared dump (standalone: `python _shared/scripts/live_dump.py <workbook> <out_dir>`), list every live
 `帳票設計書(<帳票ID>)` sheet and the `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(<帳票ID>)` sheets that pair with them.
 
 ### 2. Read the 帳票一覧 registry for the report IDs' WG
@@ -113,7 +114,8 @@ their own — which is exactly the split C1 needs.
 row's `備考` should name this program. Report both directions: a report designed here but not
 registered, and a registry row attributed to this program with no 帳票設計書 sheet (usually a report
 that was dropped from the design without being withdrawn from the registry — check whether the sheet
-exists as `bk_` before calling it missing). Also compare 帳票名称: registry vs the sheet's `[4,15]`.
+exists as `bk_` before calling it missing). Also compare 帳票名称: registry vs the sheet's `[4,15]`
+(after stripping whitespace and newlines).
 
 **C2 — Ⅱ．帳票仕様の記入漏れ.** This section is a fixed label list: 出力ｺｰﾄﾞ / 一時ﾌｧｲﾙ名(共通) /
 ﾀﾞｳﾝﾛｰﾄﾞﾌｧｲﾙ名(PG個別) / 出力方法 / 用紙ｻｲｽﾞ / 明細部 / 合計部 / 改ﾍﾟｰｼﾞ条件 / ﾍﾟｰｼﾞﾘｾｯﾄ条件 /
@@ -131,7 +133,9 @@ noise findings on one workbook. Flag only:
 - `用紙ｻｲｽﾞ` or `出力方法` **empty** (not `-`, not `なし` — genuinely blank).
 - `0件出力` **empty**. `なし` is a decision and is fine; a blank cell on a report whose 明細 is fed
   by a 複数件 fetch means nobody decided what prints when the query returns nothing.
-- `出力順 = -` **only when the detail-feeding Ⅰ block's `ｿｰﾄ順` is also `なし`/empty.** That
+- `出力順 = -` **only when the detail is fed by a 複数件 Ⅰ block whose `ｿｰﾄ順` is also `なし`/empty.**
+  Detail rows built from an 引数 list and ordered by a ※ note (`RXJC041` ※3 `1から順に`), or from 1件
+  lookups, don't qualify. That
   combination is the real defect — non-deterministic print order — and nothing else about these
   three rows is. `RXJC042` is the counter-example to check yourself against: `出力順 = -` in Ⅱ, but
   its `(3)対象在庫一覧取得` block sorts by 処置指示No / 仕掛工程ｺｰﾄﾞ / 管理No, so the order is fully
@@ -151,7 +155,8 @@ numbered block of Ⅰ．帳票出力条件, `引数`, a **sub-referenced block**
 expects alias letters and flags everything else reports almost every print item as an undefined
 alias — the failure mode to avoid here. Resolve:
 
-- `(n)` and `(n)-x` → the numbered block must exist in that report's Ⅰ．帳票出力条件.
+- `(n)`, `(n)-x` and `(n-m)` (a sub-block, `(16-3)`) → the numbered block must exist in that
+  report's Ⅰ．帳票出力条件. `※n` / `※n-m` (`※12-2`) → that footnote must exist.
 - `引数` → the report must actually take arguments (a `引数(呼出し元画面)` 参照ｴﾝﾃｨﾃｨ, or a caller
   documented in the 機能定義書).
 - `<alias>.<column>` → the alias must be a `参照ｴﾝﾃｨﾃｨ` of the block being referenced.
@@ -177,31 +182,45 @@ names the 取得項目 directly (`RXJC041`'s `指示工程ｺｰﾄﾞ+工程名
 `指示工程ｺｰﾄﾞ(添付情報)(確認用)+':'+工程名`, where `工程名` is block (3)'s only 取得項目).
 - Every `<alias>.<column>` printed in Ⅲ must appear in that block's `取得項目` list. A printed value
   that was never fetched is a genuine implementation hole.
-- Every `取得項目` entry should be printed somewhere in Ⅲ (or consumed by another block's 検索条件).
-  An unprinted fetch is usually a leftover from an earlier revision — lower confidence, report it
-  as such.
+- Every `取得項目` entry should be printed somewhere in Ⅲ, or consumed elsewhere: another block's
+  検索条件 / 結合条件 / ｿｰﾄ順, a ※ note (`※6`, `※9`), `1.処理の流れ`, or a block used as an entity.
+  Key columns repeated for joining (会社ｺｰﾄﾞ/部門GRP) and the standard `帳票ﾃﾝﾌﾟﾚｰﾄ取得` block are
+  exempt. What remains is usually a leftover from an earlier revision — 低, report it as such.
 - A `項目名・出力値` that is a bare quoted literal (`"品目ｺｰﾄﾞ"`) is a fixed label, not a data
   reference. Don't chase it into the 取得項目 list.
-- A block delegated to `07.共通項目取得` (`共通項目取得 参照`) has its 取得項目 list in that master,
-  not in this sheet — check printed items against the master's list (read it live) or mark them
-  要確認; never report them as "never fetched".
+- A block delegated to `07.共通項目取得` (marker like `※共通項目取得「共通項目取得：移動ﾛｯﾄ(最新)」参照`)
+  has its 取得項目 list in that master — read it with `--sheets "^共通項目取得"` (sheet names vary:
+  `共通項目取得`, `共通項目取得(工程管理)`, `共通項目取得 (品質管理)` with a space) and find the block **by
+  its name** (`移動ﾛｯﾄ(最新)` is (17) in the master, (1) in the report). Check printed items against
+  it or mark them 要確認; never report them as "never fetched".
 
 **C5 — 画面項目IDの登録.** Every ID in a `画面項目ID` cell must be registered in the
 `82.画面項目辞書_*.xlsx` its prefix routes to — build/read the index per `_shared/reference-index.md`
-(do **not** dump the dictionary workbook wholesale). Split multi-ID cells on newline. Also flag the
+(do **not** dump the dictionary workbook wholesale). If the index is stale and you cannot run COM,
+build it with openpyxl (`read_only`, the ID/name columns the builder's sheet table names) and say so. Split multi-ID cells on newline. Also flag the
 opposite shape: a print item in a 段落ﾀｲﾄﾙ or ﾍｯﾀﾞｰ table with **no** 画面項目ID at all where its
 siblings in the same table all have one — the column exists so that the printed label can be
 multilingual, and a blank means the label is hardcoded.
 
-**C6 — ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄとの整合.** For each report with a `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(<帳票ID>)` sheet, check that
-every 出力項目名 in the print-item tables appears somewhere on the chart, and that the chart has no
-labelled field absent from the print-item tables. **Most chart labels are DrawingML shape text, not
-cell values** — the dump misses them; extract the `<a:t>` runs from `xl/drawings/drawingN.xml` of
-the chart sheet (map sheet → drawing via `xl/worksheets/_rels/sheetN.xml.rels`). These sheets are wide grids, so compare on item
+**C6 — ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄとの整合.** Pair each chart sheet with its report by the chart's own header
+帳票ID `[4,25]`, not by the sheet name, and report a chart sheet whose name or header ID is not a
+live report (`SXJCB147`: `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(RSJC034)識別SMD` carries `[4,25]=RSJC033`;
+`ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(RSJC036)SMD` belongs to a withdrawn report). Then check that every 出力項目名 appears
+on the chart and that the chart has no labelled field absent from the print-item tables.
+**Most chart labels are DrawingML shape text, not cell values** — the dump misses them. Get them
+from the zip: sheet name → `r:id` in `xl/workbook.xml` → target in `xl/_rels/workbook.xml.rels`
+(`worksheets/sheetN.xml`) → that sheet's `xl/worksheets/_rels/sheetN.xml.rels` → the drawing
+target (relative: `../drawings/drawingM.xml`; M ≠ N in general) → all `<a:t>` runs per shape
+(`<xdr:sp>`). Normalise before comparing: NFKC, strip whitespace (letter-spaced `対　象　不　良`),
+trailing `.`, and placeholder runs (`XXXX`, `999`, `ZZ9`) — most shapes are placeholders only.
+Exclude 段落ﾀｲﾄﾙ items (never on charts) and barcode fields (pictures). For reports printed from a
+ﾃﾞｰﾀ sheet into a template (RSJC033/035), expect ﾃﾞｰﾀ-only fields — control flags and ※-composed
+lines — to be absent: report them as one 要確認 group, not item by item. Compare on item
 **names**, not positions, and keep this check's confidence honest — a chart cell can legitimately
 carry a caption that is not a print item. Report a missing item as "帳票設計書にあるがﾚｲｱｳﾄにない"
 (and the reverse) rather than asserting a defect. A report whose chart sheet is missing entirely,
-while its siblings all have one, is worth a line on its own.
+while its siblings all have one, is worth a line on its own, and so is a chart whose 更新日 is `-`
+while the design sheet was revised later (the chart was probably never updated).
 
 **C7 — 処理の流れの参照先.** Ⅲ．編集仕様's `1.処理の流れ` cites blocks by number (`①(2).ﾌｧｲﾙﾃﾞｰﾀ①を
 取得する`) and cites the 機能定義書 (`※機能定義書(SXJCB147).Ⅳ．機能処理概要.A-②を参照`). Check those

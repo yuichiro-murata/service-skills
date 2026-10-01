@@ -128,19 +128,24 @@ to the next one unless the user says "同じ観点で" or similar.
    as well as its own WG's. Subset each to the program's IDs, and pass both paths per file in the
    agent's prompt — the subset to read, the full index to grep.
    In the same step, build the two folder-wide lookups that a check would otherwise rebuild per agent
-   (cache them beside the 画面項目辞書 indexes, under `~/.claude/skills/_cache/reference-index/`, keyed
-   and refreshed the same way):
+   with the shipped scripts, cached under `~/.claude/skills/_cache/reference-index/` with the file
+   names below. **Compare freshness as values** (datetime / integer), never as strings — Python and
+   PowerShell print different fractional-second digits, so a string compare always misses. A cache
+   file in an older format (e.g. a `__meta__` key, or a screen list without a `# scope:` line) is
+   stale: rebuild it.
    - **区分名称 index** (`group → {区分: 区分名称}` from `09.区分名称_step2.xlsx`) — when
-     `design-doc-internal-consistency` is selected (check 11). Build it exactly as that check
-     describes (multi-group titles split on `、`, sub-headings not treated as groups: a col-4 title
-     followed by another col-4 title before any `区分`/`区分名称` header is the **parent**, and the value
-     tables under its sub-headings merge into it). Write JSON `{"source": …, "source-mtime-utc": …,
-     "groups": {group: {区分: 区分名称}}}`.
-   - **Screen-name list** (`画面名 → 画面ID` from the 3C header `[4,15]`/`[4,10]` of every 画面設計書 sheet
-     in every workbook under `01_Doc\08_機能定義書\` — all WGs, not only `PHASE*`, minus the folder
-     exclusions in `agent-guide.md`) — when `design-doc-writing-rules` is selected (W5). Multi-source,
-     so key its freshness on (workbook count, newest mtime) under that folder and rebuild when either
-     changes; it takes ~3 minutes cold (openpyxl `read_only`, header cells only).
+     `design-doc-internal-consistency` is selected (check 11):
+     `python _shared/scripts/build_kbn_index.py <...\04_共通設計\09.区分名称_step2.xlsx> idx_kbn-name_09.区分名称_step2.json`
+     (~15 s; reads the sheet live; fresh while `source-mtime-utc`/`source-length` match the file).
+     It encodes the structure rules — groups separated by a truly blank row (struck rows are not
+     separators), sub-headings merged into their parent, titles split on `、`.
+   - **Screen-name list** (`画面名 → 画面ID` for every visible 画面設計書 under `01_Doc\08_機能定義書\`, all
+     WGs, minus the `agent-guide.md` exclusions) — when `design-doc-writing-rules` is selected (W5):
+     `python _shared/scripts/build_screen_list.py <...\01_Doc\08_機能定義書> lookup_screen-name_08_機能定義書_ALL.tsv`
+     (4–9 min cold; finds the header row by its `画面ID` label, since row 4 is ﾌﾟﾛｸﾞﾗﾑID in 04_品質管理 /
+     05_受注出荷; prints `NON-SCREEN-ID` lines for a 画面ID cell holding a program ID — a doc defect
+     worth passing to `naming-standard-compliance`). Fresh while its `# source-count` and
+     `# source-newest-mtime-utc` lines match the folder.
    A check run standalone builds what it needs itself.
 3. Run the selected checks as one combined pass — in parallel background agents when there are
    several. Follow each selected skill's own SKILL.md as the authority for how that check is done;

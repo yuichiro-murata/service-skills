@@ -18,7 +18,7 @@ concrete diffing steps. The checklist also has purely-manual/subjective items (e
 
 This skill checks **cross-reference consistency** only (does X mentioned here also appear over
 there) — see the frontmatter `description` above for exactly which adjacent checks (I/O table
-completeness, DB-column existence, ID-numbering, formatting, typos) live in the 9 sibling skills (the self-check writing rules — Ⅴ per-item rules, 項番 — in
+completeness, DB-column existence, ID-numbering, formatting, typos) live in the other nine of the ten single-program checks (the self-check writing rules — Ⅴ per-item rules, 項番 — in
 `design-doc-writing-rules`)
 instead.
 
@@ -27,7 +27,8 @@ instead.
 **Read `_shared/agent-guide.md` first** — scope selection (`rev-program-review` is the entry point),
 the environment, what the live dump has already excluded, how to read the 画面項目辞書 index, and the
 reporting conventions common to every check. The masters this check dumps itself
-(`04.ﾒｯｾｰｼﾞ管理_*`, `06-09_ﾚｽﾎﾟﾝｽ一覧_*`) go through the cache section that guide points to. Because the
+(`04.ﾒｯｾｰｼﾞ管理_*`, `06-09_ﾚｽﾎﾟﾝｽ一覧_*`) are read live with `_shared/scripts/live_dump.py` (never the
+COM cache — withdrawn IDs are struck, and the cache keeps them). Because the
 dump is live, every row you see is live — which is what makes the "used but not declared" / "missing
 from dictionary" diffs below trustworthy without extra work.
 
@@ -53,15 +54,20 @@ For each check, dump the relevant sheets (per the shared doc) and read them, the
 exact sheet/cell for every finding so it's actionable.
 
 1. **3-4 — Event ↔ processing-overview completeness.**
-   Collect every event listed in 画面設計書 "Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細" (button clicks, フォーカスロスト,
-   起動時, etc. — one block per screen area). Collect every step described in 機能定義書
-   "Ⅳ．機能処理概要". Every event block in Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 should have a corresponding step in
-   機能処理概要 (they don't need identical wording, but the described behavior should be traceable).
-   Flag any event with no corresponding processing-overview step.
+   The checklist asks only for 「画面設計書に定義されている初期処理およびﾎﾞﾀﾝ押下時のｲﾍﾞﾝﾄ」 (05
+   checklist `[19,4]`). Collect the 画面設計書 "Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細" rows whose ｲﾍﾞﾝﾄ内容 (col 13) is
+   `起動時` or `ﾎﾞﾀﾝ押下`, in every screen area, and every step of 機能定義書 "Ⅳ．機能処理概要". Each such
+   event should have a traceable step (wording need not match). Flag any with none. `ﾛｽﾄﾌｫｰｶｽ`,
+   `ﾀﾞﾌﾞﾙｸﾘｯｸ` and similar events are outside 3-4 — flagging them gave three false positives on
+   `PXJCO125` `画面設計書(GXJC125A)` `[415]`/`[417]`/`[418]`. A zoom button (`作業場ｽﾞｰﾑ` `[416]`) is a
+   ﾎﾞﾀﾝ押下 event, but process overviews routinely leave zooms out: report a missing one as 低/要確認.
 
 2. **3-5 — Response definitions registered.**
    If 機能定義書 "Ⅶ．ﾚｽﾎﾟﾝｽ定義" defines anything beyond "※ｼｽﾃﾑ共通設計書.ﾚｽﾎﾟﾝｽ 参照", confirm it's
-   reflected in `01_Doc/06_システム設計書（一覧、管理台帳）/06-09_ﾚｽﾎﾟﾝｽ一覧_共通.xlsx`.
+   reflected in the program's own WG registry under `01_Doc/06_システム設計書（一覧、管理台帳）/` —
+   `06-09_ﾚｽﾎﾟﾝｽ一覧_<WG名>.xlsx`, one each for `基準情報`/`工程管理`/`品質管理`/`受注出荷` — and fall
+   back to `06-09_ﾚｽﾎﾟﾝｽ一覧_共通.xlsx` before calling it unregistered. (The checklist's
+   「06-09_基準情報_ﾚｽﾎﾟﾝｽ一覧」 is the 基準情報 template's wording; read it as the program's WG.)
 
 3. **4-12/7-3/8-3 — Screen-item IDs registered in the dictionary.**
    Collect every 画面項目ID from 画面設計書 "Ⅴ．画面項目定義" (rightmost ID column, e.g. `XJC0036`,
@@ -77,8 +83,13 @@ exact sheet/cell for every finding so it's actionable.
    satisfied by a same-named sheet embedded in another WG's copy. Expect to be handed one index per
    file the program's IDs reach — usually one or two. Flag any ID used in the screen design but
    missing from whichever file should hold it (or vice versa if the dictionary shows an entry whose
-   画面項目名 disagrees with the screen design's 画面項目名 for the same ID — a rename that wasn't
-   propagated).
+   name disagrees with the screen design for the same ID — a rename that wasn't propagated).
+   **The dictionary holds the displayed label, so a name matches if it equals either Ⅴ's 画面項目名
+   or its `表示` value** (col 11, after dropping a trailing key hint `(ENT)`/`(R)`). Comparing with
+   画面項目名 alone gave five false mismatches on `PXJCO125` `画面設計書(GXJC125A)`: `XJZ9002` = `検索`
+   against 画面項目名 `検索ﾎﾞﾀﾝ` / 表示 `検索(ENT)` `[439]`; likewise `XJZ9016`, `XJZ9003`, `XJC0760`, and
+   `XJC0762` = `関連ﾛｯﾄ/実績削除`, which is the 表示 of the item named `削除区分` `[463]`. Flag only when
+   the dictionary name matches neither.
 
    **Don't dump `82.画面項目辞書_<WG名>.xlsx` — read an index of it. See
    `_shared/reference-index.md`.** This check needs only `id → 画面項目名`, and an index of that costs
@@ -105,14 +116,20 @@ exact sheet/cell for every finding so it's actionable.
    You are normally handed **two** paths: a *subset* of the index scoped to this program, to read
    whole, and the *full* index, to grep. The subset is the full index filtered down to the IDs found
    in this program's own dump — so an ID this doc cites that is absent from the subset already **is**
-   the unregistered-ID finding. Do not dismiss it as "the subset just doesn't cover it". Confirm it
+   the unregistered-ID finding. Collect those IDs from cols < 100 only: cols ≥ 100 are the
+   revision-memo area, and an ID quoted there is history, not a citation (`PXJCO125` `GXJC125A`
+   `[410,107]` `画面項目ID変更(XJC7042→SJZ7002)` pulled the retired `XJC7042` into the subset). Do not dismiss it as "the subset just doesn't cover it". Confirm it
    with one grep of the full index before reporting: absent from both is the finding; present in the
    full index means the subsetting filter missed that ID's form, which is worth saying but is not a
    design defect.
 
 4. **4-8/5-1 — Message IDs registered.**
-   Collect every message ID referenced in 画面設計書 "Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細" (ﾒｯｾｰｼﾞ column) and in
-   ﾁｪｯｸ処理設計書 (error codes) — format is `<3-char JOBｺｰﾄﾞ>-<0/1><5-digit>`, e.g. `XJC-000131`.
+   Collect every message ID referenced in 画面設計書 "Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細" and in ﾁｪｯｸ処理設計書 (error
+   codes). In Ⅳ, scan **both** the ﾒｯｾｰｼﾞ column (col 43) and the 画面項目ID column (col 54): a
+   confirm/complete pair is often written as text in ﾒｯｾｰｼﾞ with its IDs in 画面項目ID, in the same
+   order (`PXJCO125` `GXJC125A` `[410,43]` `実行前：削除します。よろしいですか？⏎実行後：削除しました。`,
+   `[410,54]` `XJZ7001,SJZ7002`) — compare each text with its ID's registered name.
+   Error-message IDs are `<3-char JOBｺｰﾄﾞ>-<0/1><5-digit>`, e.g. `XJC-000131`.
    The middle letter of the JOBｺｰﾄﾞ identifies which WG owns that prefix — `JA`=基準情報,
    `JZ`=共通, `JC`=工程管理, `JB`=受注出荷, etc. (extend this mapping as you encounter other WG
    prefixes). Route the lookup by that owning WG, not by which program you're reviewing:
@@ -142,8 +159,8 @@ exact sheet/cell for every finding so it's actionable.
      separately as "cross-WG reference, couldn't verify without checking that other WG's own
      message file" rather than a confirmed gap.
    - **A short, unhyphenated `<3-char JOBｺｰﾄﾞ><4-digit>` reference (e.g. `XJZ7006`, `XJC7006`,
-     `SJC7013`) — most often in 画面設計書 Ⅳ's own ﾒｯｾｰｼﾞ column labeled "処理前:"/"完了後:" pairs for
-     a confirm/complete dialog — is a DIFFERENT ID namespace from the hyphenated
+     `SJC7013`) — the confirm/complete-dialog IDs in 画面設計書 Ⅳ, written in the ﾒｯｾｰｼﾞ column as
+     "処理前:"/"完了後:" pairs or in the 画面項目ID column beside `実行前`/`実行後` texts — is a DIFFERENT ID namespace from the hyphenated
      `<JOBｺｰﾄﾞ>-<6-digit>` error-message IDs above, and lives in a different file.** Confirmed for
      real on `PXJCO124_ﾛｯﾄ振向け.xlsx`, `画面設計書(GXJC124A)` row 807 (実行ﾎﾞﾀﾝ: 処理前 `XJZ7006`/
      完了後 `XJC7006`) and row 810 (再印刷ﾎﾞﾀﾝ: `SJC7013`) — none of these exist anywhere in
@@ -194,7 +211,8 @@ exact sheet/cell for every finding so it's actionable.
    context) — don't flag those, they're a different convention entirely and casing carries no meaning
    there. Flag every 表示形式 cell using `YYYY` and/or `DD` (or any other wrongly-cased token relative
    to the `yyyy/MM/dd` convention) as a casing defect to correct.
-   **User decision (2026-10-01): `yyyy/MM/dd` is the rule.** The self-check workbook's 観点50 says
+   **User decision (2026-10-01): `yyyy/MM/dd` is the rule.** The self-check workbook
+   (`01_Doc\08_機能定義書\11_工程管理\XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx`, sheet `レビュー観点`) 観点50 says
    「日付がある場合、表示形式は「YYYY/MM/DD」などを記載する」 and its own sample is mixed (`GXJA802B`
    `[156,25]`=`yyyy/MM/dd`, `[164,25]`=`YYYY/MM/DD`); read 観点50 as "write a date format", not as the
    casing to use. Do not re-raise this as a conflict, and keep flagging `YYYY/MM/DD` in 表示形式.
@@ -271,21 +289,16 @@ every verdict; counts and examples are one snapshot.
     - **Reading the master**: sheet `区分名称_STEP2～` only (the standing user rule in `agent-guide.md`'s
       "区分名称/区分コード lookups" — `区分名称_～STEP1` is not ground truth). A group is a title
       in col 4 (`承認状態`), then a header row `区分`(col 5) / `区分名称`(col 10) / `ﾘｿｰｽID`(col 57), then
-      one row per value. Build `group → {区分: 区分名称}` once (openpyxl live read; a struck value is
-      retired) — like the 画面項目辞書, read an index, not a dump. Two title shapes break a naive index
-      and both produced false "missing" findings in calibration:
-      - **one title naming several groups** — `ﾛｯﾄｶｰﾄﾞ発行区分、ﾌﾞｰｽｶｰﾄﾞ発行区分、ﾏｶﾞｼﾞﾝｶｰﾄﾞ発行区分`
-        (`区分名称_STEP2～` row 1011, one shared value table with ﾘｿｰｽID `XJZ0336`/`XJZ0337`): split the
-        title on `、`/`,` and register every name;
-      - **a title with col-4 sub-headings** — `合否判定条件` (row 120) is followed by `入力ﾀｲﾌﾟ 1:文字の場合`
-        and similar sub-headings, each with its own value table. The group is the top title; the
-        sub-headings are not groups (taking the nearest col-4 text above a header row registers them
-        instead and leaves `合否判定条件` looking unregistered).
-      Measured: roughly 350-375 groups depending on how sub-headings are folded — the exact count is not
-      a correctness signal. A title is a group when a `区分`/`区分名称` header follows it within 3 rows,
-      **or** when the col-4 rows under it are themselves headings that each lead to such a header (then
-      those are sub-headings). Use the prebuilt index your prompt names (JSON `{group: {区分: 区分名称}}`); build it
-      yourself when none was handed to you.
+      one row per value. Read an index, not a dump — like the 画面項目辞書. Use the prebuilt index your
+      prompt names; standalone, build it with
+      `python _shared/scripts/build_kbn_index.py <...\01_Doc\04_共通設計\09.区分名称_step2.xlsx> <out.json>`
+      (~15 s, live read; output `{source, source-mtime-utc, source-length, groups: {group: {区分: 区分名称}}}`).
+      The script is the authority on structure; in short, it splits a title naming several groups on
+      `、` (`ﾛｯﾄｶｰﾄﾞ発行区分、ﾌﾞｰｽｶｰﾄﾞ発行区分、…` row 1011), folds col-4 sub-headings into their parent
+      (`合否判定条件` row 120 → `入力ﾀｲﾌﾟ 1:文字の場合` …), and separates groups only on truly blank rows —
+      a struck row is not a separator (`製造条件表示区分`: rows 2011-2012 struck, its `入力ﾀｲﾌﾟ 2/4`
+      still belong to it). A hand-built index that misses either title shape produced false "missing"
+      findings in calibration.
     - **Parsing the reference**: take the text after `区分名称.` up to `参照`/whitespace; drop an
       unbalanced trailing `)` (it closes an outer `区分名称(ｼｽﾃﾑ共通設計書.区分名称.製造ｵｰﾀﾞｰ状態)`); keep a
       `(qualifier)` as part of the name; resolve `group.value` (value must be one of the group's names) and
@@ -301,8 +314,10 @@ every verdict; counts and examples are one snapshot.
         before reporting. A group that is truly absent has no ﾘｿｰｽID, so it cannot be displayed
         multilingually;
       - **`区分名称` with no group name at all** — 中: `ｼｽﾃﾑ共通設計書.区分名称 参照` (`PXJCO129` `GXJC129A`
-        `[726,26]`, 未作業ﾌﾗｸﾞ, where the same item elsewhere reads `…区分名称.未作業ﾌﾗｸﾞ 参照`). Flag any
-        `区分名称` not followed by `.`;
+        `[726,26]`, 未作業ﾌﾗｸﾞ, where the same item elsewhere reads `…区分名称.未作業ﾌﾗｸﾞ 参照`). Flag a
+        delegation (`…区分名称 参照`, `区分名称(…)`) with no `.<group>`. `区分名称` used as a plain noun is
+        not a reference — e.g. the display expression `検索時:(6)①.ﾛｯﾄ構成区分+":"+区分名称` in 説明
+        (`PXJCO125` `画面設計書(GXJC125A)` `[478,43]`), whose group `区分名称.ﾛｯﾄ構成区分` is in `[478,25]`;
       - **qualifier missing or different** — 要確認 (11): a bare `検索区分` when the master has
         `検索区分(ﾛｯﾄﾄﾚｰｽ)`/`(不良ﾛｯﾄ統合)`/`(社内加工用)` — say which one is meant; `検索区分(社内加工)` vs the
         master's `(社内加工用)` is a near-miss to correct.
@@ -316,8 +331,11 @@ every verdict; counts and examples are one snapshot.
 - An area can have **several Ⅵ control tables** (one per mode or per tab); merge them before
   deciding an item has no control row.
 - A **grouped name** covers a series: `直行1-4` in Ⅵ (or Ⅳ) stands for `直行1`…`直行4` in Ⅴ.
-- Ⅰ．画面ﾚｲｱｳﾄ is usually a pasted image (EMF) — its absence from the dump is not a missing layout,
-  and no item comparison against Ⅰ is possible.
+- Ⅰ．画面ﾚｲｱｳﾄ is a floating picture (usually EMF), so its empty cells in the dump are not a
+  missing layout. For check 5's three-way match, get the picture via `agent-guide.md` "Seeing the
+  actual screen layout" (unzip `xl/media/*.emf`, convert to PNG, Read it — no Excel); this completed
+  the Ⅰ/Ⅴ/Ⅵ comparison on `PXJCO125`. Report only items clearly drawn or clearly absent, as a
+  visual comparison.
 - A digest row that looks deleted may have been **moved** (struck at the old place, live elsewhere);
   search the live dump for its text before reporting a removal-driven asymmetry.
 

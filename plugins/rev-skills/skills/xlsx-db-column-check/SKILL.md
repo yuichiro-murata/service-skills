@@ -15,8 +15,10 @@ codebase (機能定義書 / 画面設計書 / 更新条件表 / ﾃｰﾌﾞﾙ�
 ## Environment
 
 **Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, reporting
-conventions. The ﾃｰﾌﾞﾙﾚｲｱｳﾄ files this check reads go through the cache section (Batch variant) that
-guide points to.
+conventions. Read the ﾃｰﾌﾞﾙﾚｲｱｳﾄ files **live** with `_shared/scripts/live_dump.py` (end of step 3) —
+never through the COM cross-session cache "Batch variant": that cache keeps struck text, and layout
+sheets do carry it (PXJCO125's batch, 2026-10-01: `TXJCM006` `[81,40]` dead, `TXJCA317`
+`[23,40]`/`[34,40]` partial).
 
 ## Procedure
 
@@ -69,11 +71,29 @@ already the live text (`PXJCO124`), and `③④` treated as two entity reference
 (`PSJCO205`). All three came from matching raw text; none can occur when matching what the live dump
 gives you.
 
-**Two more reference sources seen on the PSJCO501 run.** 更新条件表 sheets often carry a side-by-side
-`参照ｴﾝﾃｨﾃｨ` block (cols ~55–80, its own `取得ﾃｰﾌﾞﾙ`/`検索条件` headers) — collect its
-`<alias>.<column>` references against that block's table, not the sheet's 更新ﾃｰﾌﾞﾙ. And a
-subquery inside a 検索条件 introduces its own alias (`(SELECT … FROM TXJCM006 Z …)`): resolve `Z.` to
+**更新条件表 side blocks (from col 54) are a second reference source — two shapes.** Collect their
+columns against the side block's own table, never the sheet's 更新ﾃｰﾌﾞﾙ. Compare header labels after
+stripping all whitespace (half/full-width spaces and newlines: `[14,16]=　INSERT`, `入力可⏎文字種`).
+- **`取得ﾃｰﾌﾞﾙ名` / `参照ﾃｰﾌﾞﾙ名` block — the common one.** On `PXJCO125` (2026-10-01) 64 side blocks have
+  this shape (57 `取得ﾃｰﾌﾞﾙ名`, 7 `参照ﾃｰﾌﾞﾙ名`) and only 2 the 参照ｴﾝﾃｨﾃｨ shape below. The label sits at
+  col 54 (once at 55), the table at col 68, `取得条件`=`No.k` on the next row, then `条件項目名` rows whose
+  col 58 reads `<日本語ﾃｰﾌﾞﾙ名>.<列>` — no alias letter (`更新条件表(TSJCD302)` `[8,68]=ﾛｯﾄ作成履歴(TXJCA004)`,
+  `[11,58]=ﾛｯﾄ作成履歴.会社ｺｰﾄﾞ`). The table cell comes in three spellings — `TXJCA004:ﾛｯﾄ作成履歴`,
+  `ﾛｯﾄ作成履歴(TXJCA004)`, `移動ﾛｯﾄ(TXJCM006)　※削除前のﾃﾞｰﾀ` — take the ID from either form and map the
+  Japanese prefix of each `条件項目名` to it. A table cell naming `共通項目取得….<項目>` is a delegation, not
+  a table (`TSJCD101` `[34,68]`): skip it here.
+- **`参照ｴﾝﾃｨﾃｨ` block** (`TXJCM006` `[10,55]`/`[46,56]`): alias letters, `取得ﾃｰﾌﾞﾙ`/`検索条件` headers —
+  collect `<alias>.<column>` as for a 画面設計書 block.
+
+A subquery inside a 検索条件 introduces its own alias (`(SELECT … FROM TXJCM006 Z …)`): resolve `Z.` to
 the subquery's table for that cell only.
+
+**Resolve a circled source (`③`/`④`…) through the block's own 更新概要 before calling a column unknown.**
+`更新条件表(TSJCD101)` `[9,16]` defines `④ﾃｰﾌﾟﾛｯﾄ情報取得(No.3)`; `No.3` is the side block whose table cell
+is `共通項目取得(工程管理).ﾃｰﾌﾟﾛｯﾄ情報取得`. Mapping `④`'s values (`[28,18]=[KEY]製造年月`) by name to a
+look-alike table (TXJCM057 ﾛｯﾄ情報) produced 2 false misses. Follow `④` → `No.k` → that side block's
+table; when it is a 共通項目取得 delegation, check against that section's output list or leave it
+unchecked and say so — never against a guessed table.
 
 ### 3. Locate and dump the actual DB design files
 
@@ -81,7 +101,9 @@ the subquery's table for that cell only.
 
 1. Search root: `<WG番号>_<WG名>WG\07_データベース・ファイル設計書(仮)` — a TOP-LEVEL project
    folder, sibling of `01_Doc`, **NOT** nested inside it. Search recursively (it may have `PH2`/
-   `PH3`/`ファイルレイアウト` subfolders).
+   `PH3`/`ファイルレイアウト` subfolders). **Only `11_工程管理WG` has such a folder** (2026-10-01:
+   `08_データ移行WG` and `10_共通WG` have none), and it also holds other WGs' tables used by 工程管理
+   (`TXJAM007`, `TXJAM023`, `TXJAM068`, `VXJAM024`) — search it whatever the table's JOBコード.
 2. Match the design doc's ID **exactly** — never a prefix/substring match. A `WF` suffix
    (`TXJAM061` vs `TXJAM061WF`) or a numeric suffix (`VXJCM004` vs `VXJCM004_31`/`VXJCM004_31_ALL`)
    makes it a different table; the bare/unsuffixed form often has no design file of its own at all.
@@ -91,7 +113,12 @@ the subquery's table for that cell only.
    whatever its phase folder. **`A6` is sheet-dependent — read it from the wrong sheet and you reject
    the right file.** A layout workbook also carries `JAGﾃｰﾌﾞﾙﾚｲｱｳﾄ` and one or more `旧ﾃｰﾌﾞﾙﾚｲｱｳﾄ`
    sheets; in `TXJCM003_製造ｵｰﾀﾞｰ.xlsx` those hold `TXJCM003`, `FDMBM03`, `FDCJM03` and `No.`
-   respectively. Resolving `SXJCB147`'s tables
+   respectively. **Select the sheet by the exact name `^ﾃｰﾌﾞﾙﾚｲｱｳﾄ$`** — an unanchored match also takes
+   dated snapshots (`ﾃｰﾌﾞﾙﾚｲｱｳﾄ_20251002時点` in PH2 `TXJAM068`, six on PH2 `TXJCA004`,
+   `ﾃｰﾌﾞﾙﾚｲｱｳﾄ_20260915` in PH3 `TXJCM058`), prefixed copies (`JAGUR_`/`CP2_ﾃｰﾌﾞﾙﾚｲｱｳﾄ` in `TXJCD037`,
+   `JAG_ﾃｰﾌﾞﾙﾚｲｱｳﾄ` in `TXJCM057`) and `旧ﾃｰﾌﾞﾙﾚｲｱｳﾄ(XAE)` (PH2 `TXJCM006`, `max_row` 1,048,569 — slow to iterate). A dated
+   snapshot carries the **same** `A6` as the live sheet, so the `A6` check cannot tell them apart — only
+   the sheet name can. Resolving `SXJCB147`'s tables
    by filename alone picked the wrong file for three of them —
    `TXJCM003_B_ｵｰﾀﾞｰ投入出荷予定.xlsx` for `TXJCM003` (製造ｵｰﾀﾞｰ),
    `TXJCM007_B_移動ﾛｯﾄ構成取消履歴.xlsx` for `TXJCM007` (移動ﾛｯﾄ構成),
@@ -101,7 +128,11 @@ the subquery's table for that cell only.
    check overrides the phase order in step 3: a higher-priority file whose `A6` disagrees is not the
    file.
 3. If the same ID exists under more than one phase folder, resolve by **PH3 > PH2 > top-level** —
-   never by file-modified date.
+   never by file-modified date. **When the layout is from a later phase than the doc's own `PHASE`
+   folder**, a column or length that exists only in that later layout is 要確認, not 中: word it
+   "PH3ﾚｲｱｳﾄで追加/変更 — 設計書の反映要否を確認". Confirmed on PHASE2 `PXJCO125`: PH3 adds `指示者ｺｰﾄﾞ`
+   (`TXJCA318`/`TXJCD318`) and `注意事項` (`TXJCM058`), and widens `TXJCA205` `ﾒｯｾｰｼﾞ内容` from
+   `NVARCHAR2(150)` (PH2) to `(200)` (PH3) `[32,23]`. Diff the PH2 copy to tell the two cases apart.
 4. Also check the flat `01_Doc\07_データベース・ファイル設計書\<table>.xlsx` (no `(仮)`) for an
    independent copy — this is a real, separate location, distinct from (and not to be confused
    with) the wrong, non-existent `01_Doc\07_データベース・ファイル設計書(仮)` path. **Flat means the
@@ -114,7 +145,8 @@ the subquery's table for that cell only.
    cross-checking needed. For a table owned by **any other WG**, also check the flat `01_Doc\...`
    copy from step 4; if the two disagree, prefer the one with a strict column superset (treat a
    non-superset disagreement — renamed/reordered columns — as a discrepancy to report, not resolve
-   yourself).
+   yourself). Other WGs have no WG folder of their own (rule 1), so the comparison is always
+   `11_工程管理WG` copy vs flat copy; when only one of the two exists, use it.
 6. Never search `<WG番号>_<WG名>WG\開発DDL作成用<date>\` for a table's layout — always excluded
    from a REV per `agent-guide.md`'s "Folders to always exclude" list, regardless of which WG
    owns the table.
@@ -150,18 +182,18 @@ the subquery's table for that cell only.
   than searching the excluded folder anyway.
 
 Once every table's ID has resolved to exactly one layout file (step 3's PH3 > PH2 > top-level
-precedence, applied per table), **dump all of them in one pass using the "Batch variant" script in
-`_shared/xlsx-excel-com-dump.md`'s cross-session cache section**, each entry with
-`OnlySheetPatterns = @("ﾃｰﾌﾞﾙﾚｲｱｳﾄ")` — a table-layout workbook commonly has 3-4 sheets (改訂履歴, the live
-ﾃｰﾌﾞﾙﾚｲｱｳﾄ, and one or two old JAG_/旧-prefixed superseded copies), and this is the only one this
-check ever reads, so there's no reason to pay the Excel COM/cache cost of the others — and a program
-easily has 10+ tables in its I/O list, so batching means Excel launches at most once for this whole
-step (often zero times, once the cache is warm from an earlier REV that
-already dumped the same tables). That sheet has
+precedence, applied per table), dump each one **live**, one out_dir per layout file (the default
+prefix collides for `TXJCM007` vs `TXJCM007_B`):
+`python _shared/scripts/live_dump.py <layout.xlsx> <out>/<TableID> --sheets "^ﾃｰﾌﾞﾙﾚｲｱｳﾄ$" --prefix <TableID>`
+— the same call `update-condition-completeness` step 2 uses, so one set of dumps serves both checks.
+~1–7 s each; about 50 layouts took under 30 s on `PXJCO125`. That sheet has
 a fixed layout: row 6 = `[6,1]=<TableID>`/`[6,6]=<Table name>`, header at row 7
 (`No. | 項目名 | 項目ID | 属性 | 桁数 | DB桁 | I01... | notnull | 備考`), and one data row per
 column starting at row 8. Column `[r,3]` is the 項目名 (Japanese column name) — this is the
-authoritative list of columns that actually exist.
+authoritative list of columns that actually exist. **Stop the list at the first empty 項目名 or at
+`＜ｲﾝﾃﾞｯｸｽ情報＞`**, whichever comes first: many layouts keep numbered blank rows after the last column
+(`TXJCD404` Nos 43-48 at rows 50-55, `TXJCM057` Nos 41-51), and reading them as columns produced false
+"missing column" findings on 8 blocks.
 
 ### 4. Compare the referenced columns against the real column list
 
@@ -202,8 +234,8 @@ looks at lengths either.
   comparing against it manufactures a mismatch on every multi-byte column.
 - **画面設計書 sheet, Ⅴ．画面項目定義**: the same header row you already resolve 属性 from. On
   `GXJC128A` it reads `No.`(3) / `画面項目名`(5) / `表示`(12) / `属性`(18) / `TAB`(22) / **`桁数`(24)**
-  / `表示形式`(26) / `入力可`(31). **Resolve 桁数 by its header label, not by the literal column 24** —
-  the same discipline step 6's 属性 gate already demands.
+  / `表示形式`(26) / `入力可`(31). **Resolve 桁数 by its header label, not by the literal column 24** (it
+  is col 23 on `GXJC125A`), comparing labels with all whitespace stripped (`入力可⏎文字種`).
 
 **Which screen items are in scope — decide on the 桁数 cell alone, not on the control type.** An
 item is in scope when its 桁数 cell holds a number. `Label`, `Button`, `Accordion`, `RadioButton`,
@@ -258,7 +290,12 @@ which otherwise produces a guaranteed false finding:
 - **Audit columns.** `登録者`/`登録日時`/`更新者`/`更新日時`/`更新ﾎｽﾄ名`/`更新ﾌﾟﾛｸﾞﾗﾑID`/`排他ﾌﾗｸﾞ` shown on a
   screen are display-only system values — skip them for 桁数.
 - **Composites.** `(1).停止工程ｺｰﾄﾞ+":"+(1).工程名` legitimately needs the sum of its parts plus the
-  separator. Skip rather than guess which part to compare.
+  separator, so don't compare it part-by-part. **But when it is written to an update target, compare
+  the parts' maximum lengths against the target column, and never skip it when one part alone can
+  already exceed it.** Skipping hid a real overflow on `PXJCO125`: `更新条件表(TXJCA003)` `[31,18]` /
+  `(TXJCM007_B)` `[33,18]` write `①.削除理由(選択) + " " + ①.削除理由` into `削除理由 NVARCHAR2(150)`; the
+  TextBox is 100 (`GXJC125A` `[462,23]`) and the ComboBox comes from `TXJAM008.ﾎﾞﾃﾞｨ1 NVARCHAR2(1000)`
+  (`[461,25]=(7).ﾛｯﾄ削除理由`). Report it as 要確認 with the arithmetic (label length + 1 + 100 > 150?).
 - **Non-character columns.** A 年月日(8桁) TextBox against a `DATE` column, or a screen 桁数 against
   `NUMBER(p,s)`, is not like-for-like. Compare only when the DB 属性 is `NVARCHAR2`/`VARCHAR2`/`CHAR`.
 - **Generic-column tables.** When a value is persisted into `TXJAM100`-style `項目N` columns (all

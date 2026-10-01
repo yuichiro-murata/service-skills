@@ -14,12 +14,17 @@ in both directions" covers and why this was split out of `design-doc-internal-co
 
 **Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, reporting
 conventions. Read the DB一覧 **live** (`_shared/scripts/live_dump.py`; it has struck = retired rows) and
-the ﾃｰﾌﾞﾙﾚｲｱｳﾄ files live too, or through the COM cache only per the guide's master-file row. Route
-the DB一覧 by the table ID's JOBコード (`TXJC*`/`TSJC*` → `06-06_DB一覧_工程管理`, `TXJZ*` → `_共通`,
-…), as for screen-item IDs. When resolving a layout, ignore the older copies under `VIEW\`,
-`STEP1暫定テーブル\` and `10_共通WG` mirrors unless no flat-level/PHASE copy exists
-(`xlsx-db-column-check` step 3 has the precedence). Follow a delegated block (`07.共通項目取得 参照`)
-one level only: record the table it names as declared-by-reference, don't chase further. Anything visible in the dump is live evidence; removed content lives in
+the ﾃｰﾌﾞﾙﾚｲｱｳﾄ files live too (`live_dump.py … --sheets "^ﾃｰﾌﾞﾙﾚｲｱｳﾄ$"`, as in `xlsx-db-column-check`
+step 3 — never the COM cache "Batch variant", which keeps struck text). Route the DB一覧 by the table
+ID's JOBコード (characters 2-4): `XJC`/`SJC` → `06-06_DB一覧_工程管理`, `XJA`/`SJA` → `_基準情報`,
+`XJB`/`SJB` → `_受注出荷`, `XJD`/`SJD` → `_品質管理`, `XJZ`/`SJZ` → `_共通` (all in
+`01_Doc\06_システム設計書（一覧、管理台帳）`; prefixes confirmed against each file's live ID column,
+2026-10-01). A JA table may also sit on 工程管理's `作成状況一覧` (98 `XJA` + 72 `SJA` IDs there) — either
+registration counts. When resolving a layout, ignore the older copies under `VIEW\`,
+`STEP1暫定テーブル\`, `90_JAGURﾃｰﾌﾞﾙﾚｲｱｳﾄ(4月26日時点)\` and `10_共通WG` mirrors unless no flat-level/PHASE
+copy exists (`xlsx-db-column-check` step 3 has the precedence) — the JAGUR folder alone holds ~30 of
+`PXJCO125`'s tables, some under old names (`TXJCD407_ﾁｪｯｸｼｰﾄ実績.xlsx`). Delegated blocks: see
+"Delegation depth" below. Anything visible in the dump is live evidence; removed content lives in
 `_DELETED_DIGEST.txt`, which this check needs only to explain why a declared table has no live usage
 left. Sources: 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/帳票設計書/ﾌｧｲﾙ出力仕様書.
 
@@ -37,10 +42,16 @@ left. Sources: 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更�
    Ⅰ．ﾌｧｲﾙ出力条件** — 6 of the 工程管理 PHASE1-3 file specs read tables directly there rather than
    delegating to a 画面設計書 block, and each such table owes the program an R), AND every 更新条件表 sheet's *body* (not just its header) —
    the 取得内容/取得条件 column often cites other tables by Japanese name only, never by ID, so
-   search by name too before calling a table unused.
+   search by name too before calling a table unused. **Include the 更新条件表 side blocks from col 54**,
+   under any of their labels — `取得ﾃｰﾌﾞﾙ名`, `参照ﾃｰﾌﾞﾙ名` (with `参照条件`) and inline `参照ｴﾝﾃｨﾃｨ`; compare
+   labels with whitespace stripped. Each is an R on the table it names. The two 高 findings on
+   `PXJCO125` (2026-10-01, both "R missing") came from here, and a literal scan missed both:
+   `TXJCM012` is read **only** through `参照ﾃｰﾌﾞﾙ名` blocks (`更新条件表(TXJAM068)` `[8,54]`/`[24,54]`/`[97,54]`),
+   `TXJCD404` through `参照ﾃｰﾌﾞﾙ名` (`[39,54]`/`[54,54]`/`[113,54]`) and the `TXJCA404` history INSERT's
+   `取得ﾃｰﾌﾞﾙ名` (`更新条件表(TXJCA404)` `[8,54]`/`[21,54]`).
 3. Follow every `※<共通設計書名>.<項目> 参照` delegation line to its actual target sheet (check both
-   the WG-specific sheet and the shared sheet in the common-design workbook) — a table only reached
-   through a delegated block still counts as used.
+   the WG-specific sheet and the shared sheet in the common-design workbook) — but a table reached
+   **only** through a delegated block is 要確認, never 高 (see "Delegation depth").
 4. Deprecated blocks are already gone from the shared live dump — **do not run your own
    struck-through/grayed-out scan.** A 参照ｴﾝﾃｨﾃｨ block visible in the dump is live evidence; a
    deprecated one is simply absent, in both diff directions.
@@ -97,9 +108,8 @@ flag) once searched by name.
 **Also follow every "※<共通設計書名>.<項目> 参照" delegation line to its actual target sheet** —
 画面設計書/機能定義書 routinely delegate a whole get-item block to a shared common-design workbook
 (most often `01_Doc/04_共通設計/07.共通項目取得.xlsx`, e.g. "※共通項目取得.グループ名 参照")
-instead of writing the 参照ｴﾝﾃｨﾃｨ inline. The table(s) actually read live inside that delegated
-block still count as this program's usage evidence — don't stop at "this program just says
-'see common doc'" and treat the referenced table as unused. Open the target workbook, find the
+instead of writing the 参照ｴﾝﾃｨﾃｨ inline. Don't stop at "this program just says 'see common doc'" —
+open the target and collect the tables it reads; how to grade them is "Delegation depth" below. Open the target workbook, find the
 matching named section (search both the WG-specific sheet, e.g. `共通項目取得(工程管理)`, and the
 shared `共通項目取得` sheet — items get migrated from the WG-specific sheet to the shared one over
 time, noted in a revision comment like "改訂履歴No94" when it happens, so the current live copy
@@ -113,6 +123,23 @@ set may not obviously reach a delegated block's own downstream branches (e.g. a 
 "移動ﾛｯﾄ(最新)" block that itself references a table via an alias fed by a *different* delegated
 block) — if the program-level docs alone can't settle whether that path is actually taken, report
 it as a judgment call for the designer rather than asserting it either way.
+
+**Delegation depth — one rule.** Two delegation targets occur:
+`※共通項目取得.<項目> 参照` → `01_Doc\04_共通設計\07.共通項目取得.xlsx`, and
+`※ｼｽﾃﾑ共通設計(書).工程管理共通ﾙｰﾙ.<rule> 参照` (both spellings occur) → sheet `工程管理共通ﾙｰﾙ` of
+`01_Doc\04_共通設計\05.ｼｽﾃﾑ共通設計書.xlsx` (dump just that sheet: `--sheets "^工程管理共通ﾙｰﾙ$"`). On
+`PXJCO125` the latter appears in ﾁｪｯｸ処理設計書 `[35,59]`/`[37,59]`, `更新条件表(TXJCM003)` `[136,2]` and
+`(TSJCD302)` `[9,16]`.
+- **Level 1** is the named section itself **plus its in-section sub-blocks** (`(17-1)`, `(17-2)` under
+  `(17)移動ﾛｯﾄ(最新)`) — those are the section's own usage. A further `共通項目取得.X 参照` / `工程管理共通ﾙｰﾙ.X
+  参照` written inside the section is level 2: note it, don't chase it.
+- **A table read only at level 1 — never in the program's own blocks — is reported as 要確認, never
+  高**, with the delegation path cited (`TSJCD504` via `工程管理共通ﾙｰﾙ.製品輸送中ﾁｪｯｸ`, `TSJAM999` via
+  `(17-1)実績管理部門GRP取得`, `TXJCA003`'s R via `製造ｵｰﾀﾞｰ今回減算数取得`). Whether such tables belong in
+  Ⅲ．入出力定義 at all is an **open decision for the user** — do not decide it either way, and do not
+  report a delegated-only table as "declared but unused" either.
+- The `TSJAM726` miss above is why the delegation is still followed: the finding exists, only its
+  grade waits on that decision.
 
 **A 参照ｴﾝﾃｨﾃｨ block that is present in the live dump is, by construction, live evidence — the dump
 script already dropped the deprecated ones.** This replaces what used to be a mandatory per-block
@@ -177,23 +204,23 @@ Diff the two sets:
   not declared", exactly like a table.
 - Also check whether each table ID appears in the DB一覧 and whether its ﾃｰﾌﾞﾙﾚｲｱｳﾄ workbook exists.
   **The DB一覧 is per-WG** — `01_Doc/06_システム設計書（一覧、管理台帳）/06-06_DB一覧_<WG名>.xlsx`
-  (e.g. `06-06_DB一覧_工程管理.xlsx`); the `_共通` copy holds only the shared tables, so checking it
-  for a WG's own table reports a false "unregistered". Note the WG file carries **two overlapping
+  (e.g. `06-06_DB一覧_工程管理.xlsx`; route by JOBコード as in Environment); the `_共通` copy holds only
+  the shared tables, so checking it for a WG's own table reports a false "unregistered". Note the WG file carries **two overlapping
   table lists on two visible sheets with different header labels** — `作成状況一覧` (header row 1,
   `ﾃｰﾌﾞﾙID`/`ﾃｰﾌﾞﾙ名`) and `DB一覧` (header row 35, `ID`/`名称`) — and neither is a superset of the
-  other. Check both before reporting a table as unregistered. Measured on `06-06_DB一覧_工程管理.xlsx`
-  at source length 401,141 / mtime `2026-09-08T08:44:24Z`: **352 live IDs on `作成状況一覧` and 214 on
-  `DB一覧`, sharing 180 — so 34 of the latter are absent from the former and 172 the other way
-  round.** A further 7
-  `DB一覧` rows are struck through — retired, so do not count them as registered. Re-measure rather
-  than trusting these: the registries are edited during a review cycle, and the third visible sheet
-  (`改訂履歴`) is not a table list at all.
+  other. Check both before reporting a table as unregistered. Re-measured 2026-10-01 on a live dump
+  (source length 401,141 / mtime `2026-09-08T09:55:22Z`; distinct ID-shaped cells per sheet): **353 live
+  IDs on `作成状況一覧` and 211 on `DB一覧`, sharing 180 — 31 only on `DB一覧`, 173 only on
+  `作成状況一覧`.** Struck `DB一覧` rows are retired — the live dump already drops them; never count
+  them as registered. These figures are dated: re-measure rather than trust them, since the registries
+  are edited during a review cycle. The third visible sheet (`改訂履歴`) is not a table list at all.
   When resolving a table to its layout file, confirm the ID in the **`ﾃｰﾌﾞﾙﾚｲｱｳﾄ` sheet's** `A6`
   cell (under the `ﾃｰﾌﾞﾙID` label in `A5`): a `<ID>_*.xlsx` glob also matches suffixed *other* tables
   (`TXJCM003_B`, `TXJAM008_IN`), and accepting one silently checks the wrong table's column list.
   Take `A6` from that sheet specifically — the `旧ﾃｰﾌﾞﾙﾚｲｱｳﾄ` sheets in the same workbook hold the
   legacy ID there (`FDMBM03`, `FDCJM03` in `TXJCM003_製造ｵｰﾀﾞｰ.xlsx`), so reading the wrong sheet
-  makes the correct file look like a mismatch.
+  makes the correct file look like a mismatch. Select that sheet by exact name (`^ﾃｰﾌﾞﾙﾚｲｱｳﾄ$`): dated
+  snapshots such as `ﾃｰﾌﾞﾙﾚｲｱｳﾄ_20251002時点` carry the same `A6` and would pass the check.
   **The DB design folder for a WG is a TOP-LEVEL project folder named
   `<WG番号>_<WG名>WG\07_データベース・ファイル設計書(仮)` (e.g. `11_工程管理WG\07_データベース・
   ファイル設計書(仮)`) — a sibling of `01_Doc`, NOT nested inside it**, even though most other

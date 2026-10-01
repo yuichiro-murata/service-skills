@@ -118,8 +118,8 @@ against every sheet, and pass the resulting `.txt` file paths into each agent's 
 
 **In the same pre-launch step, build the reference-master index if any selected check needs it —
 see `_shared/reference-index.md`.** Today that means `design-doc-internal-consistency` (screen-item
-IDs) and `report-design-check` (the `画面項目ID` column on print items) — both read the
-画面項目辞書 index, so build it once when either is selected. That doc tells the *agent* not to build the index and to stop if it is
+IDs), `report-design-check` (the `画面項目ID` column on print items) and `file-output-spec-check` — all
+read the 画面項目辞書 index, so build it once when any is selected. That doc tells the *agent* not to build the index and to stop if it is
 missing, so if you skip this step the check simply does not run. Build one index per dictionary file
 the program's IDs route to (the routing table in `agent-guide.md`; a program using shared `XJZ`/`SJZ` items needs
 the `_共通` file too), subset each to the program's own IDs, and pass both paths per file in the
@@ -129,8 +129,7 @@ prompt (the subset to read whole, the full index to grep) — same discipline as
 everything all but one skill needs — no agent should run its own strikethrough/gray scan.** Struck
 cells are absent from the `.txt` entirely and partially-struck cells carry only their live text, so
 "is this row still live?" is answered by whether it appears at all. Removed content is preserved
-separately in `_DELETED_DIGEST.txt` for the one check that needs it (see `agent-guide.md`, "Excluding struck-through /
-grayed-out rows from review" below). Measured on `SXJCB147_処置指示発行(ｻﾌﾞﾌﾟﾛ).xlsx` (7 sheets): the
+separately in `_DELETED_DIGEST.txt` for the one check that needs it (see `agent-guide.md`, "When to read `_DELETED_DIGEST.txt`"). Measured on `SXJCB147_処置指示発行(ｻﾌﾞﾌﾟﾛ).xlsx` (7 sheets): the
 old shape cost ~155k tokens per agent (raw dump ~105k + strikethrough scan ~49k); the live dump
 alone is ~89k (**-43%**), and live + digest is ~117k (-25%). Multiply that by 5-6 parallel agents.
 
@@ -151,8 +150,7 @@ to the source file).
 left for each agent to redo.** A fully-struck (or gray) cell is omitted from the `.txt`; a cell with
 mixed struck/unstruck characters is written with only its live text; everything removed is written
 to a separate `_DELETED_DIGEST.txt`. This is what makes the shared dump self-sufficient — see
-"Orchestrating session" above for why, and `agent-guide.md`'s "Excluding struck-through / grayed-out rows from review"
-below for what the digest is for.
+"Orchestrating session" above for why, and `agent-guide.md`'s "When to read `_DELETED_DIGEST.txt`" for what the digest is for.
 
 Getting that without paying per-cell COM costs needs a **three-level cascade**, because
 `Font.Strikethrough`/`Font.Color` return `DBNull` when a range is mixed and a concrete value when it
@@ -383,21 +381,29 @@ public static class XlsxDumpHelper {
         }
         return list;
     }
-    // Non-empty columns whose left neighbour is also non-empty — the only candidates for a hidden
-    // value stored under a merge (Excel keeps those and Value2 returns them; openpyxl and the reviewer
-    // don't). Not "equal to the left": a renamed anchor leaves its old text in the hidden copies.
-    public static List<int> AfterNonEmptyCols(object vals, int r, int rows, int cols) {
-        var list = new List<int>();
-        object[,] arr = vals as object[,];
-        if (arr == null) return list;
-        string prev = null;
-        for (int c = 1; c <= cols; c++) {
-            string s = Cell(arr, vals, r, c, rows, cols);
-            if (s != null && s.Length > 0 && prev != null && prev.Length > 0) list.Add(c);
-            prev = s;
+    // Hidden values under a merge: Excel keeps a value in every cell of a merged range when the range
+    // was filled before merging, and Value2 returns them all (SXJCB147 G704:P704 = `YOTO` x10). openpyxl
+    // and the reviewer see only the anchor. Mark every non-anchor cell of every <mergeCell> in the sheet
+    // XML as omitted — read from the file itself, so no COM call per cell and no guessing.
+    public static int MarkMergeHidden(HashSet<long> dead, string sheetXml, int r0, int c0, int rows, int cols) {
+        int n = 0;
+        if (string.IsNullOrEmpty(sheetXml)) return 0;
+        var rx = new System.Text.RegularExpressions.Regex("<mergeCell ref=\"([A-Z]+)(\\d+):([A-Z]+)(\\d+)\"");
+        foreach (System.Text.RegularExpressions.Match m in rx.Matches(sheetXml)) {
+            int ac1 = ColNum(m.Groups[1].Value), ar1 = int.Parse(m.Groups[2].Value);
+            int ac2 = ColNum(m.Groups[3].Value), ar2 = int.Parse(m.Groups[4].Value);
+            for (int ar = ar1; ar <= ar2; ar++) {
+                int r = ar - r0; if (r < 1 || r > rows) continue;
+                for (int ac = ac1; ac <= ac2; ac++) {
+                    if (ar == ar1 && ac == ac1) continue;
+                    int c = ac - c0; if (c < 1 || c > cols) continue;
+                    if (dead.Add(((long)r << 20) | (long)(uint)c)) n++;
+                }
+            }
         }
-        return list;
+        return n;
     }
+    static int ColNum(string s) { int v = 0; foreach (char ch in s) v = v * 26 + (ch - 'A' + 1); return v; }
     // dead = coords to omit entirely; live = coords whose text is replaced by its unstruck remainder.
     // Both are keyed on ARRAY (UsedRange-relative) coordinates; r0/c0 shift the EMITTED coordinate
     // to sheet-absolute so a citation like [10,5] names the cell a reviewer sees in Excel.
@@ -451,6 +457,28 @@ $excel.DisplayAlerts = $false
 if ($preExistingExcelPids -contains $excelComPid) {
     throw "Excel COM automation attached to the user's existing Excel process (PID $excelComPid) instead of creating a new instance. Aborting without calling Open/Close/Quit on it — ask the user to close their other Excel windows first."
 }
+# Sheet name -> its XML part inside the .xlsx, for the merge map below. Opened read-only with
+# FileShare.ReadWrite so it works while Excel (ours or the user's) has the file open.
+Add-Type -AssemblyName System.IO.Compression
+$zipFs  = [System.IO.File]::Open($path, 'Open', 'Read', 'ReadWrite')
+$zip    = New-Object System.IO.Compression.ZipArchive($zipFs, [System.IO.Compression.ZipArchiveMode]::Read)
+function Read-ZipText([string]$name) {
+    $en = $zip.GetEntry($name); if (-not $en) { return $null }
+    $sr = New-Object System.IO.StreamReader($en.Open()); try { $sr.ReadToEnd() } finally { $sr.Close() }
+}
+$relT = @{}
+foreach ($m in [regex]::Matches((Read-ZipText 'xl/_rels/workbook.xml.rels'), '<Relationship [^>]*>')) {
+    $id = [regex]::Match($m.Value, 'Id="([^"]+)"').Groups[1].Value
+    $tg = [regex]::Match($m.Value, 'Target="([^"]+)"').Groups[1].Value
+    if ($tg.StartsWith('/')) { $tg = $tg.Substring(1) } elseif (-not $tg.StartsWith('xl/')) { $tg = 'xl/' + $tg }
+    $relT[$id] = $tg
+}
+$sheetPart = @{}
+foreach ($m in [regex]::Matches((Read-ZipText 'xl/workbook.xml'), '<sheet [^>]*>')) {
+    $nm = [System.Net.WebUtility]::HtmlDecode([regex]::Match($m.Value, ' name="([^"]+)"').Groups[1].Value)
+    $sheetPart[$nm] = $relT[[regex]::Match($m.Value, 'r:id="([^"]+)"').Groups[1].Value]
+}
+
 try {   # the finally below closes OUR instance even when a sheet throws mid-dump
 $wb = $excel.Workbooks.Open($path, $true, $true)   # ReadOnly, no update-links prompt
 
@@ -485,17 +513,8 @@ foreach ($ws in $wb.Worksheets) {
     $liveMap = New-Object 'System.Collections.Generic.Dictionary[long,string]'
     $nDead = 0; $nPart = 0
 
-    # Hidden values under a merge: SXJCB147 stores `YOTO` in every cell of G704:P704, so Value2 printed
-    # it ten times (~2,000 phantom cells on that workbook) — a duplicate-ID or mismatch check then
-    # "finds" them. Drop a cell that follows a non-empty cell AND is not its merge area's anchor.
-    for ($r = 1; $r -le $rows; $r++) {
-        foreach ($c in [XlsxDumpHelper]::AfterNonEmptyCols($vals, $r, $rows, $cols)) {
-            $mc = $ws.Cells.Item(($r + $r0), ($c + $c0))
-            if ($mc.MergeCells -and $mc.MergeArea.Column -ne ($c + $c0)) {
-                [void]$dead.Add((([int64]$r) -shl 20) -bor ([int64]$c))   # omitted, not digested
-            }
-        }
-    }
+    # Hidden values under a merge (see MarkMergeHidden): omitted from the dump, never digested.
+    [void][XlsxDumpHelper]::MarkMergeHidden($dead, (Read-ZipText $sheetPart[$n]), $r0, $c0, $rows, $cols)
 
     # Level 1 — one question for the whole sheet. Clean sheets cost zero further COM calls.
     $wholeStrike = $used.Font.Strikethrough
@@ -557,6 +576,7 @@ foreach ($ws in $wb.Worksheets) {
 } finally {
     if ($wb) { try { $wb.Close($false) } catch {} }
     try { $excel.Quit() } catch {}   # safe: the PID guard above proved this instance is ours
+    $zip.Dispose(); $zipFs.Close()
     [System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null
 }
 
@@ -771,8 +791,9 @@ subset to one program's IDs — **the figures and the source state they were mea
 `reference-index.md`, not here**, so they only have to be refreshed in one place. Do not restate
 them here, however tempting: three stale copies is what this pointer exists to prevent. Every other
 file listed above — including テーブルレイアウト workbooks and the
-`06-*.xlsx` registries — keeps using the cache below; that doc explains why each of those still
-needs a builder of its own before it can be indexed safely.
+`06-*.xlsx` registries — is **read live with `scripts/live_dump.py`**, not through the cache below
+(v1.17.0: the cache writes raw `Value2` and keeps struck text, which every one of those files has).
+The cache below remains only for a caller that needs raw values on purpose; no REV check does.
 
 **Use a persistent, cross-session cache keyed by the source file's last-write-time for any file in
 this category.** Cache root: `<user home>\.claude\skills\_cache\xlsx-dumps\<md5 of the lowercased
@@ -1235,9 +1256,9 @@ they never use. Only `design-doc-formatting-consistency` needs to read that file
   was abandoned partway, and the later sheets were never written at all. The tell is in the summary
   line: the crashed sheet reports `0x0` for its `UsedRange` size, and sheets are missing from the
   output directory. Set `$ErrorActionPreference = 'Stop'` so the run aborts at the first RPC error
-  instead of producing a plausible-looking partial dump, delete the partial output, and simply
-  re-run — the same command succeeded on the immediate retry, so treat this as transient rather
-  than a reason to change approach.
+  instead of producing a plausible-looking partial dump, delete the partial output, and re-run
+  **once** (it succeeded on the immediate retry there). If it fails again on the same workbook, stop
+  retrying and use `scripts/live_dump.py` (see the RPC-crash note at the top of this file).
 - **Always check the dump's own row/col cap against the sheet's real size before trusting a "not
   found" result.** The template script's default cap is 3000 rows / 220 cols (raised from an
   earlier 500/100 default specifically because that was too low for this project's real sheets and
@@ -1246,7 +1267,7 @@ they never use. Only `design-doc-formatting-consistency` needs to read that file
   old cap: `PSJCO308`'s 画面設計書 (2092 rows), `XJC_ｼｽﾃﾑ共通設計書.xlsx`'s `実績表項目設定` (2652
   rows) and `ﾛｯﾄ停止ﾁｪｯｸ` (999 rows, 126 cols), `09.区分名称_step2.xlsx`'s `区分名称_STEP2～` (2371
   rows, 156 cols), and a 帳票's `ｽﾎﾟｰｼﾝｷﾞﾁﾜｰﾄ(*)` sheet runs ~211 columns wide — the new
-  default covers all of these in one pass. Still, don't treat 3000/160 as
+  default covers all of these in one pass. Still, don't treat 3000/220 as
   a guarantee: re-check `$used.Rows.Count`/`$used.Columns.Count` from the sheet (printed when you
   dump it) against the cap, and if a sheet is bigger than even this default, redump just that sheet
   with an explicitly higher cap before concluding a section or ID is actually missing.

@@ -22,8 +22,9 @@ Grounded in:
 ## Environment
 
 **Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, reporting
-conventions. `05.ｼｽﾃﾑ共通設計書` and the `06-01_機能一覧_*` files go through the cache section that guide
-points to. Deleted IDs are already gone from the dump — every ID string you can see is a live one to
+conventions. Read `05.ｼｽﾃﾑ共通設計書` and the `06-01_機能一覧_*` files **live** with
+`_shared/scripts/live_dump.py <master> <out_dir> --sheets <regex>` (e.g. `--sheets 各ID採番`), one
+`out_dir` per master — each run rewrites `_DELETED_DIGEST.txt`. Deleted IDs are already gone from the dump — every ID string you can see is a live one to
 validate against the numbering rule.
 
 Two consequences worth holding onto. First, a partially-struck cell arrives as its live remainder,
@@ -55,15 +56,21 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
 ## Procedure
 
 1. Given a target file, WG folder, or the whole project, enumerate design-doc workbooks in scope
-   (`表紙`/`機能定義書`/`画面設計書`/`ﾃｰﾌﾞﾙﾚｲｱｳﾄ` sheets carry the IDs). Use the dump
+   (`表紙`/`機能定義書`/`画面設計書`/`更新条件表` sheets carry the IDs). Use the dump
    `rev-program-review` handed you; standalone, run `_shared/scripts/live_dump.py` on each workbook.
-   The program list is `06-01_機能一覧_<WG名>.xlsx` **and** `06-01_機能一覧_<WG名>(付属機能).xlsx` (its
-   `ｻﾌﾞﾌﾟﾛ一覧` sheet) — a sub-program missing from the first is not unregistered until the second is
-   checked.
+   The program registry is three sheets in two files (verified for 工程管理): in
+   `06-01_機能一覧_工程管理.xlsx`, the WG sheet `工程管理` and `ｻﾌﾞﾌﾟﾛ一覧` (`--sheets "^(工程管理|ｻﾌﾞﾌﾟﾛ一覧)$"`);
+   in `06-01_機能一覧_工程管理(付属機能).xlsx`, the sheet `付属機能` (`--sheets "^付属機能$"`), which also
+   lists sub-programs (e.g. `SXJCB184`). An ID is unregistered only when all three lack it. The
+   neighbouring `ｻﾌﾞﾌﾟﾛ利用機能一覧(工程管理)` is a caller-by-sub-program usage matrix, not the registry.
+   Other WGs name their sheets differently (`品質管理`, `基準情報`'s `機能一覧`) — list the sheet names first.
 2. Extract every ID of each type from its home location:
-   - プログラムID/画面ID from the 表紙 and 機能定義書/画面設計書 header rows (row 3-4 area, labeled
-     `ﾌﾟﾛｸﾞﾗﾑID`/`画面ID`).
-   - テーブルID from ﾃｰﾌﾞﾙﾚｲｱｳﾄ row 6.
+   - プログラムID/画面ID from the 表紙 and the header rows of each sheet, matched by label
+     (`ﾌﾟﾛｸﾞﾗﾑID`/`画面ID`), not by row — see step 4 for which labels each template has.
+   - テーブルID, in a program workbook (which has no ﾃｰﾌﾞﾙﾚｲｱｳﾄ sheet): 機能定義書 Ⅲ．入出力定義 column 5
+     under the `ID` header (PXJCO125: `[35,5]`=`ID`, IDs in `[36..81,5]`), each `更新条件表(<ID>)` sheet
+     name and its 更新ﾃｰﾌﾞﾙ cell `[8,16]` (`TXJCD203:個別不良項目明細` — the ID is the part before `:`),
+     and 参照ｴﾝﾃｨﾃｨ cells. Read a ﾃｰﾌﾞﾙﾚｲｱｳﾄ workbook's own header only when that is the review target.
    - ファイルID/帳票ID/ズームID from wherever the doc set defines them (ﾌｧｲﾙ出力仕様書/帳票設計書/
      ズーム設計書 headers, or references to them inside 画面設計書 event descriptions).
 3. Parse each extracted ID against its rule's regex shape above. Flag:
@@ -73,15 +80,26 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
      these two IDs are defined by the rule to share the same JOBコード and sequence).
    - Object-type-letter mismatches for テーブルID (e.g. ID starts with `V` but the workbook's own
      ﾃｰﾌﾞﾙ名/構造 looks like a physical table, not a view, or vice versa).
-4. Header-info check (checklist 1-6): within one workbook, confirm 機能ID/画面ID/システムID/
-   計画書No/作成日 are identical across every sheet's header block (表紙, 機能定義書, 画面設計書,
-   ﾁｪｯｸ処理設計書, 更新条件表 all repeat this header — they should never disagree). Flag any sheet
-   whose header contradicts the others in the same file. Exceptions: **作成日 may legitimately be
+
+   **Suffixed テーブルIDs** (`VXJCM004_31`, `TXJCM007_B`) are not violations when the base part parses
+   and a layout exists for the full ID (glob `**/07_データベース・ファイル設計書*/**/<ID>_*.xlsx`; both
+   exist under `01_Doc\07_データベース・ファイル設計書\90_JAGURﾃｰﾌﾞﾙﾚｲｱｳﾄ(4月26日時点)\`). Flag a
+   suffixed ID only when no layout or registry entry exists for it.
+4. Header-info check (checklist 1-6): within one workbook, confirm the header values (システムID,
+   計画書No, 機能ID, ﾌﾟﾛｸﾞﾗﾑID, 画面ID, 作成日) are identical across every sheet's header block (機能定義書,
+   画面設計書, ﾁｪｯｸ処理設計書, 更新条件表 all repeat this header — they should never disagree). **Label
+   sets differ by template**: 機能定義書/更新条件表 carry 機能ID (row 3) and ﾌﾟﾛｸﾞﾗﾑID (row 4);
+   画面設計書/ﾁｪｯｸ処理設計書 carry ﾌﾟﾛｸﾞﾗﾑID (row 3) and 画面ID (row 4), no 機能ID (verified on PXJCO125).
+   Pair cells by label and compare only labels both sheets have. Flag any sheet whose header
+   contradicts the others in the same file. Exceptions: **作成日 may legitimately be
    later on a sheet added in a later revision** (check 表紙 Ⅲ．改訂履歴 for that sheet's addition
    before reporting); **表紙 has no header block** (its IDs sit in the body); a template with a
-   single header copy (e.g. `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ`) skips the left/right comparison below. Do report an
-   **更新日 older than a dated revision note inside the same sheet** (`2026/6/10 福浦 修正` on a
-   sheet whose header 更新日 is earlier) — the header was not maintained. **Deliberately skip `詳細設計書` sheets
+   single header copy (e.g. `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ`) skips the left/right comparison below. An **更新日 older
+   than a dated revision note inside the same sheet** (`2026/6/10 福浦 修正` on a sheet whose header
+   更新日 is earlier) is a 低 finding (header bookkeeping — 更新日 diverges in 43 of 99 sibling
+   workbooks). Ignore notes dated on or before the header 作成日: those are the creation memos, and
+   a `-` 更新日 is then correct (11 false positives on PXJCO125, e.g. 更新条件表(TXJCD203), whose notes
+   are all 2025/7/2 = 作成日 45840). **Deliberately skip `詳細設計書` sheets
    here** beyond their header rows (`[1-4,*]`) —  across every program reviewed with this skill's sibling
    `design-doc-internal-consistency` so far, 詳細設計書 has turned out to be a near-empty
    header-only sheet, so checking its header costs a full-sheet dump for essentially no chance of
@@ -93,13 +111,23 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    with the header starting around column 5, and a second `2D`-labeled copy of the same header
    starting around column 57 — the same pairing exists for `3C`/`3D` on 画面設計書/ﾁｪｯｸ処理設計書/
    更新条件表/etc.). These two copies are meant to be identical but can drift independently of the
-   cross-sheet check above. This happened for real on `PXJCB102_製造ｵｰﾀﾞｰ完了処理.xlsx`: both
+   cross-sheet check above. Example of the shape (a `-` copy, so it now counts as drift — see the next
+   paragraph) from `PXJCB102_製造ｵｰﾀﾞｰ完了処理.xlsx`: both
    `機能定義書(PXJCB102)` and `更新条件表(TXJCM003)` showed 作成日=`46197` in the left (`2C`/`3C`)
    copy but 作成日=`-` (blank) in the right (`2D`/`3D`) copy of the very same header row — while a
    third sheet in the same workbook, `ﾁｪｯｸ処理設計書(PXJCB102)`, correctly showed `46197` on both
    sides. A cross-sheet-only check would have missed this, since it only compares one canonical
    value per sheet and never looks at whether a sheet agrees with itself. Extract both copies from
-   every sheet's header row and diff them against each other in addition to the cross-sheet diff.
+   every sheet's header rows (1-4; left labels at columns 5/29/41, right at 57/81/93, each value five
+   columns to the right of its label), pair them label by label, and diff them in addition to the
+   cross-sheet diff.
+
+   **Report a left/right difference only when the copies contradict** — two different non-`-`
+   values for one label. A `-` (or empty) copy beside a filled one is template-level drift, not a
+   per-sheet defect: on PHASE2, 209 of 424 sheets have differing C/D 更新日 and ~182 sheet pairs show
+   the `-` pattern, and the orchestrator's Step 3.5 rule 2 withdraws such findings. Summarise it as
+   **one 低 line per workbook**. List the
+   contradicting sheets of one workbook in a single finding grouped by pattern, not one per sheet.
 
 5. **表紙's "Ⅱ．設計書構成" list vs the sheets actually present** (checklist item near 2-1) — run
    this as a **standard, always-on check**, not an optional one: compare every row's Customer/
@@ -149,7 +177,9 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    the WG, e.g. `工程管理`), the row for a given `PGMID` (around col 34) also carries the screen's
    画面/帳票/ﾌｧｲﾙID (col 49, header `画面/帳票/ﾌｧｲﾙID`) and a 処理内容 label (col 53) whose first
    line is the screen name — that's the pair to diff against the workbook's own 画面ID/画面名, since
-   this sheet has no separate dedicated 画面ID column of its own. Also (still in this lighter
+   this sheet has no separate dedicated 画面ID column of its own. Strip the area prefix (`^[A-Z]\.`,
+   e.g. `A.ﾛｯﾄ取消`) before comparing; a trailing `画面` on the design-doc side (`ﾛｯﾄ取消画面`, 15 of 159
+   XJC/SJC screens) is 要確認 at most. Also (still in this lighter
    category): new files have a 改訂履歴 entry marked 新規作成 (and 流用新規 files cite their 流用元
    計画書No + 改訂履歴 No).
 

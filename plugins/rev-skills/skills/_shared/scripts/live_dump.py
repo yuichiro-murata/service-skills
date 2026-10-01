@@ -4,9 +4,13 @@ Writes, into OUT_DIR, one <prefix>_<sheet>.txt per visible sheet in the shared-d
 ([row,col]=value tokens, " | " separated, one line per row, empty cells skipped), with struck and
 gray content removed and partially-struck cells reduced to their live text, plus
 _DELETED_DIGEST.txt (one line per removed/partial cell: "<sheet> [r,c] DEL|GRAY|PART: text").
-Skips 詳細設計* / *画面ｲﾒｰｼﾞ* sheets (records their size), and hidden sheets unless --hidden.
+With --prefix the digest is _DELETED_DIGEST_<prefix>.txt, so several masters can share one folder;
+still prefer one out_dir per master. Non-anchor cells of merged ranges are always empty (openpyxl),
+which is the live view. Skips 詳細設計* / *画面ｲﾒｰｼﾞ* sheets (records their size), and hidden sheets
+unless --hidden. --max-col N drops columns beyond N (wide registries such as 04.ﾒｯｾｰｼﾞ管理 run to
+~800 KB per sheet otherwise).
 
-usage: python live_dump.py <workbook.xlsx> <out_dir> [--prefix P] [--sheets REGEX] [--hidden]
+usage: python live_dump.py <workbook.xlsx> <out_dir> [--prefix P] [--sheets REGEX] [--hidden] [--max-col N]
 """
 import argparse, datetime, os, re, sys, warnings
 import openpyxl
@@ -60,9 +64,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("workbook"); ap.add_argument("out_dir")
     ap.add_argument("--prefix"); ap.add_argument("--sheets"); ap.add_argument("--hidden", action="store_true")
+    ap.add_argument("--max-col", type=int)
     a = ap.parse_args()
     os.makedirs(a.out_dir, exist_ok=True)
-    prefix = a.prefix or os.path.basename(a.workbook).split("_")[0]
+    base = os.path.splitext(os.path.basename(a.workbook))[0]
+    prefix = a.prefix or base.split("_")[0]   # pass --prefix when two inputs share a first token
     wb = openpyxl.load_workbook(a.workbook, data_only=True, rich_text=True)
     digest = []; summary = []
     for ws in wb.worksheets:
@@ -72,7 +78,7 @@ def main():
         if n.startswith("詳細設計") or "画面ｲﾒｰｼﾞ" in n:
             summary.append(f"{n}\t{ws.max_row}x{ws.max_column}\tskipped"); continue
         lines = []; nd = npart = 0
-        for row in ws.iter_rows():
+        for row in ws.iter_rows(max_col=a.max_col):
             parts = []
             for c in row:
                 live, kind, removed = classify(c)
@@ -87,7 +93,8 @@ def main():
         summary.append(f"{n}\t{ws.max_row}x{ws.max_column}\tdead={nd}\tpartial={npart}")
     header = ("# _DELETED_DIGEST (openpyxl live dump): one line per removed or partially-struck cell.\n"
               "# An empty list below means nothing on the dumped sheets was struck or gray.\n")
-    open(os.path.join(a.out_dir, "_DELETED_DIGEST.txt"), "w", encoding="utf-8").write(header + "\n".join(digest))
+    dname = f"_DELETED_DIGEST_{a.prefix}.txt" if a.prefix else "_DELETED_DIGEST.txt"
+    open(os.path.join(a.out_dir, dname), "w", encoding="utf-8").write(header + "\n".join(digest))
     print("\n".join(summary))
 
 if __name__ == "__main__":

@@ -17,8 +17,8 @@ section.
 ## Environment
 
 **Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump (W2 needs
-`_DELETED_DIGEST.txt`), reporting conventions. W5 uses the folder-wide screen-name list: use the one your prompt names, and build it yourself
-when none was handed to you (standalone, or the orchestrator didn't prebuild it).
+`_DELETED_DIGEST.txt`), reporting conventions. W5 uses the all-WG screen-name list: use the one your
+prompt names, and build it yourself (see W5) when none was handed to you.
 
 ## Checks
 
@@ -81,13 +81,14 @@ Two checks the band test cannot catch, both worth a line:
 **When a sheet's whole 画面項目ID column is empty** (`PSJCO805`: all six screens, every row), do
 not list every button, No and input separately — report "画面項目ID 未採番" once per sheet, with the
 standard IDs you can already suggest (検索 `XJZ9002`, 画面ｸﾘｱ `XJZ9003`, ﾀﾞｳﾝﾛｰﾄﾞ `XJZ9004`, 新規登録
-`XJZ9028`, 削除 `XJZ9008`, 戻る `XJZ9009`, No `XJZ0425`) and which buttons need a new number.
+`XJZ9028`, 削除 `XJZ9008`, 戻る `XJZ9009`, 実行 `XJZ9016`, No `XJZ0425`) and which buttons need a new number.
 Outside `共通`, zoom buttons (`表示` = `Z`, or a `…ｽﾞｰﾑ` name — 460 rows, all `-`), calendar buttons
 (`ｶﾚﾝﾀﾞｰ(…)`) and tab controls legitimately carry `-`: report only a placeholder or a non-`9xxx` ID
 there, never a `-` or a blank (blank is as common as `-` on zoom/calendar buttons).
 "Most-used ID" comparisons: use a prebuilt button-ID table if your prompt names one; otherwise compare
 within the workbook and against the standard IDs listed here (検索 `XJZ9002`, 画面ｸﾘｱ `XJZ9003`, ﾀﾞｳﾝﾛｰﾄﾞ
-`XJZ9004`, 更新 `XJZ9007`, 削除 `XJZ9008`, 戻る `XJZ9009`, 新規登録 `XJZ9028`, 処理状況 `XJZ9017`), and
+`XJZ9004`, 更新 `XJZ9007`, 削除 `XJZ9008`, 戻る `XJZ9009`, 実行 `XJZ9016`, 新規登録 `XJZ9028`, 処理状況
+`XJZ9017` — 実行 confirmed in `82.画面項目辞書_共通` `XJZ(共通_JAGUR)` and `PXJCO125` `GXJC125A` `[440,54]`), and
 leave other buttons' correct number to the designer.
 
 **W1c — 選択 (No.48).** ("明細-type area" below = any area of repeating rows — titles with
@@ -125,22 +126,31 @@ skill's DB-length comparison.
 
 ### W2 — 項番の飛び・重複 (No.6) (formerly design-doc-internal-consistency check 10)
 
-Every numbered list in the four sheet types (機能定義書, 画面設計書, ﾁｪｯｸ処理設計書, 更新条件表) — a
-column (≤ col 8) whose header cell is `No.`/`No`/`項番`, followed by integer cells — must run 1, 2, 3 … Also the circled
-section numbers of 機能定義書 Ⅳ (`A-①`, `A-②` … per letter). **ﾁｪｯｸ処理設計書 is the exception to the
-header rule**: its number column is col 1 under the header `ﾁｪｯｸ項目` (`[8,1]`), and each
-`【…押下時】` heading starts a new list (a heading repeated verbatim further down is still a new
-list) — scan it explicitly or its defects are missed (`PXJCO129`
+Every numbered list in 表紙 and the four sheet types (機能定義書, 画面設計書, ﾁｪｯｸ処理設計書, 更新条件表) — a
+column (≤ col 8) whose header cell is `No.`/`No`/`項番`, followed by integer cells — must run 1, 2, 3 … This
+includes 表紙 Ⅲ．改訂履歴 (`No.` at col 4), where a reused revision number is a real defect (`PXJCO125`
+`表紙(PXJCO125)` `[139,4]` and `[157,4]` both `36`, dated 46268/46280). Also the circled
+section numbers of 機能定義書 Ⅳ (`A-①`, `A-②` … per letter), and **a run of circled step numbers inside
+one cell** — split the cell on newlines and read the line-initial ①②③…; they must not repeat or skip
+(`PXJCO125` `画面設計書(GXJC125A)` `[416,24]` ①②**②**). A `※1` or a mid-line circled reference is not a step.
+**ﾁｪｯｸ処理設計書 is the exception to the
+header rule**: its number column is col 1 under the header `ﾁｪｯｸ項目` (`[8,1]`), and **each `【…】`
+heading in col ≤ 3 ends the current list and starts a new one** (`[9,3]` `【検索ﾎﾞﾀﾝ押下時】`, `[40,3]`
+`【実行ﾎﾞﾀﾝ押下時】` on `PXJCO125`) even though it sits right of col 1 — the general rule below would never
+fire there. A heading repeated verbatim further down is still a new
+list — scan it explicitly or its defects are missed (`PXJCO129`
 `ﾁｪｯｸ処理設計書(GXJC129A)` `[16,1]`-`[18,1]` = 5, 6, 7 after 1-6; `GXJC129B` `[96,1]`/`[98,1]` both 84).
-**End a list only on a heading at or left of the number column** (an area title, `Ⅳ．…`, `【…】`;
+Elsewhere, **end a list only on a heading at or left of the number column** (an area title, `Ⅳ．…`, `【…】`;
 col ≤ 3 for the usual col-2 number column) — the Ⅴ 説明 column (col 43)
 routinely holds `Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 参照`, and treating that as a section break hides duplicates
 (`GSJA704J` `[255,3]`). **Judge the sequence on live numbers only**; a struck row that still shows its
 old number (`ﾁｪｯｸ処理設計書(GSJA704B)`: live 1, struck 2 and 3, live 2) is not part of the sequence and
 must not produce a "backwards" finding — consult the struck numbers only to explain a gap.
 **Also include the numbered sub-tables of 画面設計書 Ⅲ．画面表示仕様** (取得項目 / 検索条件 / 結合条件 / ｿｰﾄ順 /
-集約条件, numbers in col 4 with no `No.` header): each list starts after its own label row in col 4 and ends at
-the next such label or block. These were not part of the corpus calibration, but they hold real defects
+集約条件, no `No.` header): the number column is **the column of that table's own label**, so detect it
+per table — col 4 at top level, further right in a nested block (`PXJCO125` `GXJC125A` `[73,6]` 取得項目
+→ `[75,6]` 1, `[76,6]` 検索条件 → `[77,6]` 1). Each list starts after its label row and ends at the next
+label or block at that column or left of it. These were not part of the corpus calibration, but they hold real defects
 (`PSJAO704` `GSJA704B`: ｿｰﾄ順 `[179,4]` 2→2, 検索条件 `[224,4]` a live row with no number where the struck
 `4` was, `[454,4]` 3→5).
 
@@ -206,10 +216,12 @@ of 機能定義書 `Ⅶ．ﾚｽﾎﾟﾝｽ定義`. Measured over 109 sheets: 9
 In 機能定義書 `Ⅳ．機能処理概要` and 画面設計書 `Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細`, a known screen name followed by
 `画面` (`取引先詳細画面`) in a sentence that transitions to, opens, returns to or shows it
 (`遷移`/`起動`/`戻る`/`表示する`/`開く`/`呼出`) must be followed by `(<画面ID>)`
-(`取引先詳細画面(GXJA802B)に遷移する`). Build the screen-name list from every 画面設計書's 3C header
-`[4,15]` (screen name) / `[4,10]` (画面ID) in the folder, not just this workbook — the name you meet is
-often another program's screen (use the prebuilt list your prompt names; build it yourself when
-none was handed to you). Normalise the header name first: some end in `画面` (`受入入力画面`),
+(`取引先詳細画面(GXJA802B)に遷移する`). The screen-name list covers every visible 画面設計書 under
+`01_Doc\08_機能定義書` (all WGs), not just this workbook — the name you meet is often another program's
+screen. Its header row is found by label: the row (3-5) whose col 5 reads `画面ID` gives the ID in
+col 10 and the name in col 15 (row 4 is `ﾌﾟﾛｸﾞﾗﾑID` in 04_品質管理/05_受注出荷, so never read a fixed
+`[4,10]`). Use the prebuilt list your prompt names; standalone, build it with
+`python _shared/scripts/build_screen_list.py <...\01_Doc\08_機能定義書> <out.tsv>` (~9 min cold). Normalise the header name first: some end in `画面` (`受入入力画面`),
 most don't, so match `name` + optional `画面`. The program's **own** screens count too
 (`PSJCO602` `[52,4]` `棚卸用仕掛在庫ﾃﾞｰﾀ作成画面を表示する` → `(GSJC602A)`).
 **The screen must be the object of the verb** — `…画面に遷移する` / `…画面に戻る` / `…画面を起動する` /
@@ -219,6 +231,8 @@ parentheses before matching (`承認ｸﾞﾙｰﾌﾟ（ﾕｰｻﾞｰ)登録�
 candidate ID, not a W5 finding. `…画面に表示する` / `…画面で選択された…` put data *on* a screen and
 are not this rule (`PSJCO602` `[145,4]` `…集計し、棚卸用仕掛在庫ﾃﾞｰﾀ作成画面に表示する。`). Don't scan
 other sections: overview prose (Ⅰ．機能概要) and generic words (`画面ｸﾘｱ`, `呼出元画面`) are not this rule.
+The 機能定義書 Ⅳ screen-block headings `A.<画面名>` / `B.<画面名>` (`PXJCO125` `[86,3]` `A.ﾛｯﾄ取消画面`)
+are titles, not sentences — exempt them.
 `ﾀﾞｳﾝﾛｰﾄﾞ画面` is excluded although `GSJA702A`'s header name is `ﾀﾞｳﾝﾛｰﾄﾞ`: the common download screen
 is cited by program ID in the house wording (`【共通】ﾀﾞｳﾝﾛｰﾄﾞ(PSJAO702)を起動する`), and the bare
 `ﾀﾞｳﾝﾛｰﾄﾞ画面の戻り値…` phrases are fixed template sentences. When a name matches both the program's own screen and another program's, prefer the own one.

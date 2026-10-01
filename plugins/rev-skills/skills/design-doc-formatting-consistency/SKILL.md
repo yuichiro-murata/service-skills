@@ -13,24 +13,23 @@ rule; it's a pure structural-hygiene sweep, worth surfacing to the designer even
 
 ## Environment
 
-**Read `_shared/agent-guide.md` first** — scope selection, environment, reporting conventions. Unlike
-the other checks this one opens Excel itself (font size and merge spans are not in the text dump), so
-also read, in `_shared/xlsx-excel-com-dump.md`, the sections `## The dump script` (the pre-existing-PID
-guard that stops you `Quit()`-ing the user's own Excel, and the Add-Type/inline rules),
-`## UsedRange-relative vs sheet-absolute coordinates` and `## Operational notes`; if COM keeps dying,
-that file's openpyxl fallback also serves this scan (`cell.font.sz`, `ws.merged_cells` — load with
-`read_only=False`, since read-only mode has no merge info; ~77 s for a 300-sheet workbook). Compare
-each sheet's left (`2C`/`3C`) and right (`2D`/`3D`) header copies as an explicit step, and before
-reporting any header-row pattern measure it across sibling workbooks — a pattern a third of the
-folder shares is template drift (one 低 note), not a per-sheet defect. Then
-read `_shared/xlsx-formatting-scan.md` — it has the exact font-size/cell-merge
-detection technique (including the DBNull guard for mixed-formatting cells) and, critically, the
-noise-filtering rules learned from running this on real workbooks. **Read that second file fully
-before running anything here** — a naive sheet-wide "most common size/span" comparison for merges
-produces an unusable flood of false positives; it explains why and what to do instead (a local,
-row-proximity comparison for merges; a set of known systematic patterns to exclude for font sizes).
-(This technique lives in its own file, separate from the main shared dump doc, specifically because
-no other REV skill needs it — don't merge it back.)
+**Read `_shared/agent-guide.md` first** — scope selection, environment, reporting conventions — then
+`_shared/xlsx-formatting-scan.md` **in full before running anything** (this is the reading agent-guide's
+doc map assigns this check). Font size, font name and merge spans are not in the text dump, so this
+check reads the workbook's formatting itself; the scan file gives both routes (openpyxl, validated
+end-to-end on PXJCO125, and COM), names the `xlsx-excel-com-dump.md` sections to read only if you take
+the COM route, and — critically — the noise filters learned from real runs: a naive "most common
+size/span" comparison floods the report with template structure. (The technique lives in its own file
+because no other REV skill needs it — don't merge it back.)
+
+**Left/right header copies** (`2C`/`3C` vs `2D`/`3D`, rows 1-4): read both copies and compare them
+label by label (pair each label cell with its value cell in the left copy, the same label in the right
+copy, and compare values). Report a sheet only when the two copies **contradict** — two different
+non-`-` values for the same label. A copy reading `-` (or empty) beside a filled one is template-level
+drift: on PHASE2, 209 of 424 sheets have differing C/D 更新日 and ~182 sheet pairs show the `-` pattern,
+so summarise it as **one 低 line per workbook**, never per sheet (the orchestrator's Step 3.5 rule 2
+withdraws per-sheet `-` findings anyway). When `naming-standard-compliance` is in the same run, leave
+header *value* contradictions to it and report only formatting differences between the copies.
 
 **Don't dump or scan `詳細設計書` sheets — this is a deliberate coverage-for-tokens trade-off, not a
 claim that the sheet is always empty.** Unlike `design-doc-internal-consistency`/
@@ -44,33 +43,28 @@ specifically asks about 詳細設計書 formatting, include it then.
 
 ## Procedure
 
-### 1. Font-size scan
+### 1. Font-size and font-name scan
 
-For every worksheet in the target workbook **except `詳細設計書`** (see above), loop its non-empty
-cells (reuse the coordinates you'd
-already get from the standard bulk `Value2` dump) and record each cell's `Font.Size`. Per sheet,
-tally the size frequencies and take the mode. List every cell whose size differs from that sheet's
-mode — this raw list will be large and mostly noise.
+For every worksheet in the target workbook **except `詳細設計書`** (see above), iterate the **live
+dump's coordinates** (so struck/gray cells stay out — don't run your own strike scan) and skip
+non-anchor cells of merged ranges. Record each cell's font size and font name. Per sheet, take the
+mode of each and list every cell that differs — this raw list will be large and mostly noise.
 
 **Before reporting anything, filter out the deliberate systematic patterns** documented in the
-shared doc (revision-history annotation columns, section-title/header template cells, control-matrix
-column-group headers, and anything on a UI-mockup/screenshot sheet). What's left after that filter —
-genuinely isolated cells, especially ones sitting inside an otherwise-uniform repeating list — is
-what's worth reporting.
+shared doc (revision-memo columns, section-title/header template cells, 表紙's 12pt sections,
+control-matrix group headers and shrunk two-line matrix cells, UI-mockup sheets). What's left —
+genuinely isolated cells, especially ones inside an otherwise-uniform repeating list — is what's
+worth reporting.
 
 ### 2. Cell-merge scan
 
-For the same non-empty cells, check `MergeCells`; when true and the cell is the merge's own anchor,
-record the merge's row/column span. **Do not compare spans sheet-wide by column position** — compare
-locally: for merges at the same column, flag pairs whose spans differ while sitting within a handful
-of rows of each other (see the shared doc for why and the exact approach). This surfaces things like
-a duplicated header block whose right-side copy still carries stale content, or one row of a
-repeating item list that's merged differently than every sibling row around it.
-
-After generating candidates, do a manual pass to drop remaining template-boilerplate coincidences
-(e.g. a "No." column naturally spanning differently right next to a "特記事項" footer row) — only
-report pairs that plausibly represent an actual duplicated block or list member, not just two
-adjacent structural cells that happen to serve different roles.
+Record each merge anchor's row/column span, then compare **column spans only, among cells of the
+same role** — the same normalised label in the same column, or sibling records of one list — and
+subtract template signatures (span pairs that recur on several sheets of the workbook or across
+sibling workbooks). Row-height differences between multi-row records are expected. The shared doc
+has the exact rule and why the proximity-only version failed (891 candidates, almost none real, on
+PXJCO125). What survives is a lead: a duplicated header block whose right-side copy kept stale
+content, or one list row merged narrower/wider than its siblings.
 
 ### 3. Cross-check anything suspicious against content, not just shape
 
@@ -91,8 +85,8 @@ say what that content difference actually is, since that's usually the more usef
 finding. Group by sheet only when several findings share one.
 
 Omit entirely: the raw per-sheet size/merge dump, a tally of how many cells were checked, and any
-finding that turned out to be one of the documented systematic patterns (revision-history columns,
-template headers, mockup sheets, control-matrix group headers) — those are not worth even a one-line
+finding that turned out to be one of the documented systematic patterns (revision-memo columns,
+template headers, 表紙 12pt sections, mockup sheets, control-matrix cells) — those are not worth even a one-line
 mention once identified as such, since they're expected and consistent by design. If a whole class of
 irregularity couldn't be checked (e.g. a sheet's used range was too large to scan in full), say so
 briefly — that's a coverage gap worth flagging, not a process detail.

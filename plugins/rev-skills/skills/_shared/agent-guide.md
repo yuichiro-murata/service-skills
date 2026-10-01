@@ -11,7 +11,7 @@ not pay for it.
 | You are… | Read |
 |---|---|
 | A check agent handed a ready dump (normal case under `rev-program-review`) | **This file only.** |
-| A check agent that must read a **reference master** (ﾃｰﾌﾞﾙﾚｲｱｳﾄ, `04.ﾒｯｾｰｼﾞ管理_*`, `05.ｼｽﾃﾑ共通設計書`, `06-0x_*一覧_*`, `07.共通項目取得`, …) | This file. Read the master **live** with `scripts/live_dump.py <master> <out_dir> --sheets <regex>` (see "Reading a reference file yourself"). The COM cross-session cache in `xlsx-excel-com-dump.md` writes raw `Value2` **with struck text included** — use it only as a speed path for a ﾃｰﾌﾞﾙﾚｲｱｳﾄ batch whose files carry no strikethrough, never for registries, `07.共通項目取得` or `09.区分名称`. |
+| A check agent that must read a **reference master** (ﾃｰﾌﾞﾙﾚｲｱｳﾄ, `04.ﾒｯｾｰｼﾞ管理_*`, `05.ｼｽﾃﾑ共通設計書`, `06-0x_*一覧_*`, `07.共通項目取得`, …) | This file. Read the master **live** with `scripts/live_dump.py <master> <out_dir> --sheets <regex>` (see "Reading a reference file yourself"). **Never** use the COM cross-session cache in `xlsx-excel-com-dump.md` for a master — it writes raw `Value2` with struck text included, and layouts carry struck cells too (TXJCM006 `[81,40]`). One out_dir per master (or `--prefix`, which also names the digest `_DELETED_DIGEST_<prefix>.txt`); anchor `--sheets` (`^ﾃｰﾌﾞﾙﾚｲｱｳﾄ$` — unanchored also matches `旧ﾃｰﾌﾞﾙﾚｲｱｳﾄ`, `JAG_…`, `…_20251002時点`); `--max-col` for very wide registries. `ｼｽﾃﾑ共通設計書.工程管理共通ﾙｰﾙ` → `05.ｼｽﾃﾑ共通設計書`. Prebuilt-lookup builders: `scripts/build_kbn_index.py` (区分名称), `scripts/build_screen_list.py` (screen names). |
 | The orchestrator, or a standalone run that must dump the **target workbook** itself | This file **and** `xlsx-excel-com-dump.md` in full. |
 | Anyone building a reference index (画面項目辞書 …) | `reference-index.md` (builders, freshness, subsetting). Reading an index is covered below. |
 | `design-doc-formatting-consistency` | Additionally `xlsx-formatting-scan.md`. |
@@ -143,7 +143,7 @@ This is the routing rule `04.ﾒｯｾｰｼﾞ管理_*.xlsx` already follows (s
 foreign prefix routes to that other WG's own file, **never** to a same-named sheet embedded in the
 copy you happen to have open. In this file that matters twice over, because the sheets the 品質管理
 and 受注出荷 copies carry under other WGs' names are not dictionaries at all — see the builder's
-sheet table below.
+sheet table in `reference-index.md`.
 
 **Build one index per dictionary file the program's IDs route to — never one merged index.** The
 freshness contract below is single-source: a merged index has no meaningful `# source-mtime-utc`.
@@ -170,7 +170,8 @@ So a line-oriented read of the index is wrong in three specific ways, all silent
   leaves the record's first line with an unterminated quote — a malformed CSV handed to an agent.
 
 Grep/`Select-String` for a single id is fine (an id never contains a newline, and it is the first
-field). Anything that walks records must track quote state — see the subsetting snippet below.
+field). Anything that walks records must track quote state — see the subsetting snippet in
+`reference-index.md`.
 
 ## Folders to always exclude from project-wide searches
 
@@ -257,14 +258,16 @@ That reasoning has been tried and explicitly overruled.
 
 ### When to read `_DELETED_DIGEST.txt`
 
-**An empty (0-byte) digest means nothing on those sheets was struck or gray.** **Its line format depends on who produced it**: the COM dump's grouped blocks (described below, with
-bare numbers omitted as filler) or `live_dump.py`'s one line per cell (`<sheet> [r,c] DEL|GRAY|PART:
+**A digest with no entries means nothing on those sheets was struck or gray** (the COM digest is then
+0 bytes; `live_dump.py`'s still has its two `#` header lines). **Its line format depends on who
+produced it**: the COM dump's grouped blocks (next paragraph, bare numbers omitted as filler) or
+`live_dump.py`'s one line per cell (`<sheet> [r,c] DEL|GRAY|PART:
 value`, numbers kept). A row that *looks* deleted in the digest may have been moved — confirm against
 the live dump before calling something removed. Never rely on a struck *number* being
 listed: to decide whether a gap in a numbered list is explained by a deletion, look for **any deleted
 content on the rows between** the two live numbers.
 
-The digest holds what was removed, grouped into contiguous row blocks, with `DEL` (whole cell),
+**COM digest only:** it holds what was removed, grouped into contiguous row blocks, with `DEL` (whole cell),
 `GRAY` (whole cell, gray) and `PART` (`raw=` vs `live=` for a partially-struck cell) entries. Only
 structural filler is left out — a bare row/condition number, a hyphen placeholder, a comparison
 operator — and each block still reports how many it dropped (`+ N filler cells omitted`). Short but
@@ -361,9 +364,15 @@ sheet alone, including cells that are a single space used as a spacer), which ma
 `\[(\d+),(\d+)\]=([^|]*)` plus a trim silently corrupt them. Verified: parsing verbatim reproduces
 all 980 cells of that sheet exactly; the trimming version reported 149 false differences.
 
-**Before concluding a section or ID is missing, check the dump's cap.** The dump caps at 3000
-rows / 220 columns; compare the `rows x cols` the dump printed for the sheet against that. A sheet
-larger than the cap needs a targeted re-dump, not a "not found" finding.
+**Before concluding a section or ID is missing, check the dump's cap.** The COM dump caps at 3000
+rows / 220 columns (`live_dump.py` has no cap unless `--max-col` was given); compare the `rows x cols`
+the dump printed for the sheet against that. A sheet larger than the cap needs a targeted re-dump,
+not a "not found" finding.
+
+**Large dumps exceed one Read.** A big 画面設計書 dump (~70 KB+) is over the Read tool's limit — page it
+with `offset`/`limit`, or pull the rows you need with `dump_cells.py <dump> <row> [row2]`.
+**On Windows PowerShell 5.1, `Set-Content -Encoding utf8` / `Out-File` write a BOM**; a list file fed
+to python then starts with `\ufeff`. Write such files from python, or read them with `utf-8-sig`.
 
 ## Program structure variants to expect
 

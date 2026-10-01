@@ -15,10 +15,11 @@ small index once and let the agents read the index.
 | Reference master | How to read it |
 |---|---|
 | `82.画面項目辞書_<WG>.xlsx` | **Index it — builder below.** |
-| `<TableID>_<name>.xlsx` (ﾃｰﾌﾞﾙﾚｲｱｳﾄ) | **Not yet indexed** — keep using the `xlsx-dumps` cache. |
-| `06-06_DB一覧_<WG>.xlsx` | **Not yet indexed** — keep using the `xlsx-dumps` cache. |
-| `06-03_帳票一覧_<WG>.xlsm` | **Not yet indexed** — keep using the `xlsx-dumps` cache. |
-| `06-04_ﾌｧｲﾙ一覧_<WG>.xlsm` | **Not yet indexed** — keep using the `xlsx-dumps` cache. |
+| `<TableID>_<name>.xlsx` (ﾃｰﾌﾞﾙﾚｲｱｳﾄ) | **Not indexed** — read live with `scripts/live_dump.py --sheets "^ﾃｰﾌﾞﾙﾚｲｱｳﾄ$"`. |
+| `06-06_DB一覧_<WG>.xlsx` | **Not indexed** — read live with `scripts/live_dump.py`. |
+| `06-03_帳票一覧_<WG>.xlsm` | **Not indexed** — read live with `scripts/live_dump.py`. |
+| `06-04_ﾌｧｲﾙ一覧_<WG>.xlsm` | **Not indexed** — read live with `scripts/live_dump.py`. |
+| `09.区分名称_step2.xlsx` | `scripts/build_kbn_index.py` → JSON `{source, source-mtime-utc, source-length, groups}`. |
 
 **Do not generalise the pattern to the other four yourself.** Each was tried and each hid a
 structural trap that a hand-rolled index gets wrong silently:
@@ -234,6 +235,11 @@ and cannot tell you which one you are holding — only the path can.
 
 Inputs: `$DictPath`, **one** `82.画面項目辞書_*.xlsx` (route with the table above; call the builder
 once per file). Returns the index path, building it only if the cached one is stale.
+
+**Without COM** (the user's Excel is open and the PID guard aborts): the same rules apply in
+openpyxl — `load_workbook(path, read_only=False, rich_text=True, data_only=True)` so struck parts are
+visible (the `live_dump.py` classify rules), the sheet table and column pairs below, the same CSV
+format and freshness header. Say in the prompt that the index was built through openpyxl.
 
 Three things about this file's structure, each of which produces a plausible-looking but useless
 index if you get it wrong:
@@ -546,6 +552,7 @@ since by construction every cited-and-registered ID is already in the subset.
 
 Do not index a reference file whose check genuinely reads prose: `05.ｼｽﾃﾑ共通設計書.xlsx` sections
 cited by ※-notes, `07.共通項目取得.xlsx` delegation blocks (a get-item block is a structure, not a
-lookup row), and `09.区分名称_step2.xlsx` group bodies. Those keep using the `xlsx-dumps` cache in
-`xlsx-excel-com-dump.md`, as do the three masters listed as not-yet-indexed at the top of this file.
+lookup row), and `09.区分名称_step2.xlsx` group bodies beyond the code→name map. Read those **live**
+with `scripts/live_dump.py` (never the COM `xlsx-dumps` cache — it keeps struck text), as for the
+not-indexed masters at the top of this file.
 Indexing is for ID→attribute lookups only.
