@@ -1,6 +1,6 @@
 ---
 name: design-doc-io-table-check
-description: Check whether a program's 機能定義書「Ⅲ．入出力定義」table (the CRUD list of every DB table/file the program touches) is complete and accurate in both directions — every table actually used anywhere in 画面設計書/更新条件表/帳票設計書 (including via delegation to `07.共通項目取得.xlsx`) is declared with the right C/R/U/D flags, and every declared table is genuinely used and has a real DB一覧 entry + テーブルレイアウト file. This is the single most complex, highest-yield check in a program REV — deep delegation-tracing, WG-folder DB-layout lookups with PH2/PH3 precedence, exact-ID-match discipline, and struck-through-block exclusion all apply — so it is split out from its lighter sibling `design-doc-internal-consistency` (event/response/screen-item-ID/message-ID/three-way-match/exclusive-control checks) to get undivided attention. Use when the user asks to check 入出力定義表/CRUD一覧 completeness, or whether a design doc's declared tables match what it actually uses. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Check whether a program's 機能定義書「Ⅲ．入出力定義」table (the CRUD list of every DB table/file the program touches) is complete and accurate in both directions — every table actually used anywhere in 画面設計書/更新条件表/帳票設計書 (including via delegation to `07.共通項目取得.xlsx`) is declared with the right C/R/U/D flags, and every declared table is genuinely used and has a real DB一覧 entry + テーブルレイアウト file. This is the single most complex, highest-yield check in a program REV — deep delegation-tracing, WG-folder DB-layout lookups with PH2/PH3 precedence, exact-ID-match discipline, and struck-through-block exclusion all apply — so it is split out from its lighter sibling `design-doc-internal-consistency` (event/response/screen-item-ID/message-ID/three-way-match/exclusive-control checks) to get undivided attention. Use when the user asks to check 入出力定義表/CRUD一覧 completeness, or whether a design doc's declared tables match what it actually uses. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-io-table-check
@@ -10,38 +10,13 @@ in this project's own checklist: `01_Doc/99.共通資料/設計書記述ルー�
 (sheet "ﾁｪｯｸﾘｽﾄ", items 3-2/3-3) — see the frontmatter `description` above for exactly what "complete
 in both directions" covers and why this was split out of `design-doc-internal-consistency`.
 
-**Scope selection comes first.** When the user asks to REV a single program's design-doc workbook
-without naming specific checks, `rev-program-review` is the entry point: it presents the 9
-single-program checks as a checkbox list (`AskUserQuestion`, multiSelect), then runs only the
-selected ones as one combined pass, dumping the workbook once up front and sharing the text with
-every check (see `_shared/xlsx-excel-com-dump.md`'s "dump once, share the text" section). Do **not**
-unconditionally launch all 9 yourself, and do not post a per-check status update — the combined
-report is posted once, after every selected check has finished. This skill runs on its own when it
-was one of the selected checks, or when the user asked for this check by name.
-
 ## Environment
 
-**Where the shared docs live:** the `_shared/*.md` files ship **inside this plugin**, in the
-`_shared/` folder next to this skill's own directory (`<plugin root>/skills/_shared/`) — **not** in
-`~/.claude/skills/_shared/`, which does not exist on a normal install. Resolve every `_shared/...`
-reference below against that folder; if it doesn't resolve, glob
-`**/rev-skills/**/skills/_shared/<filename>` and read the hit. Do not skip it and improvise the
-Excel COM dump instead: that doc carries the guard against attaching to — and then `Quit()`-ing —
-the user's own live Excel session, the strikethrough-exclusion scan, and the reference-file cache.
-
-Read `_shared/xlsx-excel-com-dump.md` first for how to dump `.xlsx` sheets to text
-via PowerShell + Excel COM (the validated reader for these workbooks — Python/openpyxl is
-installed but has never been validated against them, see that doc's opening note) — including its "Excluding
-struck-through / grayed-out rows from review" section. **The dump script already resolves
-strikethrough and gray-out: deprecated rows are absent from the `.txt` and partially-struck cells
-carry only their live text, so do NOT run a formatting scan of your own.** Anything visible in the
-dump is live evidence. Removed content lives in `_DELETED_DIGEST.txt`, which this check needs only
-to explain why a declared table has no live usage left.
-
-**Don't dump or read `詳細設計書` sheets.** This check draws from 機能定義書/画面設計書/
-ﾁｪｯｸ処理設計書/更新条件表/帳票設計書 only. Across every program reviewed so far, 詳細設計書 has
-turned out to be a near-empty header-only sheet anyway, so skipping it is a pure token saving with
-nothing lost.
+**Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, reporting
+conventions. The DB一覧 and ﾃｰﾌﾞﾙﾚｲｱｳﾄ files this check reads go through the cache section that guide
+points to. Anything visible in the dump is live evidence; removed content lives in
+`_DELETED_DIGEST.txt`, which this check needs only to explain why a declared table has no live usage
+left. Sources: 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/帳票設計書/ﾌｧｲﾙ出力仕様書.
 
 ## Procedure
 

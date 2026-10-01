@@ -1,6 +1,6 @@
 ---
 name: update-condition-completeness
-description: Check a program's 更新条件表(<TableID>) sheets against the table's actual ﾃｰﾌﾞﾙﾚｲｱｳﾄ — every column of the table present in the right order, no notnull column left unset on INSERT, every primary-key column set on INSERT and carried as [KEY] on UPDATE/DELETE, and the house conventions for the 共通項目 block (登録者/登録日時 only at INSERT, 更新者/更新日時 on both, 排他ﾌﾗｸﾞ 1 / +1, 更新ﾌﾟﾛｸﾞﾗﾑID=画面ID) honored. Distinct from its siblings: `xlsx-db-column-check` asks whether a referenced column exists at all, `design-doc-io-table-check` asks whether the table is declared in the Ⅲ．入出力定義 CRUD list — this skill asks whether the UPDATE/INSERT/DELETE specification for an already-declared table is complete enough to code from. Use when the user asks to check 更新条件表 completeness, NOT NULL/主キー/共通項目の設定漏れ, 登録日時が更新されていないか, or ｼｽﾃﾑ日時の書式注記(YYYY/MM/DD HH24:MI:SS形式)漏れ. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Check a program's 更新条件表(<TableID>) sheets against the table's actual ﾃｰﾌﾞﾙﾚｲｱｳﾄ — every column of the table present in the right order, no notnull column left unset on INSERT, every primary-key column set on INSERT and carried as [KEY] on UPDATE/DELETE, and the house conventions for the 共通項目 block (登録者/登録日時 only at INSERT, 更新者/更新日時 on both, 排他ﾌﾗｸﾞ 1 / +1, 更新ﾌﾟﾛｸﾞﾗﾑID=画面ID) honored. Distinct from its siblings: `xlsx-db-column-check` asks whether a referenced column exists at all, `design-doc-io-table-check` asks whether the table is declared in the Ⅲ．入出力定義 CRUD list — this skill asks whether the UPDATE/INSERT/DELETE specification for an already-declared table is complete enough to code from. Use when the user asks to check 更新条件表 completeness, NOT NULL/主キー/共通項目の設定漏れ, 登録日時が更新されていないか, or ｼｽﾃﾑ日時の書式注記(YYYY/MM/DD HH24:MI:SS形式)漏れ. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # update-condition-completeness
@@ -15,25 +15,11 @@ This is the second-largest finding category in the project's own review history:
 第3フェーズ基本設計 指摘傾向レポート puts 更新条件表/DB at 84% of one designer's findings and 35% of
 another's, behind only 処理フロー・I/O.
 
-**Called from `rev-program-review`?** Then the workbook is already dumped and the scope is already
-chosen — don't re-dump it, don't unconditionally launch the other checks, and don't post a
-per-check status update. This skill runs on its own when it was one of the selected checks, or when
-the user asked for this check by name.
+## Environment
 
-## Environment constraints (important)
-
-**Where the shared docs live:** the `_shared/*.md` files ship **inside this plugin**, in the
-`_shared/` folder next to this skill's own directory (`<plugin root>/skills/_shared/`) — **not** in
-`~/.claude/skills/_shared/`, which does not exist on a normal install. Resolve every `_shared/...`
-reference below against that folder; if it doesn't resolve, glob
-`**/rev-skills/**/skills/_shared/<filename>` and read the hit. Do not skip it and improvise the
-Excel COM dump instead: that doc carries the guard against attaching to — and then `Quit()`-ing —
-the user's own live Excel session, the strikethrough-exclusion cascade, and the reference-file cache.
-
-Read `_shared/xlsx-excel-com-dump.md` first — it has the PowerShell + Excel COM script this skill
-(and its sibling review skills) use to read `.xlsx` files. Python/openpyxl is installed on
-this machine but has never been validated against these workbooks, so keep using that script. Its "Folders to always exclude from project-wide
-searches" list applies here too.
+**Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, folder
+exclusions, reporting conventions. The ﾃｰﾌﾞﾙﾚｲｱｳﾄ files this check reads go through the cache section
+(Batch variant) that guide points to.
 
 ## Sheet anatomy (measured, not assumed)
 

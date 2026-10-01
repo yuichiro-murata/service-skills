@@ -1,6 +1,6 @@
 ---
 name: design-doc-typo-check
-description: Proofread the free-text Japanese prose inside a program's design-doc workbook — feature/processing narratives, event descriptions, error-message text, footnotes, revision-history notes — for actual language mistakes (誤字/脱字/衍字/助詞の誤り/変換ミス), as distinct from its sibling skills' structural checks: cross-reference completeness (design-doc-internal-consistency), I/O table completeness (design-doc-io-table-check), DB column existence (xlsx-db-column-check), ID-numbering rules (naming-standard-compliance), and font/merge irregularities (design-doc-formatting-consistency). Use when the user asks to check 誤字脱字 or wants a language-proofreading pass on a design doc. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Proofread the free-text Japanese prose inside a program's design-doc workbook — feature/processing narratives, event descriptions, error-message text, footnotes, revision-history notes — for actual language mistakes (誤字/脱字/衍字/助詞の誤り/変換ミス), as distinct from its sibling skills' structural checks: cross-reference completeness (design-doc-internal-consistency), I/O table completeness (design-doc-io-table-check), DB column existence (xlsx-db-column-check), ID-numbering rules (naming-standard-compliance), and font/merge irregularities (design-doc-formatting-consistency). Use when the user asks to check 誤字脱字 or wants a language-proofreading pass on a design doc. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-typo-check
@@ -18,31 +18,11 @@ anomaly `design-doc-formatting-consistency` flags is often a good hint of *where
 typo might also be hiding, though, so it's worth cross-referencing that skill's findings if run in
 the same pass.
 
-**Scope selection comes first.** When the user asks to REV a single program's design-doc workbook
-without naming specific checks, `rev-program-review` is the entry point: it presents the 9
-single-program checks as a checkbox list (`AskUserQuestion`, multiSelect), then runs only the
-selected ones as one combined pass, dumping the workbook once up front and sharing the text with
-every check (see `_shared/xlsx-excel-com-dump.md`'s "dump once, share the text" section). Do **not**
-unconditionally launch all 9 yourself, and do not post a per-check status update — the combined
-report is posted once, after every selected check has finished. This skill runs on its own when it
-was one of the selected checks, or when the user asked for this check by name.
-
 ## Environment
 
-**Where the shared docs live:** the `_shared/*.md` files ship **inside this plugin**, in the
-`_shared/` folder next to this skill's own directory (`<plugin root>/skills/_shared/`) — **not** in
-`~/.claude/skills/_shared/`, which does not exist on a normal install. Resolve every `_shared/...`
-reference below against that folder; if it doesn't resolve, glob
-`**/rev-skills/**/skills/_shared/<filename>` and read the hit. Do not skip it and improvise the
-Excel COM dump instead: that doc carries the guard against attaching to — and then `Quit()`-ing —
-the user's own live Excel session, the strikethrough-exclusion scan, and the reference-file cache.
-
-Read `_shared/xlsx-excel-com-dump.md` first for how to dump `.xlsx` sheets to text
-via PowerShell + Excel COM (the validated reader for these workbooks — Python/openpyxl is
-installed but has never been validated against them, see that doc's opening note) — including its "Excluding
-struck-through / grayed-out rows from review" section. **The dump script already removed
-struck-through/grayed text, so do NOT run a formatting scan of your own** — everything in the `.txt`
-is live prose, and deleted-in-spirit text was never handed to you to proofread.
+**Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, reporting
+conventions. This check reads only the target workbook's dump: everything in the `.txt` is live
+prose, and deleted-in-spirit text was never handed to you to proofread.
 
 This matters more to proofreading than to any sibling check, because the artefact it removes looks
 exactly like this skill's own quarry. A partially-struck cell arrives already reduced to its live
@@ -52,8 +32,6 @@ proofread that. Confirmed false findings from raw dumps: `"GSXJC205A"` reported 
 `GSJC205A` (only the `X` was struck), and `注意事項備考` reported as a nonexistent term (only
 `注意事項` was live).
 
-As with the sibling skills, **don't dump or read `詳細設計書` sheets** — out of scope for the same
-token-saving reasons documented in the other REV skills.
 
 ## Scope: which cells are "prose" here
 

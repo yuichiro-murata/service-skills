@@ -1,5 +1,10 @@
 # Reference-master indexes: read a lookup table, not a whole workbook
 
+> **Split note.** Which dictionary file an ID routes to, and how to read an index back (one record
+> is not always one line), are in `agent-guide.md` — agents read that. This file is for whoever
+> **builds** an index: format, struck entries, freshness, builders, subsetting.
+
+
 `xlsx-excel-com-dump.md` covers the workbook **under review**. This file covers a reference master a
 REV skill consults as ground truth. Those are large, they change rarely, and a check that only needs
 to look up an ID needs two or three columns out of forty-odd — so for that shape of check, build a
@@ -49,37 +54,6 @@ reads a torn index. Same reasoning as "dump once, share the text" in `xlsx-excel
 
 If you are a sub-agent and the index you were pointed at is missing or stale, **say so and stop** —
 do not build it yourself, and do not fall back to opening Excel unless your prompt allowed it.
-
-## Which dictionary file: route by the ID's own prefix, not by the reviewing WG
-
-`82.画面項目辞書_*.xlsx` is split by JOBコード, not by who is doing the review. A 工程管理 program that
-puts a shared item on its screen cites an `XJZ…`/`SJZ…` ID, and that ID is registered in
-`82.画面項目辞書_共通.xlsx` — it is not in `_工程管理` at all. Look for it there and you report a
-registered item as unregistered.
-
-| ID prefix | Dictionary file (under `01_Doc/04_共通設計/`) |
-|---|---|
-| `XJZ` / `SJZ` | `82.画面項目辞書_共通.xlsx` |
-| `XJA` / `SJA` | `82.画面項目辞書_基準情報.xlsx` |
-| `XJB` / `SJB` | `82.画面項目辞書_受注出荷.xlsx` |
-| `XJC` / `SJC` | `82.画面項目辞書_工程管理.xlsx` |
-| `XJD` / `SJD` | `82.画面項目辞書_品質管理.xlsx` |
-
-A `MENU`-prefixed ID carries its routing prefix immediately after `MENU` — `MENUXJCP00` → 工程管理,
-`MENUXJZP00` → 共通.
-
-This is the routing rule `04.ﾒｯｾｰｼﾞ管理_*.xlsx` already follows (see `xlsx-excel-com-dump.md`): a
-foreign prefix routes to that other WG's own file, **never** to a same-named sheet embedded in the
-copy you happen to have open. In this file that matters twice over, because the sheets the 品質管理
-and 受注出荷 copies carry under other WGs' names are not dictionaries at all — see the builder's
-sheet table below.
-
-**Build one index per dictionary file the program's IDs route to — never one merged index.** The
-freshness contract below is single-source: a merged index has no meaningful `# source-mtime-utc`.
-Collect the distinct prefixes from the program's dump, build an index for each file they name,
-subset each, and hand the agent all of them. Most programs touch one or two files. The builder needs
-no per-file configuration — it locates dictionary sheets by their header, so the same call handles
-every one of the five.
 
 ## Measured effect
 
@@ -149,26 +123,6 @@ function CsvQ($s) {
     return $t
 }
 ```
-
-### Reading the index back: one record is not always one line
-
-Because the format is lossless, a value containing a newline makes **one record span several
-physical lines**. In the 工程管理 dictionary index that is 2 records (`SJC7009`, `SJC0633`) spread
-over 6 extra physical lines, and one more record has a comma inside its quoted name
-(`SJC0600,"0001～ZZZZ (0～9,A～Z(I,O,Q除く))"`).
-
-So a line-oriented read of the index is wrong in three specific ways, all silent:
-
-- **Counting records by counting lines over-counts.** The 工程管理 index has 3,288 records on 3,294
-  data lines. (Confirmed the hard way: the discrepancy looked like a builder bug and cost a round of
-  debugging.)
-- **`$_ -split ','` splits inside quotes**, so the `name` field comes back truncated for the record
-  above.
-- **A continuation line matches no id and does not start with `#`**, so a naive filter drops it and
-  leaves the record's first line with an unterminated quote — a malformed CSV handed to an agent.
-
-Grep/`Select-String` for a single id is fine (an id never contains a newline, and it is the first
-field). Anything that walks records must track quote state — see the subsetting snippet below.
 
 ## Struck-through and grayed-out entries
 

@@ -1,6 +1,6 @@
 ---
 name: xlsx-db-column-check
-description: Check whether a function-definition Excel doc (機能定義書/画面設計書/更新条件表) references DB columns that don't actually exist in the corresponding table-layout (テーブルレイアウト) Excel files, AND whether each screen item's declared 桁数 matches that column's 桁数 in the layout. Distinct from design-doc-io-table-check, which checks whether a table is *declared* in the Ⅲ．入出力定義 CRUD list at all — this skill instead checks whether the *columns* referenced within an already-used table actually exist, and whether they are declared at the right length: a column can exist and still be wrong, e.g. a 工程名 TextBox declared 桁数=30 against a 工程ﾏｽﾀ column of NVARCHAR2(60) silently truncates on entry and display. Also flags a project-specific anti-pattern in 検索条件保存マスタ-style generic tables (e.g. TXJAM100): persisting both a master-entity code (品目コード等) AND its master-derived display name (KC品名等) together, when only the code should be stored and the name should come from a JOIN at read-time — but ONLY when the screen shows that name as a Label; a name the user types into a TextBox is an independent search condition and persisting it is correct. Conversely, also flags a search condition the user enters that is NOT saved to TXJAM100 at all (self-check レビュー観点 No.47 "検索条件の項目が全てあるか"). Use when the user asks to verify a program's design doc against DB/file design docs, e.g. "このファイルが使っているカラムが、DB設計書のファイルに存在するか確認して" or "存在しないカラムを使っていたら教えて". When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Check whether a function-definition Excel doc (機能定義書/画面設計書/更新条件表) references DB columns that don't actually exist in the corresponding table-layout (テーブルレイアウト) Excel files, AND whether each screen item's declared 桁数 matches that column's 桁数 in the layout. Distinct from design-doc-io-table-check, which checks whether a table is *declared* in the Ⅲ．入出力定義 CRUD list at all — this skill instead checks whether the *columns* referenced within an already-used table actually exist, and whether they are declared at the right length: a column can exist and still be wrong, e.g. a 工程名 TextBox declared 桁数=30 against a 工程ﾏｽﾀ column of NVARCHAR2(60) silently truncates on entry and display. Also flags a project-specific anti-pattern in 検索条件保存マスタ-style generic tables (e.g. TXJAM100): persisting both a master-entity code (品目コード等) AND its master-derived display name (KC品名等) together, when only the code should be stored and the name should come from a JOIN at read-time — but ONLY when the screen shows that name as a Label; a name the user types into a TextBox is an independent search condition and persisting it is correct. Conversely, also flags a search condition the user enters that is NOT saved to TXJAM100 at all (self-check レビュー観点 No.47 "検索条件の項目が全てあるか"). Use when the user asks to verify a program's design doc against DB/file design docs, e.g. "このファイルが使っているカラムが、DB設計書のファイルに存在するか確認して" or "存在しないカラムを使っていたら教えて". For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # xlsx-db-column-check
@@ -12,36 +12,17 @@ the frontmatter `description` above for what counts as a miss and how this diffe
 codebase (機能定義書 / 画面設計書 / 更新条件表 / ﾃｰﾌﾞﾙﾚｲｱｳﾄ sheets); generalizes to any
 `<機能定義書xlsx>` + `<DB設計書folder>` pair, not just one specific program.
 
-**Scope selection comes first.** When the user asks to REV a single program's design-doc workbook
-without naming specific checks, `rev-program-review` is the entry point: it presents the 9
-single-program checks as a checkbox list (`AskUserQuestion`, multiSelect), then runs only the
-selected ones as one combined pass, dumping the workbook once up front and sharing the text with
-every check (see `_shared/xlsx-excel-com-dump.md`'s "dump once, share the text" section). Do **not**
-unconditionally launch all 9 yourself, and do not post a per-check status update — the combined
-report is posted once, after every selected check has finished. This skill runs on its own when it
-was one of the selected checks, or when the user asked for this check by name.
+## Environment
 
-## Environment constraints (important)
-
-**Where the shared docs live:** the `_shared/*.md` files ship **inside this plugin**, in the
-`_shared/` folder next to this skill's own directory (`<plugin root>/skills/_shared/`) — **not** in
-`~/.claude/skills/_shared/`, which does not exist on a normal install. Resolve every `_shared/...`
-reference below against that folder; if it doesn't resolve, glob
-`**/rev-skills/**/skills/_shared/<filename>` and read the hit. Do not skip it and improvise the
-Excel COM dump instead: that doc carries the guard against attaching to — and then `Quit()`-ing —
-the user's own live Excel session, the strikethrough-exclusion scan, and the reference-file cache.
-
-Read `_shared/xlsx-excel-com-dump.md` first — it has the PowerShell + Excel COM
-script this skill (and its sibling review skills) use to read `.xlsx` files. Python/openpyxl is
-installed on this machine but has never been validated against these workbooks, so keep using
-that script rather than swapping in a library reader.
+**Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, reporting
+conventions. The ﾃｰﾌﾞﾙﾚｲｱｳﾄ files this check reads go through the cache section (Batch variant) that
+guide points to.
 
 ## Procedure
 
-### 1. Dump the target design workbook to text
+### 1. Get the target workbook dump
 
-Follow `_shared/xlsx-excel-com-dump.md` to dump every worksheet of the target workbook to
-plain-text files under the session scratchpad directory, one file per sheet.
+Use the dump you were handed; standalone, dump the target per `_shared/xlsx-excel-com-dump.md`.
 
 ### 2. Extract the referenced tables and columns from the design doc
 
@@ -74,7 +55,7 @@ Build a per-table list: `{ table_id: [column names referenced] }`.
 
 **Struck-through/grayed-out rows are already excluded — do NOT run a formatting scan of your own.**
 The dump script resolves this while the workbook is open (see
-`_shared/xlsx-excel-com-dump.md`'s "Excluding struck-through / grayed-out rows from review"), so a
+`_shared/agent-guide.md`'s "Excluding struck-through / grayed-out rows from review"), so a
 deprecated 参照ｴﾝﾃｨﾃｨ block and every column reference under it (取得項目/検索条件/結合条件/ｿｰﾄ順)
 are simply absent from the `.txt`. Report a brief count of excluded cells — the dump prints
 `dead=`/`partial=` per sheet — rather than listing them.
@@ -129,7 +110,7 @@ gives you.
    non-superset disagreement — renamed/reordered columns — as a discrepancy to report, not resolve
    yourself).
 6. Never search `<WG番号>_<WG名>WG\開発DDL作成用<date>\` for a table's layout — always excluded
-   from a REV per the shared dump doc's "Folders to always exclude" list, regardless of which WG
+   from a REV per `agent-guide.md`'s "Folders to always exclude" list, regardless of which WG
    owns the table.
 7. If a table's file is genuinely not found anywhere under the specified folder, that's *not* a
    "missing column" finding — report it separately as "design file not present" (usually means the

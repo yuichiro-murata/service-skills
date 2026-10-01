@@ -1,6 +1,6 @@
 ---
 name: file-output-spec-check
-description: Review a program's ﾌｧｲﾙ出力仕様書(<ﾌｧｲﾙID>) sheets — the file/download output specification that no other REV skill reviews in its own right. Checks that the ﾌｧｲﾙID agrees everywhere it is written (sheet name, 3C/3D header, Ⅰ's 出力ｺｰﾄﾞ argument, 機能定義書 Ⅲ．入出力定義 and its 【ﾌｧｲﾙ出力仕様書(…)】 pointers), that the file is registered in 06-04_ﾌｧｲﾙ一覧_<WG>.xlsm under this program, that Ⅱ．ﾌｧｲﾙ出力仕様's fixed rows are filled in, that a 共通ﾀﾞｳﾝﾛｰﾄﾞ file carries its three standard annotations, that every ﾍｯﾀﾞｰ item has a 画面項目ID in the right number band and registered in 82.画面項目辞書, that the ﾍｯﾀﾞｰ and 明細 item lists agree, that every 明細 reference resolves to a real 画面設計書 block / 参照ﾃｰﾌﾞﾙ alias, that 編集方法 uses the common-design vocabulary and matches the value's format, that No is not output, and — when a ﾌｧｲﾙﾚｲｱｳﾄ workbook exists — that the spec agrees with it. Distinct from report-design-check (帳票設計書 only; explicitly does not read this sheet) and xlsx-db-column-check (column existence). Use when the user asks to REV ﾌｧｲﾙ出力仕様書/ﾀﾞｳﾝﾛｰﾄﾞﾌｧｲﾙ/CSV・TSV出力の仕様. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Review a program's ﾌｧｲﾙ出力仕様書(<ﾌｧｲﾙID>) sheets — the file/download output specification that no other REV skill reviews in its own right. Checks that the ﾌｧｲﾙID agrees everywhere it is written (sheet name, 3C/3D header, Ⅰ's 出力ｺｰﾄﾞ argument, 機能定義書 Ⅲ．入出力定義 and its 【ﾌｧｲﾙ出力仕様書(…)】 pointers), that the file is registered in 06-04_ﾌｧｲﾙ一覧_<WG>.xlsm under this program, that Ⅱ．ﾌｧｲﾙ出力仕様's fixed rows are filled in, that a 共通ﾀﾞｳﾝﾛｰﾄﾞ file carries its three standard annotations, that every ﾍｯﾀﾞｰ item has a 画面項目ID in the right number band and registered in 82.画面項目辞書, that the ﾍｯﾀﾞｰ and 明細 item lists agree, that every 明細 reference resolves to a real 画面設計書 block / 参照ﾃｰﾌﾞﾙ alias, that 編集方法 uses the common-design vocabulary and matches the value's format, that No is not output, and — when a ﾌｧｲﾙﾚｲｱｳﾄ workbook exists — that the spec agrees with it. Distinct from report-design-check (帳票設計書 only; explicitly does not read this sheet) and xlsx-db-column-check (column existence). Use when the user asks to REV ﾌｧｲﾙ出力仕様書/ﾀﾞｳﾝﾛｰﾄﾞﾌｧｲﾙ/CSV・TSV出力の仕様. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # file-output-spec-check
@@ -12,39 +12,23 @@ this skill existed, nothing reviewed this sheet at all: `report-design-check` ex
 (レビュー観点 No.65-69 plus the call-outs on its `ﾌｧｲﾙ出力仕様書(FXJA002)` sample sheet). This skill
 is the automatable part of that block.
 
-**Called from `rev-program-review`?** Then the workbook is already dumped and the scope is already
-chosen — don't re-dump it, don't unconditionally launch the other checks, and don't post a
-per-check status update. This skill runs on its own when it was one of the selected checks, or when
-the user asked for this check by name.
-
 **A program with no visible `ﾌｧｲﾙ出力仕様書(*)` sheet is not in scope.** Say so in one line and stop.
 Hidden ones are out of scope too (the shared dump's default): across the project most hidden copies
 are untouched template stubs named `ﾌｧｲﾙ出力仕様書(FXJDXXX)` / `ﾌｧｲﾙ出力仕様書()`, or withdrawn ones
 renamed `削除)ﾌｧｲﾙ出力仕様書(…)`. Also out of scope: sheets that merely share the prefix but are not a
 spec — `ﾌｧｲﾙ出力ｲﾒｰｼﾞ`, `ﾌｧｲﾙ出力のｲﾒｰｼﾞ→` (mock-ups) — and a `…_様式` companion sheet.
 
-## Environment constraints (important)
+## Environment
 
-**Where the shared docs live:** the `_shared/*.md` files ship **inside this plugin**, in the
-`_shared/` folder next to this skill's own directory (`<plugin root>/skills/_shared/`) — **not** in
-`~/.claude/skills/_shared/`. Resolve every `_shared/...` reference below against that folder; if it
-doesn't resolve, glob `**/rev-skills/**/skills/_shared/<filename>` and read the marketplace copy.
-
-Read `_shared/xlsx-excel-com-dump.md` first (the dump, strikethrough/gray-out resolution, the
-openpyxl fallback, and the folder exclusions) and `_shared/reference-index.md` for the 画面項目辞書
-index used by F5.
-
-**The openpyxl fallback is not always available for this sheet's workbooks.**
-`PXJCO130_ﾛｯﾄﾄﾚｰｽ.xlsx` makes `openpyxl.load_workbook` raise
-`There is no item named 'xl/drawings/NULL' in the archive` (a dangling drawing relationship); Excel
-opens it fine. If the fallback dies this way, go back to the COM dump for that workbook rather than
-skipping it.
+**Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, reading the
+画面項目辞書 index (F5), reporting conventions. The `06-04_ﾌｧｲﾙ一覧_*` registry and any ﾌｧｲﾙﾚｲｱｳﾄ workbook
+go through the cache section that guide points to.
 
 ## Sheet anatomy (measured, not assumed)
 
 Measured on 2026-09-30 across 63 visible `ﾌｧｲﾙ出力仕様書(*)` sheets in 44 workbooks under
 `01_Doc\08_機能定義書\11_工程管理\PHASE1`-`PHASE3` (plus `PXJCO130`'s three, which openpyxl cannot
-open — see above). Anchor on the **labels**; the column numbers are the common case, not a contract.
+open — see `agent-guide.md`'s Environment). Anchor on the **labels**; the column numbers are the common case, not a contract.
 Every count quoted below is from that one snapshot of actively-edited workbooks — re-derive a verdict
 from the current dump, never cite a count or an example here as a live finding.
 
@@ -75,7 +59,7 @@ Parsing rules that matter:
 - **`出力項目名` spans merged cells** — take the first cell (col 7). Merge repetition is not a
   finding here.
 - **A cell value can contain a newline** (`\n収縮率 長辺` in `PSJAO203`'s FSJA008). Group tokens by the
-  `[r,c]` inside them, never by physical line — see the dump doc's "Parsing a dump line" — and strip
+  `[r,c]` inside them, never by physical line — see `agent-guide.md`'s "Parsing a dump line" — and strip
   leading/trailing whitespace from item names **only for comparison**, never when quoting.
 - **Section titles vary**: `1.ﾍｯﾀﾞｰ`/`2.明細`/`3.ﾌｯﾀｰ` is the common case, but a multi-part file uses
   `1) 送品案内` → `1-1.ﾍｯﾀﾞｰ`/`1-2.明細`, and an Excel file with blocks uses `1.ｷｰ情報` →
@@ -108,12 +92,13 @@ Route by the **file ID's own JOBコード** (the three letters after `F`), exact
 | `FXJB` / `FSJB` | `06-04_ﾌｧｲﾙ一覧_受注出荷.xlsm` |
 
 A program's files can span two prefixes (a 工程管理 program writing an `FSJA` file) — route per ID.
-**Read the registry with strikethrough resolved** — openpyxl with the dump doc's live-text rules, or
-the `LiveText` cascade in `_shared/reference-index.md`. Do not use the plain `xlsx-dumps` cache script
+**Read the registry with strikethrough resolved** — openpyxl per `agent-guide.md`'s "Reading a
+reference file yourself". Do not use the plain `xlsx-dumps` cache script
 for this file: it writes `Value2` as-is, so a struck (withdrawn) row reads as registered and a
 renamed-in-place name reads as old+new text concatenated. The registry's header row reads
 `No. | ファイルID | ファイル名称 | 編成 | ＲＬ | ＢＦ | ＢＬ | 区分 | 備考 | 計画書No.` (row 4 on the
-工程管理 file, data from row 5; locate it by the `ファイル名称` label, not the row number). `備考` names
+工程管理 file, data from row 5; locate it by the `ファイル名称` label after stripping whitespace — the cell
+actually reads `フ　ァ　イ　ル　名　称` with full-width spaces). `備考` names
 the owning function (`損金一覧`, or `付属機能/損金一覧` for an 付属機能 program), and `編成` is
 `TSV` / `CSV` / `EXCEL`. Apply the same `LiveText` cascade as `report-design-check` step 2: a
 partially-struck name is a rename in place, not a dead row.
@@ -289,8 +274,8 @@ What survives is real, and it is exactly the kind of defect this check exists fo
   others, so find them by pattern, not column;
 - compound and external forms, all legitimate: `(2)-①` (sub-item ① of Ⅰ block `(2)`), `(1)、区分名称.… 参照`
   (block plus a 区分名称 lookup), `共通項目取得(工程管理).汎用工程GRP 参照` (delegation to
-  `07.共通項目取得.xlsx` — check the named item exists there, the way `design-doc-io-table-check`
-  follows delegations);
+  `01_Doc\04_共通設計\07.共通項目取得.xlsx` — check the named item exists (sheet `共通項目取得` and the WG
+  sheet such as `共通項目取得(工程管理)`; read it live per `agent-guide.md`));
 - **an Ⅰ block with its own inline 取得項目** (`PSJCO502` `FSJC032`'s `② 納品案内明細情報取得`, beside
   a delegating `①`) → check the 明細 values against that block's own 取得項目 list, not a screen's;
 - `A` / `B` … → an alias in Ⅰ's `参照ﾃｰﾌﾞﾙ` / `参照ｴﾝﾃｨﾃｨ` list;
@@ -344,7 +329,8 @@ not — say which it is.
 
 **F9 — ﾌｧｲﾙﾚｲｱｳﾄとの一致（ﾚｲｱｳﾄがある場合のみ）.** Most download files have no layout workbook —
 only interface files do. Look for `<ﾌｧｲﾙID>_*.xlsx` in, in this order:
-`<WG番号>_<WG名>WG\07_データベース・ファイル設計書(仮)\ファイルレイアウト\` and
+`<WG番号>_<WG名>WG\07_データベース・ファイル設計書(仮)\ファイルレイアウト\` (glob
+`*WG\07_データベース・ファイル設計書(仮)\ファイルレイアウト\<ﾌｧｲﾙID>_*.xlsx` — only `11_工程管理WG` has one today) and
 `01_Doc\07_データベース・ファイル設計書\07_03_ファイルレイアウト\<nn>_<WG名>\`. Confirm the ID in the
 layout sheet's `[6,1]` (under the `ﾌｧｲﾙID` label at `[5,1]`), exactly — the same suffix trap as table
 layouts. No layout found is **not** a finding; say in one line which files had one.

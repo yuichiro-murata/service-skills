@@ -1,6 +1,6 @@
 ---
 name: naming-standard-compliance
-description: Check that program/screen/table/file/report/zoom/message IDs and design-doc headers in this project follow the official ID-numbering rules and doc-writing checklist (05.システム共通設計書「各ID採番」, 05.設計書記述ルール_チェックリスト). Use when the user asks to check ID命名規則/採番ルール compliance, or wants a broad "is this design doc written correctly" pass distinct from cross-reference or DB-column checks. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Check that program/screen/table/file/report/zoom/message IDs and design-doc headers in this project follow the official ID-numbering rules and doc-writing checklist (05.システム共通設計書「各ID採番」, 05.設計書記述ルール_チェックリスト). Use when the user asks to check ID命名規則/採番ルール compliance, or wants a broad "is this design doc written correctly" pass distinct from cross-reference or DB-column checks. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # naming-standard-compliance
@@ -8,15 +8,6 @@ description: Check that program/screen/table/file/report/zoom/message IDs and de
 Checks that IDs used in design docs (and the docs' own header/structure) follow this project's
 documented rules — see the frontmatter `description` above for which sibling skill covers
 cross-references, I/O table completeness, DB-column existence, or typo proofreading instead.
-
-**Scope selection comes first.** When the user asks to REV a single program's design-doc workbook
-without naming specific checks, `rev-program-review` is the entry point: it presents the 9
-single-program checks as a checkbox list (`AskUserQuestion`, multiSelect), then runs only the
-selected ones as one combined pass, dumping the workbook once up front and sharing the text with
-every check (see `_shared/xlsx-excel-com-dump.md`'s "dump once, share the text" section). Do **not**
-unconditionally launch all 9 yourself, and do not post a per-check status update — the combined
-report is posted once, after every selected check has finished. This skill runs on its own when it
-was one of the selected checks, or when the user asked for this check by name.
 
 Grounded in:
 
@@ -30,19 +21,9 @@ Grounded in:
 
 ## Environment
 
-**Where the shared docs live:** the `_shared/*.md` files ship **inside this plugin**, in the
-`_shared/` folder next to this skill's own directory (`<plugin root>/skills/_shared/`) — **not** in
-`~/.claude/skills/_shared/`, which does not exist on a normal install. Resolve every `_shared/...`
-reference below against that folder; if it doesn't resolve, glob
-`**/rev-skills/**/skills/_shared/<filename>` and read the hit. Do not skip it and improvise the
-Excel COM dump instead: that doc carries the guard against attaching to — and then `Quit()`-ing —
-the user's own live Excel session, the strikethrough-exclusion scan, and the reference-file cache.
-
-Read `_shared/xlsx-excel-com-dump.md` first for how to dump `.xlsx` sheets to text
-via PowerShell + Excel COM (the validated reader for these workbooks — Python/openpyxl is
-installed but has never been validated against them, see that doc's opening note) — including its "Excluding
-struck-through / grayed-out rows from review" section. **Deleted IDs are already gone from the dump,
-so do NOT run a formatting scan of your own** — every ID string you can see is a live one to
+**Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, reporting
+conventions. `05.ｼｽﾃﾑ共通設計書` and the `06-01_機能一覧_*` files go through the cache section that guide
+points to. Deleted IDs are already gone from the dump — every ID string you can see is a live one to
 validate against the numbering rule.
 
 Two consequences worth holding onto. First, a partially-struck cell arrives as its live remainder,
@@ -202,7 +183,8 @@ and so on; the table is in `_shared/reference-index.md`), which is
    (`遷移`/`起動`/`戻る`/`表示する`/`開く`/`呼出`) must be followed by `(<画面ID>)`
    (`取引先詳細画面(GXJA802B)に遷移する`). Build the screen-name list from every 画面設計書's 3C header
    `[4,15]` (screen name) / `[4,10]` (画面ID) in the folder, not just this workbook — the name you meet is
-   often another program's screen. Normalise the header name first: some end in `画面` (`受入入力画面`),
+   often another program's screen (under `rev-program-review` this list is handed to you prebuilt;
+   build it yourself only when running standalone). Normalise the header name first: some end in `画面` (`受入入力画面`),
    most don't, so match `name` + optional `画面`. The program's **own** screens count too
    (`PSJCO602` `[52,4]` `棚卸用仕掛在庫ﾃﾞｰﾀ作成画面を表示する` → `(GSJC602A)`).
    **The screen must be the object of the verb** — `…画面に遷移する` / `…画面に戻る` / `…画面を起動する` /

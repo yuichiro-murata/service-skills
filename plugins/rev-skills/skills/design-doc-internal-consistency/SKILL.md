@@ -1,6 +1,6 @@
 ---
 name: design-doc-internal-consistency
-description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency — e.g. every screen event is reflected in the processing overview, response definitions are registered, every screen-item ID / message ID is registered in its master list, screen layout/item-definition/control-spec agree (including item ORDER matching between Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 and Ⅴ．画面項目定義, not just which items are present), exclusive-control is present when a program updates a table, and the per-item writing rules of Ⅴ．画面項目定義 from the self-check workbook (upper-case conversion note on code inputs, button IDs in the 9xxx band, 選択 = □ without ID, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea always carry 桁数 and 入力可文字種), process/check order vs button order, 項番 gaps/duplicates, and 区分名称 references resolving in 09.区分名称_step2.xlsx. Grounded in this project's own official review checklist. Does NOT cover the Ⅲ．入出力定義 (I/O table) completeness check — that's the more involved `design-doc-io-table-check` skill, split out separately. Use when the user asks to レビュー/REV a program's 機能定義書 or 画面設計書, or asks whether a design doc is "internally consistent" / "漏れがないか", or whether screen-item ordering matches across sections. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency — e.g. every screen event is reflected in the processing overview, response definitions are registered, every screen-item ID / message ID is registered in its master list, screen layout/item-definition/control-spec agree (including item ORDER matching between Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 and Ⅴ．画面項目定義, not just which items are present), exclusive-control is present when a program updates a table, and the per-item writing rules of Ⅴ．画面項目定義 from the self-check workbook (upper-case conversion note on code inputs, button IDs in the 9xxx band, 選択 = □ without ID, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea always carry 桁数 and 入力可文字種), process/check order vs button order, 項番 gaps/duplicates, and 区分名称 references resolving in 09.区分名称_step2.xlsx. Grounded in this project's own official review checklist. Does NOT cover the Ⅲ．入出力定義 (I/O table) completeness check — that's the more involved `design-doc-io-table-check` skill, split out separately. Use when the user asks to レビュー/REV a program's 機能定義書 or 画面設計書, or asks whether a design doc is "internally consistent" / "漏れがないか", or whether screen-item ordering matches across sections. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-internal-consistency
@@ -21,32 +21,14 @@ there) — see the frontmatter `description` above for exactly which adjacent ch
 completeness, DB-column existence, ID-numbering, formatting, typos) live in the 8 sibling skills
 instead.
 
-**Scope selection comes first.** When the user asks to REV a single program's design-doc workbook
-without naming specific checks, `rev-program-review` is the entry point: it presents the 9
-single-program checks as a checkbox list (`AskUserQuestion`, multiSelect), then runs only the
-selected ones as one combined pass, dumping the workbook once up front and sharing the text with
-every check (see `_shared/xlsx-excel-com-dump.md`'s "dump once, share the text" section). Do **not**
-unconditionally launch all 9 yourself, and do not post a per-check status update — the combined
-report is posted once, after every selected check has finished. This skill runs on its own when it
-was one of the selected checks, or when the user asked for this check by name.
-
 ## Environment
 
-**Where the shared docs live:** the `_shared/*.md` files ship **inside this plugin**, in the
-`_shared/` folder next to this skill's own directory (`<plugin root>/skills/_shared/`) — **not** in
-`~/.claude/skills/_shared/`, which does not exist on a normal install. Resolve every `_shared/...`
-reference below against that folder; if it doesn't resolve, glob
-`**/rev-skills/**/skills/_shared/<filename>` and read the hit. Do not skip it and improvise the
-Excel COM dump instead: that doc carries the guard against attaching to — and then `Quit()`-ing —
-the user's own live Excel session, the strikethrough-exclusion scan, and the reference-file cache.
-
-Read `_shared/xlsx-excel-com-dump.md` first for how to dump `.xlsx` sheets to text
-via PowerShell + Excel COM (the validated reader for these workbooks — Python/openpyxl is
-installed but has never been validated against them, see that doc's opening note) — including its "Excluding
-struck-through / grayed-out rows from review" section. **The dump script already dropped
-struck-through and grayed-out content, so do NOT run a formatting scan of your own** — every row you
-can see is live, which is what makes the "used but not declared" / "missing from dictionary" diffs
-below trustworthy without any extra work.
+**Read `_shared/agent-guide.md` first** — scope selection (`rev-program-review` is the entry point),
+the environment, what the live dump has already excluded, how to read the 画面項目辞書 index, and the
+reporting conventions common to every check. The masters this check dumps itself
+(`04.ﾒｯｾｰｼﾞ管理_*`, `06-09_ﾚｽﾎﾟﾝｽ一覧_*`) go through the cache section that guide points to. Because the
+dump is live, every row you see is live — which is what makes the "used but not declared" / "missing
+from dictionary" diffs below trustworthy without extra work.
 
 **Of the nine single-program checks, this is the one that genuinely needs `_DELETED_DIGEST.txt`.**
 Its highest-value findings are asymmetries — one half of a pair edited while the other was left
@@ -63,13 +45,6 @@ what was *removed*:
 Conversely, do not report something as "a leftover that should have been deleted" without checking
 the digest first: it may already be marked dead, in which case there is nothing to fix. That exact
 false finding has been made before (`XJC_ｼｽﾃﾑ共通設計書.xlsx`, `ﾛｯﾄ停止ﾁｪｯｸ`, rows 829-832).
-
-**Don't dump or read `詳細設計書` sheets.** None of the 7 checks below reference detail-design
-content — they all draw from 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表 only. Across every
-program reviewed with this skill so far, 詳細設計書 has turned out to be a near-empty
-header-only sheet anyway, so skipping it is a pure token saving with nothing lost. If a future
-review genuinely needs detail-design content for some other purpose, that's a different task outside
-this skill's scope, not a reason to dump it here by default.
 
 ## Checks to run (checklist item → what to diff)
 
@@ -348,11 +323,17 @@ every verdict; counts and examples are one snapshot.
    合わせる" (ﾁｪｯｸ処理設計書).
    - **Reference order** = the `Button` rows of the screen's Ⅴ．画面項目定義 `共通` area, top to bottom.
    - **機能定義書 Ⅳ．機能処理概要**: section titles `A-①.初期処理`, `A-②.検索処理`, … (col 3); the letter
-     is the screen (`A` → `G…A`). **ﾁｪｯｸ処理設計書(<画面ID>)**: event headings `【検索ﾎﾞﾀﾝ押下時】` (col 3).
+     is the screen (`A` → `G…A`). Assign each title to the screen by the **block heading** it sits under
+     (`E.ﾜｰｸﾌﾛｰ承認ﾌﾛｰ一覧`), not by its own letter — a mislettered title (`F-⑥` inside the E block) belongs
+     to E, and its wrong letter is check 10's finding. **ﾁｪｯｸ処理設計書(<画面ID>)**: event headings `【検索ﾎﾞﾀﾝ押下時】` (col 3).
    - Match names after stripping `ﾎﾞﾀﾝ` / `押下時` / `押下処理` / `処理` / `【】`. A heading written as a
      sentence still matches when it **contains** a button name (`I-⑥.承認ｸﾞﾙｰﾌﾟ…へ挿入する処理　(<< ﾎﾞﾀﾝ押下時)`
-     → `<<`, `I-⑦.承認ｸﾞﾙｰﾌﾟ(ﾕｰｻﾞｰ)行削除処理` → `行削除`); take the **longest** button name contained, so
-     `行削除` never also counts as `削除`. Items that match no 共通 button (links, zoom, other-area
+     → `<<`, `I-⑦.承認ｸﾞﾙｰﾌﾟ(ﾕｰｻﾞｰ)行削除処理` → `行削除`). Resolve a contained name in this order: (1) the
+     name written immediately before `ﾎﾞﾀﾝ押下` (`(<< ﾎﾞﾀﾝ押下時)` → `<<`, even though `検索` also appears in
+     the sentence); (2) otherwise the **longest** button name contained, so `行削除` never also counts as
+     `削除`; (3) a tie of equal length is left unmatched. Never match a heading that names a link or a
+     frame/row operation inside an area — `…ﾘﾝｸ押下処理`, `承認ｸﾞﾙｰﾌﾟ枠削除処理`, `通知先行削除処理` — those are
+     not 共通 buttons even when a 共通 button's name (`承認`, `削除`) appears in them. Items that match no 共通 button (links, zoom, other-area
      buttons) are ignored, not reported. Then flag any pair of matched items whose relative order
      differs from the reference.
    - **Leave `閉じる` / `戻る` out of the order comparison.** Ⅴ often lists them first (top-right on a
@@ -382,8 +363,11 @@ every verdict; counts and examples are one snapshot.
     most of it is structure:
     - **A drop back to 1 is a new list**, not an error (ﾁｪｯｸ処理 restarts per `【…押下時】` event; 39 such).
     - **A gap explained by a struck row is the project's convention** — deleted rows keep their number in
-      strikethrough (26 gaps, e.g. `PSJAO241` `更新条件表(TXJAM002)` 45→47 with a struck `46`). Check
-      `_DELETED_DIGEST.txt` for the missing number in the same column before reporting a gap.
+      strikethrough (26 gaps, e.g. `PSJAO241` `更新条件表(TXJAM002)` 45→47 with a struck `46`). Before
+      reporting a gap, look in `_DELETED_DIGEST.txt` for **deleted content on the rows between** the two
+      live numbers — the COM dump's digest omits a bare struck number as filler, so don't wait for the
+      number itself to appear. A row whose content is struck but whose number is **not** (`GSJA704B`
+      【引戻ﾎﾞﾀﾝ押下時】 `[26,1]`-`[28,1]` live 2/3/4 over struck checks) is an empty live item — 要確認.
     - **A constant step of 2 over three or more items** (`PXJCO906` `GXJC906A` 1, 3, 5, 7 in col 6) is a
       two-row item layout, not missing numbers.
     - A sub-number (`A-②-1`, `A-②(1)`) belongs to its own series; don't fold it into the circled list.
@@ -392,8 +376,8 @@ every verdict; counts and examples are one snapshot.
     (16 — `PXJAO701` `GXJA701A` `[625,3]` 11→**123**→13, i.e. `12` mistyped; `GSJA704F` is in Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細,
     not Ⅴ — say which section), **list not starting at 1** (4),
     and in 機能処理概要 (11 lists) — a skipped circled number (`PXJCO152` `A`: ①②⑥⑦⑧), a duplicate
-    (`PSJCO402` `A`/`B`: ④④), and a section filed under the wrong letter (`PSJAO704`: `E` skips ⑥ and `F`
-    opens with a stray ⑥ — the `E-⑥` was written as `F-⑥`). Severity 低, except a duplicate/misfiled
+    (`PSJCO402` `A`/`B`: ④④), and a section filed under the wrong letter (`PSJAO704`: inside the `E` block,
+    `[143,3]` reads `F-⑥.戻る処理`, so E jumps ⑤→⑦ — the `E-⑥` was written as `F-⑥`; F itself is fine). Severity 低, except a duplicate/misfiled
     circled section that another doc cites by number (`A-⑥ 参照`), which is 中 — the citation now points at
     the wrong section. Some lists interleave two sequences in one column (`PXJAO243`
     `更新条件表(TXJAM023)` col 2: 22, 25, 23, 29, 24, 35 …); report it once as "番号が二系統混在" rather than
@@ -403,7 +387,8 @@ every verdict; counts and examples are one snapshot.
     group name: `ｼｽﾃﾑ共通設計書.区分名称.仕入先区分 参照`, `区分名称.ﾛｯﾄ停止区分(ﾛｯﾄ停止指示登録) 参照`, and
     occasionally a value: `区分名称.製造ｵｰﾀﾞｰ状態.中断`. Each must resolve in
     `01_Doc\04_共通設計\09.区分名称_step2.xlsx`.
-    - **Reading the master**: sheets `区分名称_STEP2～` (prefer) and `区分名称_～STEP1`. A group is a title
+    - **Reading the master**: sheet `区分名称_STEP2～` only (the standing user rule in `agent-guide.md`'s
+      "区分名称/区分コード lookups" — `区分名称_～STEP1` is not ground truth). A group is a title
       in col 4 (`承認状態`), then a header row `区分`(col 5) / `区分名称`(col 10) / `ﾘｿｰｽID`(col 57), then
       one row per value. Build `group → {区分: 区分名称}` once (openpyxl live read; a struck value is
       retired) — like the 画面項目辞書, read an index, not a dump. Two title shapes break a naive index
@@ -415,7 +400,12 @@ every verdict; counts and examples are one snapshot.
         and similar sub-headings, each with its own value table. The group is the top title; the
         sub-headings are not groups (taking the nearest col-4 text above a header row registers them
         instead and leaves `合否判定条件` looking unregistered).
-      Measured: ~374 groups after splitting.
+      Measured: roughly 350-375 groups depending on how sub-headings are folded — the exact count is not
+      a correctness signal. A title is a group when a `区分`/`区分名称` header follows it within 3 rows,
+      **or** when the col-4 rows under it are themselves headings that each lead to such a header (then
+      those are sub-headings). Under `rev-program-review` the index is handed to you prebuilt (path in your
+      prompt; JSON `{group: {区分: 区分名称}}`) — use it; build it yourself when the prompt says none was
+      prebuilt or you run standalone.
     - **Parsing the reference**: take the text after `区分名称.` up to `参照`/whitespace; drop an
       unbalanced trailing `)` (it closes an outer `区分名称(ｼｽﾃﾑ共通設計書.区分名称.製造ｵｰﾀﾞｰ状態)`); keep a
       `(qualifier)` as part of the name; resolve `group.value` (value must be one of the group's names) and

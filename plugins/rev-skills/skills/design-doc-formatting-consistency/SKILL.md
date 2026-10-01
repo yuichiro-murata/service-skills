@@ -1,6 +1,6 @@
 ---
 name: design-doc-formatting-consistency
-description: Scan a design-doc workbook for stray font-size and cell-merge irregularities — a cell whose font size or merge span breaks from the surrounding pattern, which usually signals a leftover copy-paste artifact, an incompletely-applied edit, or a duplicated header block that never got updated. This is a formatting/editing-hygiene check, distinct from design-doc-internal-consistency (cross-reference completeness), design-doc-io-table-check (I/O table completeness), xlsx-db-column-check (DB column existence), and design-doc-typo-check (actual Japanese-language proofreading). Use as part of a full program REV, or when the user specifically asks about フォントサイズ/セル結合のブレ. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Scan a design-doc workbook for stray font-size and cell-merge irregularities — a cell whose font size or merge span breaks from the surrounding pattern, which usually signals a leftover copy-paste artifact, an incompletely-applied edit, or a duplicated header block that never got updated. This is a formatting/editing-hygiene check, distinct from design-doc-internal-consistency (cross-reference completeness), design-doc-io-table-check (I/O table completeness), xlsx-db-column-check (DB column existence), and design-doc-typo-check (actual Japanese-language proofreading). Use as part of a full program REV, or when the user specifically asks about フォントサイズ/セル結合のブレ. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-formatting-consistency
@@ -11,26 +11,14 @@ Unlike the other REV skills, this one isn't grounded in the project's checklist 
 rule; it's a pure structural-hygiene sweep, worth surfacing to the designer even though these aren't
 "wrong" in the same sense as a broken cross-reference.
 
-**Scope selection comes first.** When the user asks to REV a single program's design-doc workbook
-without naming specific checks, `rev-program-review` is the entry point: it presents the 9
-single-program checks as a checkbox list (`AskUserQuestion`, multiSelect), then runs only the
-selected ones as one combined pass, dumping the workbook once up front and sharing the text with
-every check (see `_shared/xlsx-excel-com-dump.md`'s "dump once, share the text" section). Do **not**
-unconditionally launch all 9 yourself, and do not post a per-check status update — the combined
-report is posted once, after every selected check has finished. This skill runs on its own when it
-was one of the selected checks, or when the user asked for this check by name.
-
 ## Environment
 
-**Where the shared docs live:** the `_shared/*.md` files ship **inside this plugin**, in the
-`_shared/` folder next to this skill's own directory (`<plugin root>/skills/_shared/`) — **not** in
-`~/.claude/skills/_shared/`, which does not exist on a normal install. Resolve every `_shared/...`
-reference below against that folder; if it doesn't resolve, glob
-`**/rev-skills/**/skills/_shared/<filename>` and read the hit. Do not skip it and improvise the
-Excel COM dump instead: that doc carries the guard against attaching to — and then `Quit()`-ing —
-the user's own live Excel session, the strikethrough-exclusion scan, and the reference-file cache.
-
-Read `_shared/xlsx-excel-com-dump.md` first for the core dump/COM technique, then
+**Read `_shared/agent-guide.md` first** — scope selection, environment, reporting conventions. Unlike
+the other checks this one opens Excel itself (font size and merge spans are not in the text dump), so
+also read, in `_shared/xlsx-excel-com-dump.md`, the sections `## The dump script` (the pre-existing-PID
+guard that stops you `Quit()`-ing the user's own Excel, and the Add-Type/inline rules),
+`## UsedRange-relative vs sheet-absolute coordinates` and `## Operational notes`; if COM keeps dying,
+that file's openpyxl fallback also serves this scan (`cell.font.sz`, `ws.merged_cells`). Then
 read `_shared/xlsx-formatting-scan.md` — it has the exact font-size/cell-merge
 detection technique (including the DBNull guard for mixed-formatting cells) and, critically, the
 noise-filtering rules learned from running this on real workbooks. **Read that second file fully

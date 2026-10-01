@@ -1,6 +1,6 @@
 ---
 name: report-design-check
-description: Review a program's 帳票設計書(<帳票ID>) sheets — the report/print specification that no other REV skill looks at in its own right. Checks that the report is registered in 06-03_帳票一覧_<WG>.xlsm under this program, that Ⅱ．帳票仕様's fixed spec rows (用紙ｻｲｽﾞ/明細部/改ﾍﾟｰｼﾞ条件/0件出力/出力順/抑止項目…) are actually filled in rather than left blank, that every 参照先 alias used in Ⅲ．編集仕様 is defined by a 参照ｴﾝﾃｨﾃｨ in Ⅰ．帳票出力条件, that every printed value traces back to a 取得項目 (and no fetched item goes unprinted), that 画面項目ID values on print items are registered in 82.画面項目辞書, and that the ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(<帳票ID>) layout sheet agrees with the print-item list. Distinct from design-doc-io-table-check (which only asks whether a 帳票設計書's tables reach the CRUD list) and xlsx-db-column-check (column existence). Use when the user asks to REV 帳票設計書/帳票仕様/印字項目. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Review a program's 帳票設計書(<帳票ID>) sheets — the report/print specification that no other REV skill looks at in its own right. Checks that the report is registered in 06-03_帳票一覧_<WG>.xlsm under this program, that Ⅱ．帳票仕様's fixed spec rows (用紙ｻｲｽﾞ/明細部/改ﾍﾟｰｼﾞ条件/0件出力/出力順/抑止項目…) are actually filled in rather than left blank, that every 参照先 alias used in Ⅲ．編集仕様 is defined by a 参照ｴﾝﾃｨﾃｨ in Ⅰ．帳票出力条件, that every printed value traces back to a 取得項目 (and no fetched item goes unprinted), that 画面項目ID values on print items are registered in 82.画面項目辞書, and that the ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(<帳票ID>) layout sheet agrees with the print-item list. Distinct from design-doc-io-table-check (which only asks whether a 帳票設計書's tables reach the CRUD list) and xlsx-db-column-check (column existence). Use when the user asks to REV 帳票設計書/帳票仕様/印字項目. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # report-design-check
@@ -15,11 +15,6 @@ It is also where the findings are. The project's 第3フェーズ基本設計 �
 ファイル出力 at 26% of one designer's findings and 18% of another's — and those two designers own the
 report-heavy programs.
 
-**Called from `rev-program-review`?** Then the workbook is already dumped and the scope is already
-chosen — don't re-dump it, don't unconditionally launch the other checks, and don't post a
-per-check status update. This skill runs on its own when it was one of the selected checks, or when
-the user asked for this check by name.
-
 **A program with no `帳票設計書(*)` sheet is not in scope.** Say so in one line and stop — do not
 substitute the `ﾌｧｲﾙ出力仕様書(F*)` sheet, which is a different document with a different shape and
 has its own check, `file-output-spec-check` (its own registry `06-04_ﾌｧｲﾙ一覧_*`, its own
@@ -27,16 +22,12 @@ common-download conventions). The two share the Ⅲ．編集仕様 table shape, 
 a ﾌｧｲﾙ出力仕様書 here when 帳票設計書 is absent — the report-specific rules below (Ⅱ．帳票仕様's label
 list, ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ) do not apply to it and would only produce noise.
 
-## Environment constraints (important)
+## Environment
 
-**Where the shared docs live:** the `_shared/*.md` files ship **inside this plugin**, in the
-`_shared/` folder next to this skill's own directory (`<plugin root>/skills/_shared/`) — **not** in
-`~/.claude/skills/_shared/`, which does not exist on a normal install. Resolve every `_shared/...`
-reference below against that folder; if it doesn't resolve, glob
-`**/rev-skills/**/skills/_shared/<filename>` and read the hit.
-
-Read `_shared/xlsx-excel-com-dump.md` first (the Excel COM dump — the validated reader for these
-workbooks; Python/openpyxl is installed but unvalidated against them), and `_shared/reference-index.md` for the 画面項目辞書 index used by check C5.
+**Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, reading the
+画面項目辞書 index (check C5), reporting conventions. The `06-03_帳票一覧_*` registry goes through the
+cache section that guide points to; resolve its struck/renamed rows with the `LiveText` cascade in
+`_shared/reference-index.md` ("Struck-through and grayed-out entries").
 
 ## Sheet anatomy (measured, not assumed)
 
