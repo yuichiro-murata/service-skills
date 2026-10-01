@@ -271,6 +271,26 @@ contradicts itself.
 `更新条件表(TXJCM137)`, whose whole sheet is struck out and withdrawn — a raw `Value2` scan surfaces
 them and a reviewer working from the shared dump will not see them at all. They are not findings.
 
+**C9 — 更新概要の書式「①画面(画面ID)、②ﾛｸﾞｲﾝ情報」.** Call-out on the self-check workbook's
+`更新条件表(TXJAM007)`: "①画面(画面ID)、②ﾛｸﾞｲﾝ情報 で記載すること。順番が逆や、ﾛｸﾞｲﾝ情報ではなくﾛｸﾞｲﾝは
+ﾀﾞﾒです". Read each block's `更新概要` value (col 16, first line). Find the label by **prefix**: the
+cell reads `更新概要⏎（仕様の背景なども記述）`, sometimes with a half-width `(`, so an exact match finds
+nothing. Calibrated on 2026-10-01 over 1,053
+blocks in 120 工程管理 PHASE1-3 workbooks; 634 are exactly `①画面(<画面ID>)、②ﾛｸﾞｲﾝ情報[、③…]`.
+**Apply the rule only when the block's sources include the screen and the login info.** Many blocks
+legitimately take values from elsewhere — `①承認処理API引数`, `①引戻し処理API引数`, `①ﾜｰｸﾌﾛｰからの引数`,
+`①機能定義書(PSJCB301).Ⅳ．機能処理概要.(2)、②起動ﾊﾟﾗﾒｰﾀ` (batch), `①製品仕様ﾏｽﾀWF(削除対象)` — and are
+not findings. Flag:
+- **画面 without its ID** — `①画面、②ﾛｸﾞｲﾝ情報` (87 blocks, e.g. `PSJAO401` `更新条件表(TXJAM023)` `[9,16]`,
+  most of `PSJCO503`): 低, name the 画面ID from the trigger/sheet context. A screen ID with a tab suffix
+  (`画面(GSJA241B-工程情報)`) or two IDs (`画面(GXJC101A,GXJC101B)`) is fine;
+- **order reversed** — `①ﾛｸﾞｲﾝ情報、②画面(GSJA241A)` (44 blocks, nearly all `PSJAO241`): 低. The ①②
+  symbols are used in the value-source column, so when fixing the order the designer must renumber
+  every source cell of that block too — say so in the finding;
+- **`ﾛｸﾞｲﾝ` not followed by `情報`** — none in the current corpus, but the call-out names it explicitly;
+  keep it.
+Report one line per sheet when every block on it has the same deviation.
+
 ### 5. Verify before reporting
 
 For each candidate finding, re-read the source cells in the dump. The three things that have

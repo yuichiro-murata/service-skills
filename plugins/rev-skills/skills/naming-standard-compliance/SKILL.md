@@ -164,6 +164,61 @@ and so on; the table is in `_shared/reference-index.md`), which is
    category): new files have a 改訂履歴 entry marked 新規作成 (and 流用新規 files cite their 流用元
    計画書No + 改訂履歴 No).
 
+7. **記述ルール from the self-check workbook** (`01_Doc\08_機能定義書\11_工程管理\XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx`,
+   call-outs on its sample sheets). Always-on, like steps 4-5. Calibrated on 2026-10-01 over 120
+   工程管理 `PHASE1`-`PHASE3` workbooks; counts and examples are one snapshot — re-derive every verdict.
+
+   **7a — 画面表示仕様の各ﾌﾞﾛｯｸ末行に取得件数.** Call-out on 画面設計書 Ⅲ: "取得件数を各末行に記載する".
+   Every block of 画面設計書 Ⅲ．画面表示仕様 that starts with `参照ｴﾝﾃｨﾃｨ` **and has a `取得項目`
+   table** must close with a `取得件数` row (`[27,4]=取得件数 [27,9]=1件 [27,15]=取得できない場合 [27,24]=-`).
+   Don't fix the column: a nested child block starts further right and so does its 取得件数
+   (`PSJCO503` `GSJC503A` `[156,6]` … `[172,6]`). Scope is 画面設計書 only — a ﾁｪｯｸ処理設計書 Ⅱ block with
+   参照ｴﾝﾃｨﾃｨ is not covered by this call-out.
+   - Exempt a block with no 取得項目 — a sort-only sub-block under a 集計単位 variant (`PXJCO164`
+     `GXJC164A` `①集計単位="管理No"` … 参照ｴﾝﾃｨﾃｨ/集計条件/ｿｰﾄ順 only) or a `UNION ALL` of two earlier
+     blocks (`PSJCO505` `GSJC505A` `[1044]`). 14 such blocks in the corpus.
+   - Measured: 1,007 of 1,058 blocks comply. **Missing — 低** (7: `PSJAO704` `GSJA704A` `[213]`,
+     `PSJCO503` `GSJC503A` `[432]`, `PXJCO128` `GXJC128B` `[124]` …).
+   - **Legacy shape** — the count written as `想定件数 0件以上` on the 取得項目 header row instead of a
+     closing 取得件数 row: 44 blocks in 5 sheets (`PSJCO602` `GSJC602A` alone has 16). Report once per
+     sheet as 低 ("旧書式。末行に取得件数を記載"). A block with **neither** shape on a legacy sheet
+     (`GSJC602A` `[264,4]`, `[462,4]`) is the plain "missing" finding, listed separately.
+   - A 取得件数 row present but with **no 件数** (`取得できない場合 -` only; 43 rows, against 551 `1件` and
+     409 `複数件`) — 低: the reader can't tell whether the fetch is single- or multi-row (レビュー観点 No.25).
+
+   **7b — ﾚｽﾎﾟﾝｽ定義の表記.** Call-out on 機能定義書: "「ｼｽﾃﾑ共通設計書.ﾚｽﾎﾟﾝｽ 参照」に統一". Read the body
+   of 機能定義書 `Ⅶ．ﾚｽﾎﾟﾝｽ定義`. Measured over 109 sheets: 97 read exactly `※ｼｽﾃﾑ共通設計書.ﾚｽﾎﾟﾝｽ 参照`.
+   - `※呼び出し元で記載` / `※呼出元で記載` (9) — every one is a **サブプロ/バッチ** (`S…B…`), whose response is
+     the caller's; correct, don't flag.
+   - `※06-09_ﾚｽﾎﾟﾝｽ一覧_工程管理を参照` (`PSJCO602`, `PSJCO604`) — 要確認: either the program has its own
+     responses (then `design-doc-internal-consistency` check 2 verifies 06-09) or it should use the
+     standard wording.
+   - Any other wording of the standard reference (missing `※`, `ｼｽﾃﾑ共設計書`, extra text) — 低, give the
+     exact standard string.
+
+   **7c — 画面名の後ろに画面ID.** Call-out on 機能定義書: "画面名を記載する場合は後ろに画面IDを記載すること".
+   In 機能定義書 `Ⅳ．機能処理概要` and 画面設計書 `Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細`, a known screen name followed by
+   `画面` (`取引先詳細画面`) in a sentence that transitions to, opens, returns to or shows it
+   (`遷移`/`起動`/`戻る`/`表示する`/`開く`/`呼出`) must be followed by `(<画面ID>)`
+   (`取引先詳細画面(GXJA802B)に遷移する`). Build the screen-name list from every 画面設計書's 3C header
+   `[4,15]` (screen name) / `[4,10]` (画面ID) in the folder, not just this workbook — the name you meet is
+   often another program's screen. Normalise the header name first: some end in `画面` (`受入入力画面`),
+   most don't, so match `name` + optional `画面`. The program's **own** screens count too
+   (`PSJCO602` `[52,4]` `棚卸用仕掛在庫ﾃﾞｰﾀ作成画面を表示する` → `(GSJC602A)`).
+   **The screen must be the object of the verb** — `…画面に遷移する` / `…画面に戻る` / `…画面を起動する` /
+   `…画面を表示する` / `…画面を開く`. `…画面に表示する` / `…画面で選択された…` put data *on* a screen and
+   are not this rule (`PSJCO602` `[145,4]` `…集計し、棚卸用仕掛在庫ﾃﾞｰﾀ作成画面に表示する。`). Don't scan
+   other sections: overview prose (Ⅰ．機能概要) and generic words (`画面ｸﾘｱ`, `呼出元画面`) are not this rule.
+   `ﾀﾞｳﾝﾛｰﾄﾞ画面` is excluded although `GSJA702A`'s header name is `ﾀﾞｳﾝﾛｰﾄﾞ`: the common download screen
+   is cited by program ID in the house wording (`【共通】ﾀﾞｳﾝﾛｰﾄﾞ(PSJAO702)を起動する`), and the bare
+   `ﾀﾞｳﾝﾛｰﾄﾞ画面の戻り値…` phrases are fixed template sentences. Several names map to more than one ID
+   (`社内加工単価登録` GSJC401A/GSJC402A, `工順比較` GSJA401G/GXJC124B, `工程詳細` GSJA401C/GXJA243B) — give
+   the candidates, don't guess.
+   Measured in that scope: 405 mentions carry the ID, **310 don't, across 110 sheets** — a widespread
+   omission, so report it **once per sheet, 低**, listing the cells and the ID to append
+   (`PSJAO704` `機能定義書` `[70,4]` `承認ｸﾞﾙｰﾌﾟ一覧画面に遷移する` → `承認ｸﾞﾙｰﾌﾟ一覧画面(GSJA704G)`). When the
+   name matches more than one screen ID, give the candidates rather than guessing.
+
 ## Reporting
 
 The output goes to the designer who owns the doc, not into your own working notes — report only
