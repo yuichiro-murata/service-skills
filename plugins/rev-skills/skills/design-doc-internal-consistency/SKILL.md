@@ -194,6 +194,10 @@ exact sheet/cell for every finding so it's actionable.
    context) — don't flag those, they're a different convention entirely and casing carries no meaning
    there. Flag every 表示形式 cell using `YYYY` and/or `DD` (or any other wrongly-cased token relative
    to the `yyyy/MM/dd` convention) as a casing defect to correct.
+   **User decision (2026-10-01): `yyyy/MM/dd` is the rule.** The self-check workbook's 観点50 says
+   「日付がある場合、表示形式は「YYYY/MM/DD」などを記載する」 and its own sample is mixed (`GXJA802B`
+   `[156,25]`=`yyyy/MM/dd`, `[164,25]`=`YYYY/MM/DD`); read 観点50 as "write a date format", not as the
+   casing to use. Do not re-raise this as a conflict, and keep flagging `YYYY/MM/DD` in 表示形式.
    The *absence* of that annotation is a different matter and belongs to a sibling skill: on a
    更新条件表 sheet a bare `ｼｽﾃﾑ日時` value with no `(YYYY/MM/DD HH24:MI:SS形式)` note is a finding,
    raised by `update-condition-completeness` C8. Casing inside the annotation is never a finding on
