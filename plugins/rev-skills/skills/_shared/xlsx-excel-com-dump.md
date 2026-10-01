@@ -383,6 +383,21 @@ public static class XlsxDumpHelper {
         }
         return list;
     }
+    // Non-empty columns whose left neighbour is also non-empty — the only candidates for a hidden
+    // value stored under a merge (Excel keeps those and Value2 returns them; openpyxl and the reviewer
+    // don't). Not "equal to the left": a renamed anchor leaves its old text in the hidden copies.
+    public static List<int> AfterNonEmptyCols(object vals, int r, int rows, int cols) {
+        var list = new List<int>();
+        object[,] arr = vals as object[,];
+        if (arr == null) return list;
+        string prev = null;
+        for (int c = 1; c <= cols; c++) {
+            string s = Cell(arr, vals, r, c, rows, cols);
+            if (s != null && s.Length > 0 && prev != null && prev.Length > 0) list.Add(c);
+            prev = s;
+        }
+        return list;
+    }
     // dead = coords to omit entirely; live = coords whose text is replaced by its unstruck remainder.
     // Both are keyed on ARRAY (UsedRange-relative) coordinates; r0/c0 shift the EMITTED coordinate
     // to sheet-absolute so a citation like [10,5] names the cell a reviewer sees in Excel.
@@ -413,6 +428,7 @@ $prefix = "<program id>"
 # @("表紙*","機能定義書*","帳票設計書*"). Hidden sheets (bk_ backups etc.) are out of scope by default.
 $IncludeSheetPatterns = $null
 $IncludeHiddenSheets  = $false
+$ErrorActionPreference = 'Stop'   # abort at the first RPC error instead of writing a half dump
 
 function Test-Gray([double]$argb) {
     $r = [int]$argb -band 0xFF; $g = ([int]$argb -shr 8) -band 0xFF; $b = ([int]$argb -shr 16) -band 0xFF
@@ -435,6 +451,7 @@ $excel.DisplayAlerts = $false
 if ($preExistingExcelPids -contains $excelComPid) {
     throw "Excel COM automation attached to the user's existing Excel process (PID $excelComPid) instead of creating a new instance. Aborting without calling Open/Close/Quit on it — ask the user to close their other Excel windows first."
 }
+try {   # the finally below closes OUR instance even when a sheet throws mid-dump
 $wb = $excel.Workbooks.Open($path, $true, $true)   # ReadOnly, no update-links prompt
 
 $deleted       = New-Object System.Collections.Generic.List[object]
@@ -468,6 +485,18 @@ foreach ($ws in $wb.Worksheets) {
     $liveMap = New-Object 'System.Collections.Generic.Dictionary[long,string]'
     $nDead = 0; $nPart = 0
 
+    # Hidden values under a merge: SXJCB147 stores `YOTO` in every cell of G704:P704, so Value2 printed
+    # it ten times (~2,000 phantom cells on that workbook) — a duplicate-ID or mismatch check then
+    # "finds" them. Drop a cell that follows a non-empty cell AND is not its merge area's anchor.
+    for ($r = 1; $r -le $rows; $r++) {
+        foreach ($c in [XlsxDumpHelper]::AfterNonEmptyCols($vals, $r, $rows, $cols)) {
+            $mc = $ws.Cells.Item(($r + $r0), ($c + $c0))
+            if ($mc.MergeCells -and $mc.MergeArea.Column -ne ($c + $c0)) {
+                [void]$dead.Add((([int64]$r) -shl 20) -bor ([int64]$c))   # omitted, not digested
+            }
+        }
+    }
+
     # Level 1 — one question for the whole sheet. Clean sheets cost zero further COM calls.
     $wholeStrike = $used.Font.Strikethrough
     $wholeColor  = $used.Font.Color
@@ -488,16 +517,20 @@ foreach ($ws in $wb.Worksheets) {
             if (-not $drill) { continue }
             # Level 3 — per cell, and per character only where the cell itself is mixed.
             foreach ($c in $cl) {
+                if ($dead.Contains((([int64]$r) -shl 20) -bor ([int64]$c))) { continue }   # hidden under a merge
                 $cell = $ws.Cells.Item($ar, ($c + $c0))
                 $s    = $cell.Font.Strikethrough
                 $col  = $cell.Font.Color
                 $isGray = (-not ($col -is [System.DBNull])) -and (Test-Gray $col)
                 $key = (([int64]$r) -shl 20) -bor ([int64]$c)   # key stays array-relative
                 $aC  = $c + $c0                                # digest records absolute coords
-                if ($s -is [System.DBNull]) {
+                if (($s -is [System.DBNull]) -and ($cell.Value2 -isnot [string])) {
+                    # mixed font on a number/date cell: Characters() has nothing to walk — keep it live
+                } elseif ($s -is [System.DBNull]) {
                     $raw = "$($cell.Value2)"; $lv = ""
                     for ($i = 1; $i -le $raw.Length; $i++) {
                         $ch = $cell.Characters($i, 1)
+                        if ($null -eq $ch) { $lv = $raw; break }   # see "Characters() returns $null" below
                         if (-not $ch.Font.Strikethrough) { $lv += $ch.Text }
                     }
                     if ($lv.Trim().Length -eq 0) {
@@ -521,9 +554,11 @@ foreach ($ws in $wb.Worksheets) {
     [System.IO.File]::WriteAllText((Join-Path $out ($prefix + "_" + $safe + ".txt")), $text, [System.Text.Encoding]::UTF8)
     $summary += "$n`t$($used.Rows.Count)x$($used.Columns.Count)`tdead=$nDead`tpartial=$nPart"
 }
-$wb.Close($false)
-$excel.Quit()
-[System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null
+} finally {
+    if ($wb) { try { $wb.Close($false) } catch {} }
+    try { $excel.Quit() } catch {}   # safe: the PID guard above proved this instance is ours
+    [System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null
+}
 
 # _DELETED_DIGEST.txt — removed content, grouped into contiguous row blocks. Structural filler is
 # counted but not listed: a bare row/condition number, a hyphen placeholder, a comparison operator.
@@ -568,6 +603,9 @@ $skippedSheets -join "`n"   # a suspiciously large row count on a skipped 詳細
 ```
 
 ## When Excel refuses to open the workbook at all (0x800A03EC)
+
+(Re-checked 2026-10-01: `SXJCB147` now opens in both Excel and openpyxl, and the two dumps agree cell
+for cell — 1,451 struck / 396 partial. Try COM first; fall back to `scripts/live_dump.py` on this error.)
 
 Occasionally `$excel.Workbooks.Open(...)` fails on one specific design-doc workbook with
 `Workbooks クラスの Open プロパティを取得できません。` / HRESULT `0x800A03EC`, while every other

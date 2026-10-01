@@ -46,12 +46,20 @@ Rules that make the parse reliable:
   whole sheet for header rows and treat each block independently — each has its own 更新ﾃｰﾌﾞﾙ,
   更新条件 and operation set. Stopping at the first block silently skips most of the specification.
 - **Operation columns are read off the header row, not hardcoded.** Observed label columns: 16, 28,
-  34, 40. Accept a cell as an operation only when its text matches
-  `^(INSERT|UPDATE|DELETE|MERGE)[0-9０-９①-⑳]*$`. **The suffix is often a circled digit, not an
-  ASCII one** — `TXJAM026WF`'s header reads `INSERT①` / `INSERT②` while `TXJAM027`'s reads
-  `INSERT1` / `INSERT2`. An ASCII-only `\d*$` silently drops both circled blocks and reviews only
-  the `DELETE`, which is how a first pass over `PXJCO192` missed two thirds of that sheet. Repeated
-  plain labels (two bare `INSERT` columns) are real too. This filter matters: several sheets put an
+  34, 40. Accept a header-row cell as an operation when it **starts with** an operation word —
+  `re.match(r"^\s*(?:\d+\.|【)?\s*(INSERT|UPDATE|DELETE|MERGE)", text)` — and take its kinds from
+  **every** operation word in it (`re.findall`). **Never anchor the end of the label.** Measured on
+  the 122 工程管理 PHASE1-3 workbooks (2026-10-01): of 1,444 header labels, an end-anchored
+  `^(INSERT|…)[0-9０-９①-⑳]*$` silently dropped **98** — `UPDATE ※1`, `INSERT※1`, `DELETE　※1`,
+  `INSERT① ※1`, `INSERT-1`, `INSERT_1`, `1.DELETE`, `【DELETE】※1`, `DELETE　(※1)`,
+  `INSERT(新規入力の場合)`, `UPDATE(1)⏎(削除された…明細)` — each a whole block left unreviewed. The
+  prefix match accepts all 1,443 real labels and rejects only a free-text note in the same row
+  (`[115,74]=更新条件表(TXJCM006)のUPDATE①でｷｰにした枝番`). **Read the suffix**: a `※n` or a
+  parenthetical says when the operation runs, which C3/C6 need. A column naming two operations
+  (`DELETE　INSERT`, `UPDATEDELETE`, `UPDATE(存在すれば) INSERT`) gets both rule sets: C2 for its
+  INSERT side and the `[KEY]` rule of C3 for its UPDATE/DELETE side. Circled and ASCII digits both
+  occur (`TXJAM026WF` `INSERT①`/`INSERT②`, `TXJAM027` `INSERT1`/`INSERT2`), and repeated plain labels
+  (two bare `INSERT` columns) are real too. The start anchor matters: several sheets put an
   unrelated
   取得ﾃｰﾌﾞﾙ/検索条件 sub-block on the same rows further right (`[14,58]=ﾊﾟﾗﾒｰﾀﾏｽﾀ.ｷｰ1`,
   `[14,58]=共通ｺｰﾄﾞﾏｽﾀ.ｷｰ1`), and a "any non-empty cell to the right is an operation" rule turns
@@ -75,8 +83,8 @@ Rules that make the parse reliable:
 - **Hidden sheets are out of scope**, per the shared dump doc's default.
 - **A dump record can span several physical lines.** The dump writes one line per sheet row, but a
   cell whose own value contains a newline (a multi-line 更新条件, a `※…`-annotated INSERT value)
-  puts that newline straight into the file. Join every line that does **not** start with `[` onto
-  the previous line before parsing, or the row is truncated at the newline and every operation
+  puts that newline straight into the file. Parse with `_shared/scripts/dump_cells.py` (`load()` groups by the
+  `[r,c]=` tokens, so embedded newlines are harmless) — never line by line, or the row is truncated at the newline and every operation
   column after it reads as empty — which looks exactly like "未設定" and produces false C2/C3
   findings. Confirmed on `TXJCM137WF` row 26 (`ﾜｰｸﾌﾛｰID`), whose INSERT value carries a
   `※ｼｽﾃﾑ共通設計書…` continuation.
@@ -85,8 +93,8 @@ Rules that make the parse reliable:
 
 ### 1. Get the workbook dump
 
-If `rev-program-review` already dumped it, read those scratchpad files. Otherwise dump the workbook
-per `_shared/xlsx-excel-com-dump.md`. Only `更新条件表(*)` sheets matter for this check, plus the
+If `rev-program-review` already dumped it, read those scratchpad files. Otherwise dump it live with `python _shared/scripts/live_dump.py <workbook> <out_dir>`
+(openpyxl; same format and digest as the shared dump). Only `更新条件表(*)` sheets matter for this check, plus the
 機能定義書 and 画面設計書 sheets for the trigger cross-check in step 5 C6.
 
 ### 2. Resolve each 更新ﾃｰﾌﾞﾙ to its layout file
@@ -171,7 +179,7 @@ This check earns its place: on `PXJCO192`'s `TXJCM501` it found three layout col
 surfaces if step 2's PH3 > PH2 precedence was applied: `TXJCM501` has a layout file under **both**
 phase folders, and the 更新条件表 matches the older one.
 
-**C2 — INSERT で notnull 列が未設定.** For every operation whose label starts with `INSERT` (or
+**C2 — INSERT で notnull 列が未設定.** For every operation whose kinds include `INSERT` (or
 `MERGE`): every layout column with `notnull = Y` must have a non-`-`, non-empty value. An unset
 NOT NULL column is a guaranteed runtime failure, so this is the highest-severity finding this check
 produces. Two exemptions, both verifiable from the layout: the column has a `default` value (col 36),
@@ -190,7 +198,14 @@ than staying silent — "notnull だが default 設定あり" is useful to the r
   produced noise on two of `PXJCO192`'s sheets (`TXJCM838WF`, where the DELETE omits `SEQ` from a
   7-column PK, and `TXJAM026WF`, where it omits `工程ｺｰﾄﾞ`), and in both the paired INSERT sets the
   full key. Report a partial key only for a **standalone** DELETE, for an UPDATE, or when the paired
-  INSERT does **not** set the full PK.
+  INSERT does **not** set the full PK. **The exemption does not cover a PK column the paired INSERT
+  sets to a fixed literal** (a discriminator such as `区分="1"`): leaving it out of the DELETE's
+  `[KEY]` also wipes the rows of every *other* discriminator value, which the INSERT never rewrites
+  (`PSJCO501` `TSJCD215` `[35,18]`). Report that one at 中, quoting the literal.
+- **Differential notation in the 2nd+ column of the same operation.** When a block has `UPDATE1` /
+  `UPDATE2`, the later column often writes only what differs and leaves the rest `-`. Do not read
+  those `-` as "not set" for C2/C3; report the notation once per block at 低 ("差分記法 — 共通列の
+  扱いが明記されていない") only if no footnote explains it.
 - A `[KEY]` on a column that is **not** in `I01` is also worth a line: either the doc means a
   non-unique filter (fine, but then see the range warning above) or the PK in the layout is wrong.
 

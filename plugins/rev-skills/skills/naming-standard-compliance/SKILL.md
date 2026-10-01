@@ -49,14 +49,17 @@ the digest is retired, not a numbering violation: report neither its format nor 
 Note: **画面項目ID** (e.g. `XJC0036`, `SJC0662` seen inside 画面設計書「Ⅴ．画面項目定義」) is a
 *different* ID space not defined in "各ID採番" at all — its correctness is "is it registered in the
 `82.画面項目辞書_*.xlsx` its own prefix routes to" (`XJC`/`SJC` → `_工程管理`, `XJZ`/`SJZ` → `_共通`,
-and so on; the table is in `_shared/reference-index.md`), which is
+and so on; the routing table is in `_shared/agent-guide.md`), which is
 `design-doc-internal-consistency`'s job, not a fixed regex to validate here.
 
 ## Procedure
 
 1. Given a target file, WG folder, or the whole project, enumerate design-doc workbooks in scope
-   (`表紙`/`機能定義書`/`画面設計書`/`ﾃｰﾌﾞﾙﾚｲｱｳﾄ` sheets carry the IDs — dump those sheets per the
-   shared COM script).
+   (`表紙`/`機能定義書`/`画面設計書`/`ﾃｰﾌﾞﾙﾚｲｱｳﾄ` sheets carry the IDs). Use the dump
+   `rev-program-review` handed you; standalone, run `_shared/scripts/live_dump.py` on each workbook.
+   The program list is `06-01_機能一覧_<WG名>.xlsx` **and** `06-01_機能一覧_<WG名>(付属機能).xlsx` (its
+   `ｻﾌﾞﾌﾟﾛ一覧` sheet) — a sub-program missing from the first is not unregistered until the second is
+   checked.
 2. Extract every ID of each type from its home location:
    - プログラムID/画面ID from the 表紙 and 機能定義書/画面設計書 header rows (row 3-4 area, labeled
      `ﾌﾟﾛｸﾞﾗﾑID`/`画面ID`).
@@ -73,8 +76,13 @@ and so on; the table is in `_shared/reference-index.md`), which is
 4. Header-info check (checklist 1-6): within one workbook, confirm 機能ID/画面ID/システムID/
    計画書No/作成日 are identical across every sheet's header block (表紙, 機能定義書, 画面設計書,
    ﾁｪｯｸ処理設計書, 更新条件表 all repeat this header — they should never disagree). Flag any sheet
-   whose header contradicts the others in the same file. **Deliberately skip `詳細設計書` sheets
-   here** (and don't dump them at all) — across every program reviewed with this skill's sibling
+   whose header contradicts the others in the same file. Exceptions: **作成日 may legitimately be
+   later on a sheet added in a later revision** (check 表紙 Ⅲ．改訂履歴 for that sheet's addition
+   before reporting); **表紙 has no header block** (its IDs sit in the body); a template with a
+   single header copy (e.g. `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ`) skips the left/right comparison below. Do report an
+   **更新日 older than a dated revision note inside the same sheet** (`2026/6/10 福浦 修正` on a
+   sheet whose header 更新日 is earlier) — the header was not maintained. **Deliberately skip `詳細設計書` sheets
+   here** beyond their header rows (`[1-4,*]`) —  across every program reviewed with this skill's sibling
    `design-doc-internal-consistency` so far, 詳細設計書 has turned out to be a near-empty
    header-only sheet, so checking its header costs a full-sheet dump for essentially no chance of
    catching a real mismatch. This is a deliberate, documented coverage trade for token savings, not

@@ -13,8 +13,13 @@ in both directions" covers and why this was split out of `design-doc-internal-co
 ## Environment
 
 **Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, reporting
-conventions. The DB一覧 and ﾃｰﾌﾞﾙﾚｲｱｳﾄ files this check reads go through the cache section that guide
-points to. Anything visible in the dump is live evidence; removed content lives in
+conventions. Read the DB一覧 **live** (`_shared/scripts/live_dump.py`; it has struck = retired rows) and
+the ﾃｰﾌﾞﾙﾚｲｱｳﾄ files live too, or through the COM cache only per the guide's master-file row. Route
+the DB一覧 by the table ID's JOBコード (`TXJC*`/`TSJC*` → `06-06_DB一覧_工程管理`, `TXJZ*` → `_共通`,
+…), as for screen-item IDs. When resolving a layout, ignore the older copies under `VIEW\`,
+`STEP1暫定テーブル\` and `10_共通WG` mirrors unless no flat-level/PHASE copy exists
+(`xlsx-db-column-check` step 3 has the precedence). Follow a delegated block (`07.共通項目取得 参照`)
+one level only: record the table it names as declared-by-reference, don't chase further. Anything visible in the dump is live evidence; removed content lives in
 `_DELETED_DIGEST.txt`, which this check needs only to explain why a declared table has no live usage
 left. Sources: 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/帳票設計書/ﾌｧｲﾙ出力仕様書.
 

@@ -71,7 +71,8 @@ those would be ~150 false findings. Flag, for a non-zoom Button in a `共通` ar
   sheets use for the same button as the fix. A cell holding two IDs (`SJA0873⏎SJA9048`) passes if
   one of them is `9xxx`.
 Two checks the band test cannot catch, both worth a line:
-- **the same ID on two different buttons of one sheet** — `PSJAO205` `GSJA205D` gives 処理状況ﾎﾞﾀﾝ
+- **the same ID on two different buttons of one sheet** (not a button repeated on every detail row —
+  a per-row `削除ﾎﾞﾀﾝ` sharing one ID is one control) — `PSJAO205` `GSJA205D` gives 処理状況ﾎﾞﾀﾝ
   `[86,54]` the ID `XJZ9009`, which is its own 戻るﾎﾞﾀﾝ's `[85,54]`; a duplicate ID means one label
   is wrong at runtime;
 - **a standard button whose ID differs from the one the rest of the corpus uses** for that button
@@ -124,13 +125,15 @@ skill's DB-length comparison.
 
 ### W2 — 項番の飛び・重複 (No.6) (formerly design-doc-internal-consistency check 10)
 
-Every numbered list in the four sheet types — a column (≤ col 8) whose
-header cell is `No.`/`No`/`項番`, followed by integer cells — must run 1, 2, 3 … Also the circled
+Every numbered list in the four sheet types (機能定義書, 画面設計書, ﾁｪｯｸ処理設計書, 更新条件表) — a
+column (≤ col 8) whose header cell is `No.`/`No`/`項番`, followed by integer cells — must run 1, 2, 3 … Also the circled
 section numbers of 機能定義書 Ⅳ (`A-①`, `A-②` … per letter). **ﾁｪｯｸ処理設計書 is the exception to the
 header rule**: its number column is col 1 under the header `ﾁｪｯｸ項目` (`[8,1]`), and each
-`【…押下時】` heading starts a new list — scan it explicitly or its defects are missed (`PXJCO129`
+`【…押下時】` heading starts a new list (a heading repeated verbatim further down is still a new
+list) — scan it explicitly or its defects are missed (`PXJCO129`
 `ﾁｪｯｸ処理設計書(GXJC129A)` `[16,1]`-`[18,1]` = 5, 6, 7 after 1-6; `GXJC129B` `[96,1]`/`[98,1]` both 84).
-**End a list only on a heading in col ≤ 3** (an area title, `Ⅳ．…`, `【…】`) — the Ⅴ 説明 column (col 43)
+**End a list only on a heading at or left of the number column** (an area title, `Ⅳ．…`, `【…】`;
+col ≤ 3 for the usual col-2 number column) — the Ⅴ 説明 column (col 43)
 routinely holds `Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 参照`, and treating that as a section break hides duplicates
 (`GSJA704J` `[255,3]`). **Judge the sequence on live numbers only**; a struck row that still shows its
 old number (`ﾁｪｯｸ処理設計書(GSJA704B)`: live 1, struck 2 and 3, live 2) is not part of the sequence and
@@ -218,7 +221,9 @@ are not this rule (`PSJCO602` `[145,4]` `…集計し、棚卸用仕掛在庫ﾃ
 other sections: overview prose (Ⅰ．機能概要) and generic words (`画面ｸﾘｱ`, `呼出元画面`) are not this rule.
 `ﾀﾞｳﾝﾛｰﾄﾞ画面` is excluded although `GSJA702A`'s header name is `ﾀﾞｳﾝﾛｰﾄﾞ`: the common download screen
 is cited by program ID in the house wording (`【共通】ﾀﾞｳﾝﾛｰﾄﾞ(PSJAO702)を起動する`), and the bare
-`ﾀﾞｳﾝﾛｰﾄﾞ画面の戻り値…` phrases are fixed template sentences. Several names map to more than one ID
+`ﾀﾞｳﾝﾛｰﾄﾞ画面の戻り値…` phrases are fixed template sentences. When a name matches both the program's own screen and another program's, prefer the own one.
+`名称(ID)画面` (`取引先詳細(GXJA802B)画面に遷移`) carries the ID and passes; mention the house order
+`名称画面(ID)` once at 低 at most. Several names map to more than one ID
 (`社内加工単価登録` GSJC401A/GSJC402A, `工順比較` GSJA401G/GXJC124B, `工程詳細` GSJA401C/GXJA243B) — give
 the candidates, don't guess.
 Measured in that scope: 405 mentions carry the ID, **310 don't, across 110 sheets** — a widespread

@@ -21,8 +21,9 @@ spec — `ﾌｧｲﾙ出力ｲﾒｰｼﾞ`, `ﾌｧｲﾙ出力のｲﾒｰｼ
 ## Environment
 
 **Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump, reading the
-画面項目辞書 index (F5), reporting conventions. The `06-04_ﾌｧｲﾙ一覧_*` registry and any ﾌｧｲﾙﾚｲｱｳﾄ workbook
-go through the cache section that guide points to.
+画面項目辞書 index (F5), reporting conventions. Read the `06-04_ﾌｧｲﾙ一覧_*` registry and any ﾌｧｲﾙﾚｲｱｳﾄ
+workbook **live** with `_shared/scripts/live_dump.py` (registries carry struck rows; the COM cache
+keeps them).
 
 ## Sheet anatomy (measured, not assumed)
 

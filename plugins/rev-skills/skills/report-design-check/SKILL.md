@@ -89,7 +89,9 @@ screen-item IDs: `R` + `XJC`/`SJC` → `01_Doc\06_システム設計書（一覧
 `06-03_帳票一覧_工程管理.xlsm` holds both `RXJC*` and `RSJC*` — so route per ID and deduplicate the
 files, rather than assuming one file per program.
 
-Dump it through the cross-session cache (`_shared/xlsx-excel-com-dump.md`). The registry sheet is
+Read it **live** — `_shared/scripts/live_dump.py <registry> <out> --sheets "^帳票一覧"` — not
+through the COM cross-session cache, which keeps struck text (see the rename-in-place rule below).
+The registry sheet is
 `帳票一覧(<WG>)`: header at row 4, data from row 5 —
 `No.(1) | 帳票ID(2) | 帳票名称(3) | 編成(4) | RL(5) | BF(6) | BL(7) | 区分(8) | 備考(9) | 計画書No.(10)`.
 The `備考` column carries the **owning program's name** (`処置指示発行(ｻﾌﾞﾌﾟﾛ)`), which is what C1
@@ -164,6 +166,11 @@ reference and more than one block defines it, that ambiguity is the finding.
 取得項目 table; only inside Ⅲ．編集仕様 is it `参照先`. Scope the scan to Ⅲ, or the 取得内容 values
 enter the reference set and get reported as unresolvable.
 
+**More vocabulary seen on the SXJCB147 validation run:** a `※n` 参照先 points at the footnote of that
+number (resolve it there, not as a block); a row whose meaning is fully given by its `※n` note may
+carry 参照先 `-`; and `Y.<column>` items can be defined by Ⅰ's `※1` rather than by a block's 取得項目.
+None of these is unresolved.
+
 **C4 — 取得項目と印字項目の双方向照合.** Use the reference vocabulary from C3 — a print item's source
 block is usually named by its `(n)` 参照先, not by an alias letter, and the `項目名・出力値` cell then
 names the 取得項目 directly (`RXJC041`'s `指示工程ｺｰﾄﾞ+工程名称` has 参照先 `引数,(3)` and value
@@ -175,6 +182,9 @@ names the 取得項目 directly (`RXJC041`'s `指示工程ｺｰﾄﾞ+工程名
   as such.
 - A `項目名・出力値` that is a bare quoted literal (`"品目ｺｰﾄﾞ"`) is a fixed label, not a data
   reference. Don't chase it into the 取得項目 list.
+- A block delegated to `07.共通項目取得` (`共通項目取得 参照`) has its 取得項目 list in that master,
+  not in this sheet — check printed items against the master's list (read it live) or mark them
+  要確認; never report them as "never fetched".
 
 **C5 — 画面項目IDの登録.** Every ID in a `画面項目ID` cell must be registered in the
 `82.画面項目辞書_*.xlsx` its prefix routes to — build/read the index per `_shared/reference-index.md`
@@ -185,7 +195,9 @@ multilingual, and a blank means the label is hardcoded.
 
 **C6 — ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄとの整合.** For each report with a `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(<帳票ID>)` sheet, check that
 every 出力項目名 in the print-item tables appears somewhere on the chart, and that the chart has no
-labelled field absent from the print-item tables. These sheets are wide grids, so compare on item
+labelled field absent from the print-item tables. **Most chart labels are DrawingML shape text, not
+cell values** — the dump misses them; extract the `<a:t>` runs from `xl/drawings/drawingN.xml` of
+the chart sheet (map sheet → drawing via `xl/worksheets/_rels/sheetN.xml.rels`). These sheets are wide grids, so compare on item
 **names**, not positions, and keep this check's confidence honest — a chart cell can legitimately
 carry a caption that is not a print item. Report a missing item as "帳票設計書にあるがﾚｲｱｳﾄにない"
 (and the reverse) rather than asserting a defect. A report whose chart sheet is missing entirely,

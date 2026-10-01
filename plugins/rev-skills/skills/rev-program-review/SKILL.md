@@ -5,7 +5,7 @@ description: Entry point for a full REV of ONE program's design-doc workbook (�
 
 # rev-program-review
 
-Runs a REV of one program's design-doc workbook with a **user-selected scope**. The 9 checks below
+Runs a REV of one program's design-doc workbook with a **user-selected scope**. The 10 checks below
 are individually expensive (each dumps and re-reads a large workbook, several also read WG-folder
 DB-layout files and the 01_Doc common-design workbooks), so running all of them when the user only
 wanted two wastes a lot of time and tokens. Ask first, then run only what was selected.
@@ -132,15 +132,22 @@ to the next one unless the user says "同じ観点で" or similar.
    and refreshed the same way):
    - **区分名称 index** (`group → {区分: 区分名称}` from `09.区分名称_step2.xlsx`) — when
      `design-doc-internal-consistency` is selected (check 11). Build it exactly as that check
-     describes (multi-group titles split on `、`, sub-headings not treated as groups).
-   - **Screen-name list** (`画面名 → 画面ID` from the 3C header `[4,15]`/`[4,10]` of every 画面設計書 in
-     the WG's `PHASE*` folders) — when `design-doc-writing-rules` is selected (W5).
+     describes (multi-group titles split on `、`, sub-headings not treated as groups: a col-4 title
+     followed by another col-4 title before any `区分`/`区分名称` header is the **parent**, and the value
+     tables under its sub-headings merge into it). Write JSON `{"source": …, "source-mtime-utc": …,
+     "groups": {group: {区分: 区分名称}}}`.
+   - **Screen-name list** (`画面名 → 画面ID` from the 3C header `[4,15]`/`[4,10]` of every 画面設計書 sheet
+     in every workbook under `01_Doc\08_機能定義書\` — all WGs, not only `PHASE*`, minus the folder
+     exclusions in `agent-guide.md`) — when `design-doc-writing-rules` is selected (W5). Multi-source,
+     so key its freshness on (workbook count, newest mtime) under that folder and rebuild when either
+     changes; it takes ~3 minutes cold (openpyxl `read_only`, header cells only).
    A check run standalone builds what it needs itself.
 3. Run the selected checks as one combined pass — in parallel background agents when there are
    several. Follow each selected skill's own SKILL.md as the authority for how that check is done;
    this skill only decides *which* checks run. **Each agent's prompt must say**: read
    `_shared/agent-guide.md` (not the whole of `xlsx-excel-com-dump.md`), the dump directory and
-   `_DELETED_DIGEST.txt` path, and the index/lookup paths that check uses. The orchestrator itself
+   `_DELETED_DIGEST.txt` path, the per-sheet `dead=`/`partial=` counts the dump printed, and the
+   index/lookup paths that check uses. The orchestrator itself
    reads both `agent-guide.md` and `xlsx-excel-com-dump.md`, since it produces the dump.
 4. Do **not** post a status update as each agent finishes. Wait until every check in the batch has
    completed, then compose and post **one** merged report.
@@ -167,7 +174,9 @@ user's very next message after the report was 「取り消し線加味して誤�
    shared-template sheet must be measured across the sibling workbooks in the same PHASE folder
    before it is reported. Two `PXJCO124` findings died this way (0 of 28 and 27 of 28 — see
    `naming-standard-compliance`'s 表紙 section for the specifics). One openpyxl pass over the folder
-   settles it and takes under a minute.
+   settles it and takes under a minute. **Apply the same to header-row observations** — a right-hand
+   (`3D`) header copy reading `-` was raised 15+ times on the PSJCO501 REV, yet ~115 of 323 PHASE2
+   sheets do it; only a copy that *contradicts* the left one is a finding.
 
 State the outcome of this pass in the report. "取り消し線を加味した結果、誤指摘は0件" is itself
 information the reviewer wants, and it is what lets them trust the rest of the list.

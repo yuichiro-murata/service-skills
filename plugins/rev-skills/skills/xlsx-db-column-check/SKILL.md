@@ -69,6 +69,12 @@ already the live text (`PXJCO124`), and `③④` treated as two entity reference
 (`PSJCO205`). All three came from matching raw text; none can occur when matching what the live dump
 gives you.
 
+**Two more reference sources seen on the PSJCO501 run.** 更新条件表 sheets often carry a side-by-side
+`参照ｴﾝﾃｨﾃｨ` block (cols ~55–80, its own `取得ﾃｰﾌﾞﾙ`/`検索条件` headers) — collect its
+`<alias>.<column>` references against that block's table, not the sheet's 更新ﾃｰﾌﾞﾙ. And a
+subquery inside a 検索条件 introduces its own alias (`(SELECT … FROM TXJCM006 Z …)`): resolve `Z.` to
+the subquery's table for that cell only.
+
 ### 3. Locate and dump the actual DB design files
 
 **Quick reference — resolving a table ID to its one authoritative layout file:**
@@ -249,6 +255,8 @@ which otherwise produces a guaranteed false finding:
   appear in no 検索条件, no 取得項目 and no 更新条件表. Skip them silently; they are not "unmapped item"
   findings.
 
+- **Audit columns.** `登録者`/`登録日時`/`更新者`/`更新日時`/`更新ﾎｽﾄ名`/`更新ﾌﾟﾛｸﾞﾗﾑID`/`排他ﾌﾗｸﾞ` shown on a
+  screen are display-only system values — skip them for 桁数.
 - **Composites.** `(1).停止工程ｺｰﾄﾞ+":"+(1).工程名` legitimately needs the sum of its parts plus the
   separator. Skip rather than guess which part to compare.
 - **Non-character columns.** A 年月日(8桁) TextBox against a `DATE` column, or a screen 桁数 against

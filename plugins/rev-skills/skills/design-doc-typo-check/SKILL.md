@@ -46,16 +46,20 @@ program workbook, that means:
   (short prose), Ⅳ．機能処理概要 (the main narrative — numbered steps, ※ footnotes, and any prose
   woven into 検索条件/取得内容 descriptions), Ⅵ．前提条件, Ⅷ．その他特記事項.
 - **画面設計書**: Ⅲ．画面表示仕様 の ※ footnotes, Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 (event-behavior
-  descriptions — often long paragraphs), Ⅴ．画面項目定義 の 備考 column, Ⅵ．画面項目制御・出力仕様
-  の 備考/条件 prose.
-- **ﾁｪｯｸ処理設計書**: condition descriptions, error-message body text.
+  descriptions — often long paragraphs), Ⅴ．画面項目定義 の 説明 column (col 43 — there is no 備考
+  column), Ⅵ．画面項目制御・出力仕様 の 条件 prose.
+- **ﾁｪｯｸ処理設計書**: the `ﾁｪｯｸ詳細` and `ﾁｪｯｸ補足` columns, error-message body text.
+- **ﾌｧｲﾙ出力仕様書** (if present): 出力条件 / 編集内容 / 備考 prose.
 - **更新条件表**: the 更新概要 prose at the top of the sheet, and ※-numbered footnotes (these are
   written in full sentences, unlike the 項目名/取得内容 columns which are mostly structured tokens).
+  A structured token is still in scope for an **obvious** misspelling (`ﾛｸﾞｲﾝ画面.` with a stray
+  period, `作場名` for `作業場名`) — skip only style and abbreviation questions there.
 - **帳票設計書** (if present): 処理の流れ (numbered narrative steps), 備考 column.
 
 ## Procedure
 
-1. Dump the target workbook's sheets per the shared COM technique (skip 詳細設計書).
+1. Use the dump `rev-program-review` handed you; standalone, run
+   `python _shared/scripts/live_dump.py <workbook> <out_dir>` (it skips 詳細設計書).
 2. For each section listed above, read every cell's full text — sentence by sentence, not a keyword
    scan. Look for:
    - **誤字**: a wrong kanji/character that doesn't fit the intended word (a likely IME conversion

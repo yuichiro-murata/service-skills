@@ -11,7 +11,7 @@ not pay for it.
 | You are… | Read |
 |---|---|
 | A check agent handed a ready dump (normal case under `rev-program-review`) | **This file only.** |
-| A check agent that must dump a **reference master** (ﾃｰﾌﾞﾙﾚｲｱｳﾄ, `04.ﾒｯｾｰｼﾞ管理_*`, `05.ｼｽﾃﾑ共通設計書`, `06-0x_*一覧_*`, …) | This file, plus **only** the section `## Cross-session cache for reference/master files` of `xlsx-excel-com-dump.md` (Grep the heading for its line number and Read from there), and `## UsedRange-relative vs sheet-absolute coordinates` if you write any COM code. |
+| A check agent that must read a **reference master** (ﾃｰﾌﾞﾙﾚｲｱｳﾄ, `04.ﾒｯｾｰｼﾞ管理_*`, `05.ｼｽﾃﾑ共通設計書`, `06-0x_*一覧_*`, `07.共通項目取得`, …) | This file. Read the master **live** with `scripts/live_dump.py <master> <out_dir> --sheets <regex>` (see "Reading a reference file yourself"). The COM cross-session cache in `xlsx-excel-com-dump.md` writes raw `Value2` **with struck text included** — use it only as a speed path for a ﾃｰﾌﾞﾙﾚｲｱｳﾄ batch whose files carry no strikethrough, never for registries, `07.共通項目取得` or `09.区分名称`. |
 | The orchestrator, or a standalone run that must dump the **target workbook** itself | This file **and** `xlsx-excel-com-dump.md` in full. |
 | Anyone building a reference index (画面項目辞書 …) | `reference-index.md` (builders, freshness, subsetting). Reading an index is covered below. |
 | `design-doc-formatting-consistency` | Additionally `xlsx-formatting-scan.md`. |
@@ -41,20 +41,27 @@ need per `reference-index.md`.
 - `python` (CPython 3.13, openpyxl 3.1.5) works; `python3` is a Store stub. Write scripts with the
   Write tool and run `python <path>`.
 - Cylance blocks running a `.ps1` file: pass PowerShell inline, or `Invoke-Expression (Get-Content … -Raw)`.
-- Read dump `.txt` files with the Read tool.
+- Read dump `.txt` files with the Read tool; **parse them in code only through `scripts/dump_cells.py`**
+  (`load()` groups tokens by `[r,c]`). A hand-written line-by-line parser drops every token after an
+  in-cell newline — that produced a false 中 finding in a full REV (PSJCO501 `TSJCA311` row 70).
+- Set `$env:PYTHONIOENCODING='utf-8'` before running python from PowerShell, or printing half-width
+  katakana fails under cp932.
 - **openpyxl cannot open every workbook**: `PXJCO130_ﾛｯﾄﾄﾚｰｽ.xlsx` raises
   `There is no item named 'xl/drawings/NULL' in the archive` (a dangling drawing relationship) while
   Excel opens it fine. If the fallback dies this way, use the COM dump for that workbook — never skip it.
-- Excel COM dump is the default reader; the openpyxl live dump in `xlsx-excel-com-dump.md` is a
-  **validated** fallback (byte-identical on the sheets compared). Older SKILL text calling openpyxl
-  "never validated" is out of date.
+- Excel COM dump is the default reader for the target; the openpyxl live dump
+  (`scripts/live_dump.py`, same output format, digest one line per cell) is the **validated** fallback
+  and the standalone route — it reproduced an independent openpyxl implementation cell for cell on
+  SXJCB147 (1,451 struck / 396 partial).
 
 **Don't dump or read `詳細設計*` / `*画面ｲﾒｰｼﾞ*` sheets** — no check reads them (the shared dump skips
 them and records only their size). `design-doc-formatting-consistency` documents its own deliberate
 exception note.
 
-**The dump is live** — struck/gray content is already gone; **do NOT run a formatting scan of your
-own**. See "Excluding struck-through / grayed-out rows" below for what that means and when to open
+**The dump is live** — struck/gray content is already gone; **do NOT run your own strikethrough/gray
+scan** (font-size/merge scanning is `design-doc-formatting-consistency`'s separate job). The
+orchestrator passes the per-sheet `dead=`/`partial=` counts in your prompt; quote them for the one-line
+"excluded at dump time" note, and omit that line if none were given. See "Excluding struck-through / grayed-out rows" below for what that means and when to open
 `_DELETED_DIGEST.txt`.
 
 **Reporting conventions (all checks).** The output goes to the designer who owns the doc. Per finding:
@@ -84,9 +91,17 @@ Header labels in these registries are often spaced out with full-width spaces (`
 ## Reading a reference file yourself (openpyxl live read)
 
 When a check reads a master directly (a registry, `07.共通項目取得`, `09.区分名称`), apply the same
-"live" semantics as the dump — never compare against struck or gray text:
+"live" semantics as the dump — never compare against struck or gray text. **The easy way is the
+script**, which implements every rule below and writes the shared-dump format:
 
-- `openpyxl.load_workbook(path, data_only=True, rich_text=True)`.
+    python <plugin>/skills/_shared/scripts/live_dump.py <master.xlsx> <out_dir> --sheets "<regex>"
+
+and then `dump_cells.py` to read the result. Write your own code only when you need cells the
+script skips (hidden sheets: `--hidden`). The rules, for that case:
+
+- `openpyxl.load_workbook(path, data_only=True, rich_text=True)` (not `read_only` — it drops rich text).
+- **Merged ranges**: openpyxl returns `None` for every non-anchor cell. Keep it that way — Excel can
+  store hidden values there (SXJCB147 `G704:P704` all hold `YOTO`), and the COM dump now drops them too.
 - **Cell-level**: `cell.font.strike` → dead; font colour gray (`rgb` with r = g = b and 80 < r < 220)
   → dead. Theme-colour grays are not detected by this test; that is an accepted gap.
 - **Rich text** (`CellRichText`): a `TextBlock` with its own font **overrides** the cell font
@@ -242,10 +257,10 @@ That reasoning has been tried and explicitly overruled.
 
 ### When to read `_DELETED_DIGEST.txt`
 
-**An empty (0-byte) digest means nothing on those sheets was struck or gray.** **Its line format depends on who produced it.** The COM dump writes contiguous row blocks with a
-`=== <sheet> rows a-b (n cells) ===` header and **omits structural filler** — a bare number, a hyphen,
-an operator — counting it in `(+ N filler cells omitted)`. An openpyxl fallback may write one line per
-cell (`<sheet> [r,c] DEL|GRAY|PART: value`) and keep the numbers. Never rely on a struck *number* being
+**An empty (0-byte) digest means nothing on those sheets was struck or gray.** **Its line format depends on who produced it**: the COM dump's grouped blocks (described below, with
+bare numbers omitted as filler) or `live_dump.py`'s one line per cell (`<sheet> [r,c] DEL|GRAY|PART:
+value`, numbers kept). A row that *looks* deleted in the digest may have been moved — confirm against
+the live dump before calling something removed. Never rely on a struck *number* being
 listed: to decide whether a gap in a numbered list is explained by a deletion, look for **any deleted
 content on the rows between** the two live numbers.
 

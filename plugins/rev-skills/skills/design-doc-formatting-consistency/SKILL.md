@@ -18,7 +18,11 @@ the other checks this one opens Excel itself (font size and merge spans are not 
 also read, in `_shared/xlsx-excel-com-dump.md`, the sections `## The dump script` (the pre-existing-PID
 guard that stops you `Quit()`-ing the user's own Excel, and the Add-Type/inline rules),
 `## UsedRange-relative vs sheet-absolute coordinates` and `## Operational notes`; if COM keeps dying,
-that file's openpyxl fallback also serves this scan (`cell.font.sz`, `ws.merged_cells`). Then
+that file's openpyxl fallback also serves this scan (`cell.font.sz`, `ws.merged_cells` — load with
+`read_only=False`, since read-only mode has no merge info; ~77 s for a 300-sheet workbook). Compare
+each sheet's left (`2C`/`3C`) and right (`2D`/`3D`) header copies as an explicit step, and before
+reporting any header-row pattern measure it across sibling workbooks — a pattern a third of the
+folder shares is template drift (one 低 note), not a per-sheet defect. Then
 read `_shared/xlsx-formatting-scan.md` — it has the exact font-size/cell-merge
 detection technique (including the DBNull guard for mixed-formatting cells) and, critically, the
 noise-filtering rules learned from running this on real workbooks. **Read that second file fully

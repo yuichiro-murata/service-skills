@@ -118,15 +118,14 @@ exact sheet/cell for every finding so it's actionable.
    prefixes). Route the lookup by that owning WG, not by which program you're reviewing:
    - **Program's own-WG prefix IDs** (e.g. an `XJC`/`SJC` id inside a 工程管理 program): check
      against that WG's own `01_Doc/04_共通設計/04.ﾒｯｾｰｼﾞ管理_<WG名>.xlsx` (e.g.
-     `04.ﾒｯｾｰｼﾞ管理_工程管理.xlsx`). **Dump it via the cross-session cache with
-     `OnlySheetPatterns = @("<X-prefix>(*", "<S-prefix>(*")`** (e.g. `@("XJC(*", "SJC(*")` for
-     工程管理, open-ended with no closing `)` — same reason as the screen-item dictionary case
-     above) instead of a full-file dump: confirmed for real that
+     `04.ﾒｯｾｰｼﾞ管理_工程管理.xlsx`). **Read only the program's own prefix sheets, live:**
+     `live_dump.py <file> <out> --sheets "^(XJC|SJC)\("` for 工程管理 (open-ended after the `(` —
+     sheet names carry a suffix after the prefix) instead of a full-file dump: confirmed for real that
      `04.ﾒｯｾｰｼﾞ管理_工程管理.xlsx` has 11 sheets but only the program's own two prefix sheets are
      ever read from it — a foreign-WG prefix routes to that other WG's own file (see below), never
      to a same-named sheet embedded in this one, so the other 9 sheets in this file are dead weight
-     for every 工程管理-program review. See `_shared/xlsx-excel-com-dump.md`'s cross-session cache
-     section for the full mechanism.
+     for every 工程管理-program review. (Do not use the COM cross-session cache for this file: it
+     keeps struck rows, and withdrawn message IDs are exactly what this lookup must not match.)
    - **`XJZ`/`SJZ` (共通) prefix IDs, from *any* program in *any* WG**: check ONLY against
      `01_Doc/04_共通設計/04.ﾒｯｾｰｼﾞ管理_共通.xlsx` (sheets `XJZ(共通)`/`SJZ(共通)`). **Do not use a
      WG-specific file's own embedded `XJZ(共通)`/`SJZ(共通)` sheet as the source of truth for
@@ -308,6 +307,15 @@ every verdict; counts and examples are one snapshot.
       expect silence.
     - The same scan surfaces `ｼｽﾃﾑ共設計書`(sic — `通` missing) in many references; that is a typo for
       `design-doc-typo-check`, mention it only if that check is not in the run.
+
+**Shapes that are not defects (from the 2026-10 validation runs).**
+- An area can have **several Ⅵ control tables** (one per mode or per tab); merge them before
+  deciding an item has no control row.
+- A **grouped name** covers a series: `直行1-4` in Ⅵ (or Ⅳ) stands for `直行1`…`直行4` in Ⅴ.
+- Ⅰ．画面ﾚｲｱｳﾄ is usually a pasted image (EMF) — its absence from the dump is not a missing layout,
+  and no item comparison against Ⅰ is possible.
+- A digest row that looks deleted may have been **moved** (struck at the old place, live elsewhere);
+  search the live dump for its text before reporting a removal-driven asymmetry.
 
 ## Reporting
 
