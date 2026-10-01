@@ -146,6 +146,10 @@ to the next one unless the user says "同じ観点で" or similar.
      05_受注出荷; prints `NON-SCREEN-ID` lines for a 画面ID cell holding a program ID — a doc defect
      worth passing to `naming-standard-compliance`). Fresh while its `# source-count` and
      `# source-newest-mtime-utc` lines match the folder.
+   - **入力可文字種 table** — when `design-doc-writing-rules` is selected (W1f):
+     `python _shared/scripts/build_kind_table.py <...\01_Doc\08_機能定義書\<WG>> lookup_kind_<WG>.tsv` (~45 s;
+     fresh by the same `# source-count` / `# source-newest-mtime-utc` lines). Pass its path; the agent runs
+     `kind_consistency.py` on it for the program.
    A check run standalone builds what it needs itself.
 3. Run the selected checks as one combined pass — in parallel background agents when there are
    several. Follow each selected skill's own SKILL.md as the authority for how that check is done;

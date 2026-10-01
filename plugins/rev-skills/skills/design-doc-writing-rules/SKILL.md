@@ -1,6 +1,6 @@
 ---
 name: design-doc-writing-rules
-description: Check a program's design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules — Ⅴ．画面項目定義 per-item rules (upper-case conversion note on code inputs, button IDs in the 9xxx band, 選択 = □ without ID, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea always carry 桁数 and 入力可文字種), 項番 gaps/duplicates (No. columns, ﾁｪｯｸ処理 numbers, circled 機能処理概要 sections), 取得件数 at the end of every 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, and screen names followed by their 画面ID. Rules about how a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Check a program's design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules — Ⅴ．画面項目定義 per-item rules (upper-case conversion note on code inputs, button IDs in the 9xxx band, 選択 = □ without ID, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea always carry 桁数 and 入力可文字種, 入力可文字種 consistent with other screens for the same item), 項番 gaps/duplicates (No. columns, ﾁｪｯｸ処理 numbers, circled 機能処理概要 sections), 取得件数 at the end of every 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, and screen names followed by their 画面ID. Rules about how a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-writing-rules
@@ -123,6 +123,40 @@ decided yet.
 This is stricter than, and complementary to, `xlsx-db-column-check` step 5 (which reports a `-` only
 when another screen gives the same item a number): report here regardless, and don't repeat that
 skill's DB-length comparison.
+
+**W1f — 入力可文字種の画面間統一 (レビュー観点 No.42 「入力可文字種は他画面の同じ項目と同じ文字種か」).**
+`xlsx-db-column-check` step 5 compares 桁数 across screens; this is the same comparison for
+入力可文字種. Scope: `TextBox`/`TextArea` rows whose 文字種 is a real value (`-`/blank is W1e; a `※n`
+footnote cannot be compared). Match items by **normalised 画面項目名** (strip whitespace, `(FROM)`/`(TO)`,
+`(1-N)`, a trailing digit), never by 画面項目ID alone — `PSJCO403` `[1309]` 作業工程GRP carries 製造ﾛｯﾄNo's
+`XJC0028`, which is a wrong ID (`design-doc-internal-consistency` check 3), not a 文字種 deviation.
+Two comparisons:
+- **Against other programs** — report a row whose 文字種 differs from the value other programs use
+  for the same item **when that value is dominant**: ≥ 5 rows from ≥ 3 distinct other programs, and
+  ≥ 80 % of those rows. Use the prebuilt table your prompt names, or standalone build it and list the
+  candidates (scripts under `<plugin>\skills\_shared\scripts\`):
+  `python build_kind_table.py <...\01_Doc\08_機能定義書\11_工程管理> kind.tsv` (~45 s, up to 3 min on a busy machine; the script
+  itself limits a folder with `PHASE*` sub-folders to the workbooks directly inside them), then
+  `python kind_consistency.py kind.tsv <ProgramID>` — it prints `[row,col]` and groups the rows of one
+  item with one value. **Report one finding per item and value**, listing every cell (`PSJCO805`
+  ｲﾝｸ品名 on `GSJC805A`/`D`/`E`/`F` is one line). Confirm each cell in the live dump before reporting.
+- **Within the program** — the same item on two of its own screens with different 文字種 (the script's
+  part (b)). Report as 要確認; a date granularity difference can be intended (`PSJCO805` 回答納期 is
+  `年月(6桁)` on `GSJC805C` `[412]` and `年月日(8桁)` on four other screens).
+Calibrated 2026-10-02 on 1,867 TextBox/TextArea rows (live text) in the 122 工程管理 `PHASE1`-`PHASE3` workbooks:
+of 231 items used on ≥ 2 sheets, 202 are consistent, and the dominant-value rule yields **13 grouped
+findings (17 cells) in 8 programs**, plus 6 within-program pairs — e.g. `PSJCO204` `GSJC204A` `[728,30]` 品目ｺｰﾄﾞ `文字列(半英数)` against `文字列(半英数記号)` in
+54 of 54 rows (a code with a symbol could not be entered; the same sheet's ﾃｰﾌﾟﾛｯﾄNo `[744,30]` and
+製造ﾛｯﾄNo `[745,30]` have the same narrowing), `PSJCO305` `GSJC305A` `[407,31]`/`[409]`
+資源ｺｰﾄﾞ1/2 `文字列(全角)` against `文字列(半英数)` 18/18, `PSJAO404` `GSJA404B` `[281]` 工程ｺｰﾄﾞ
+`文字列(半数)` against `文字列(半英数)` 32/32, `PSJCO204` `[854]` 識別ｶｰﾄﾞ発行枚数 `文字列(半英数)` where
+every other program has `数値(整数)正数`. Items that are mixed across the corpus have no dominant value
+and are **not** reported — `KC品名` (`文字列` 16 / `半英数記号` 11 / `半英数` 4), `処置指示No` 7:5,
+`KC図番`, `資源GRP`. Severity: 中 when the screen's type is narrower than or incompatible with the
+dominant one (`半英数` vs `半英数記号`, `全角` vs `半英数`, a string type where others use `数値`);
+要確認 otherwise (a broader type, `数値(整数)` vs `数値(整数)正数` — a negative entry may be intended).
+Note that the dominant value can contradict the call-out "ｺｰﾄﾞ/No/ｷｰは半角英数": 品目ｺｰﾄﾞ, 製造ﾛｯﾄNo and
+ﾃｰﾌﾟﾛｯﾄNo are overwhelmingly `半英数記号`. Follow the corpus here and do not raise that call-out against them.
 
 ### W2 — 項番の飛び・重複 (No.6) (formerly design-doc-internal-consistency check 10)
 
