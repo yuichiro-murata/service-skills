@@ -1,6 +1,6 @@
 ---
 name: design-doc-internal-consistency
-description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency — e.g. every screen event is reflected in the processing overview, response definitions are registered, every screen-item ID / message ID is registered in its master list, screen layout/item-definition/control-spec agree (including item ORDER matching between Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 and Ⅴ．画面項目定義, not just which items are present), exclusive-control is present when a program updates a table, and the per-item writing rules of Ⅴ．画面項目定義 from the self-check workbook (upper-case conversion note on code inputs, button IDs in the 9xxx band, 選択 = □ without ID, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea always carry 桁数 and 入力可文字種). Grounded in this project's own official review checklist. Does NOT cover the Ⅲ．入出力定義 (I/O table) completeness check — that's the more involved `design-doc-io-table-check` skill, split out separately. Use when the user asks to レビュー/REV a program's 機能定義書 or 画面設計書, or asks whether a design doc is "internally consistent" / "漏れがないか", or whether screen-item ordering matches across sections. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
+description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency — e.g. every screen event is reflected in the processing overview, response definitions are registered, every screen-item ID / message ID is registered in its master list, screen layout/item-definition/control-spec agree (including item ORDER matching between Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 and Ⅴ．画面項目定義, not just which items are present), exclusive-control is present when a program updates a table, and the per-item writing rules of Ⅴ．画面項目定義 from the self-check workbook (upper-case conversion note on code inputs, button IDs in the 9xxx band, 選択 = □ without ID, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea always carry 桁数 and 入力可文字種), process/check order vs button order, 項番 gaps/duplicates, and 区分名称 references resolving in 09.区分名称_step2.xlsx. Grounded in this project's own official review checklist. Does NOT cover the Ⅲ．入出力定義 (I/O table) completeness check — that's the more involved `design-doc-io-table-check` skill, split out separately. Use when the user asks to レビュー/REV a program's 機能定義書 or 画面設計書, or asks whether a design doc is "internally consistent" / "漏れがないか", or whether screen-item ordering matches across sections. When the user asks to REV a single design-doc workbook without naming which checks they want, the entry point is `rev-program-review`: it first asks the user, checkbox-style, which of the 9 single-program checks to run, then runs only those as one combined pass. Do not launch all nine yourself. Run this skill standalone only when it was one of the selected checks, or when the user asked for this check by name.
 ---
 
 # design-doc-internal-consistency
@@ -337,6 +337,110 @@ exact sheet/cell for every finding so it's actionable.
    This is stricter than, and complementary to, `xlsx-db-column-check` step 5 (which reports a `-` only
    when another screen gives the same item a number): report here regardless, and don't repeat that
    skill's DB-length comparison.
+
+Checks 9-11 also come from the self-check workbook (レビュー観点 No.3/56, No.11/41, No.6). They were
+calibrated on 2026-10-01 against every visible 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表 sheet of
+120 工程管理 `PHASE1`-`PHASE3` workbooks (`PXJCO130` excluded — openpyxl cannot open it). Re-derive
+every verdict; counts and examples are one snapshot.
+
+9. **処理・ﾁｪｯｸの並びがﾎﾞﾀﾝ順と一致しているか (No.3 / No.56).** The self-check's call-outs: "①は初期処理、
+   ②以降はﾎﾞﾀﾝ処理の順番を基本とする" (機能定義書) and "ﾁｪｯｸ処理のｲﾍﾞﾝﾄの順番は画面ﾚｲｱｳﾄのﾎﾞﾀﾝ順と
+   合わせる" (ﾁｪｯｸ処理設計書).
+   - **Reference order** = the `Button` rows of the screen's Ⅴ．画面項目定義 `共通` area, top to bottom.
+   - **機能定義書 Ⅳ．機能処理概要**: section titles `A-①.初期処理`, `A-②.検索処理`, … (col 3); the letter
+     is the screen (`A` → `G…A`). **ﾁｪｯｸ処理設計書(<画面ID>)**: event headings `【検索ﾎﾞﾀﾝ押下時】` (col 3).
+   - Match names after stripping `ﾎﾞﾀﾝ` / `押下時` / `押下処理` / `処理` / `【】`. A heading written as a
+     sentence still matches when it **contains** a button name (`I-⑥.承認ｸﾞﾙｰﾌﾟ…へ挿入する処理　(<< ﾎﾞﾀﾝ押下時)`
+     → `<<`, `I-⑦.承認ｸﾞﾙｰﾌﾟ(ﾕｰｻﾞｰ)行削除処理` → `行削除`); take the **longest** button name contained, so
+     `行削除` never also counts as `削除`. Items that match no 共通 button (links, zoom, other-area
+     buttons) are ignored, not reported. Then flag any pair of matched items whose relative order
+     differs from the reference.
+   - **Leave `閉じる` / `戻る` out of the order comparison.** Ⅴ often lists them first (top-right on a
+     rich screen) while every process overview puts them last — comparing them generates most of the
+     noise (`PSJAO401` `GSJA401B`/`F`).
+   - Measured: 9 of 154 機能処理概要 lists and 17 of 155 ﾁｪｯｸ処理 sheets disagree with Ⅴ's order. The
+     self-check's own sample (`PXJAO802`) places `停止` third in ﾁｪｯｸ処理 while Ⅴ lists it last, and Ⅴ is
+     a proxy for the visual layout rather than the layout itself, so **report order findings as 低**,
+     one line per sheet, naming the item that moved (`PXJCO134` `ﾁｪｯｸ処理設計書(GXJC134A)`: 解除 before
+     検索/ﾀﾞｳﾝﾛｰﾄﾞ; `PSJCO604` `GSJC604A`/`B`: 製伝修正 and 単価修正 swapped).
+   - Separately, **`X-①` must be 初期処理** for a screen: 8 lists start with something else
+     (`PXJAO243` `B-①` = 更新, `PSJAO501` `B`-`E`) — 低, unless the screen genuinely has no initial
+     processing, which the designer should then say.
+
+10. **項番の飛び・重複 (No.6).** Every numbered list in the four sheet types — a column (≤ col 8) whose
+    header cell is `No.`/`No`/`項番`, followed by integer cells — must run 1, 2, 3 … Also the circled
+    section numbers of 機能定義書 Ⅳ (`A-①`, `A-②` … per letter). **ﾁｪｯｸ処理設計書 is the exception to the
+    header rule**: its number column is col 1 under the header `ﾁｪｯｸ項目` (`[8,1]`), and each
+    `【…押下時】` heading starts a new list — scan it explicitly or its defects are missed (`PXJCO129`
+    `ﾁｪｯｸ処理設計書(GXJC129A)` `[16,1]`-`[18,1]` = 5, 6, 7 after 1-6; `GXJC129B` `[96,1]`/`[98,1]` both 84).
+    **End a list only on a heading in col ≤ 3** (an area title, `Ⅳ．…`, `【…】`) — the Ⅴ 説明 column (col 43)
+    routinely holds `Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 参照`, and treating that as a section break hides duplicates
+    (`GSJA704J` `[255,3]`). **Judge the sequence on live numbers only**; a struck row that still shows its
+    old number (`ﾁｪｯｸ処理設計書(GSJA704B)`: live 1, struck 2 and 3, live 2) is not part of the sequence and
+    must not produce a "backwards" finding — consult the struck numbers only to explain a gap.
+    Normalise before flagging — measured, the naive check fires ~150 times on 94,445 numbered cells and
+    most of it is structure:
+    - **A drop back to 1 is a new list**, not an error (ﾁｪｯｸ処理 restarts per `【…押下時】` event; 39 such).
+    - **A gap explained by a struck row is the project's convention** — deleted rows keep their number in
+      strikethrough (26 gaps, e.g. `PSJAO241` `更新条件表(TXJAM002)` 45→47 with a struck `46`). Check
+      `_DELETED_DIGEST.txt` for the missing number in the same column before reporting a gap.
+    - **A constant step of 2 over three or more items** (`PXJCO906` `GXJC906A` 1, 3, 5, 7 in col 6) is a
+      two-row item layout, not missing numbers.
+    - A sub-number (`A-②-1`, `A-②(1)`) belongs to its own series; don't fold it into the circled list.
+    What survives is real: **duplicate** (16 — `PSJAO704` `GSJA704J` `[255,3]` 9→9, `PSJCOA09`
+    `GSJCA09C` four `3`s in a row), **gap** (33 — `PSJAO704` `GSJA704F` `[174,3]` 4→6), **typo / backwards**
+    (16 — `PXJAO701` `GXJA701A` `[625,3]` 11→**123**→13, i.e. `12` mistyped; `GSJA704F` is in Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細,
+    not Ⅴ — say which section), **list not starting at 1** (4),
+    and in 機能処理概要 (11 lists) — a skipped circled number (`PXJCO152` `A`: ①②⑥⑦⑧), a duplicate
+    (`PSJCO402` `A`/`B`: ④④), and a section filed under the wrong letter (`PSJAO704`: `E` skips ⑥ and `F`
+    opens with a stray ⑥ — the `E-⑥` was written as `F-⑥`). Severity 低, except a duplicate/misfiled
+    circled section that another doc cites by number (`A-⑥ 参照`), which is 中 — the citation now points at
+    the wrong section. Some lists interleave two sequences in one column (`PXJAO243`
+    `更新条件表(TXJAM023)` col 2: 22, 25, 23, 29, 24, 35 …); report it once as "番号が二系統混在" rather than
+    as a cascade of gaps and backward steps.
+
+11. **区分名称の参照が 09.区分名称_step2.xlsx と一致するか (No.11 / No.41).** Design docs cite a 区分 by
+    group name: `ｼｽﾃﾑ共通設計書.区分名称.仕入先区分 参照`, `区分名称.ﾛｯﾄ停止区分(ﾛｯﾄ停止指示登録) 参照`, and
+    occasionally a value: `区分名称.製造ｵｰﾀﾞｰ状態.中断`. Each must resolve in
+    `01_Doc\04_共通設計\09.区分名称_step2.xlsx`.
+    - **Reading the master**: sheets `区分名称_STEP2～` (prefer) and `区分名称_～STEP1`. A group is a title
+      in col 4 (`承認状態`), then a header row `区分`(col 5) / `区分名称`(col 10) / `ﾘｿｰｽID`(col 57), then
+      one row per value. Build `group → {区分: 区分名称}` once (openpyxl live read; a struck value is
+      retired) — like the 画面項目辞書, read an index, not a dump. Two title shapes break a naive index
+      and both produced false "missing" findings in calibration:
+      - **one title naming several groups** — `ﾛｯﾄｶｰﾄﾞ発行区分、ﾌﾞｰｽｶｰﾄﾞ発行区分、ﾏｶﾞｼﾞﾝｶｰﾄﾞ発行区分`
+        (`区分名称_STEP2～` row 1011, one shared value table with ﾘｿｰｽID `XJZ0336`/`XJZ0337`): split the
+        title on `、`/`,` and register every name;
+      - **a title with col-4 sub-headings** — `合否判定条件` (row 120) is followed by `入力ﾀｲﾌﾟ 1:文字の場合`
+        and similar sub-headings, each with its own value table. The group is the top title; the
+        sub-headings are not groups (taking the nearest col-4 text above a header row registers them
+        instead and leaves `合否判定条件` looking unregistered).
+      Measured: ~374 groups after splitting.
+    - **Parsing the reference**: take the text after `区分名称.` up to `参照`/whitespace; drop an
+      unbalanced trailing `)` (it closes an outer `区分名称(ｼｽﾃﾑ共通設計書.区分名称.製造ｵｰﾀﾞｰ状態)`); keep a
+      `(qualifier)` as part of the name; resolve `group.value` (value must be one of the group's names) and
+      `group.qualifier` → `group(qualifier)` before calling anything missing.
+    - Measured: 525 references, ~441 resolve once the index handles both title shapes. Report:
+      - **placeholder `区分名称.XXXX`** — 中 (≈30, `PSJCO403`/`404`/`405`, plus `検索区分(XXXX)` in
+        `PSJCOB01`); the 区分 was never decided;
+      - **group not in the master** — 中. Confirmed: `PXJCO129` `GXJC129B` `[701,26]` `区分名称.ﾛｯﾄ識別`,
+        where the item and its 説明 say `ﾛｯﾄ種別` and the master has `ﾛｯﾄ種別` (row 1016) — a wrong name,
+        not a missing registration; say the likely intended group when a near name exists. Other
+        calibration candidates (`PSJCO801` ｶﾗｰﾊﾟﾀｰﾝ, `PSJCO802` ｲﾝｸ在庫状態/保管状態, `PSJCO402`
+        依頼先工場区分) were not individually verified — re-check each against both title shapes above
+        before reporting. A group that is truly absent has no ﾘｿｰｽID, so it cannot be displayed
+        multilingually;
+      - **`区分名称` with no group name at all** — 中: `ｼｽﾃﾑ共通設計書.区分名称 参照` (`PXJCO129` `GXJC129A`
+        `[726,26]`, 未作業ﾌﾗｸﾞ, where the same item elsewhere reads `…区分名称.未作業ﾌﾗｸﾞ 参照`). Flag any
+        `区分名称` not followed by `.`;
+      - **qualifier missing or different** — 要確認 (11): a bare `検索区分` when the master has
+        `検索区分(ﾛｯﾄﾄﾚｰｽ)`/`(不良ﾛｯﾄ統合)`/`(社内加工用)` — say which one is meant; `検索区分(社内加工)` vs the
+        master's `(社内加工用)` is a near-miss to correct.
+    - **Inline value lists** (`'0':表示しない、'1':表示する`, or an 初期値 like `11:新規発行` / `0:通常`, beside an item named after a group): compare
+      code and name with the master when present. Only 7 rows in the corpus carry one and all matched, so
+      expect silence.
+    - The same scan surfaces `ｼｽﾃﾑ共設計書`(sic — `通` missing) in many references; that is a typo for
+      `design-doc-typo-check`, mention it only if that check is not in the run.
 
 ## Reporting
 
