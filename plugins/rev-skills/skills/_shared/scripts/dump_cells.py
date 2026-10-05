@@ -10,7 +10,7 @@ never trim them; leading/trailing spaces are significant in these workbooks.
     cells = load(path)          # {(row, col): value}
     R = rows(cells)             # {row: {col: value}}
 
-CLI:  python dump_cells.py <dump.txt> [row [row2]]   -> prints those rows as "row: col=value | ..."
+CLI:  python dump_cells.py <dump.txt> [row [row2]]   -> prints those rows as "row: col='value' | ..." (repr)
 """
 import collections, re, sys
 
@@ -35,8 +35,11 @@ def rows(cells):
 if __name__ == "__main__":
     if len(sys.argv) < 2: sys.exit(__doc__)
     R = rows(load(sys.argv[1]))
+    if not R: sys.exit(f"{sys.argv[1]}: no cells (empty sheet or not a dump file)")
+    if any(not x.isdigit() for x in sys.argv[2:4]): sys.exit("row arguments must be numbers")
     lo = int(sys.argv[2]) if len(sys.argv) > 2 else min(R)
     hi = int(sys.argv[3]) if len(sys.argv) > 3 else (lo if len(sys.argv) > 2 else max(R))
+    if hi < lo: lo, hi = hi, lo
     for a in sorted(R):
         if lo <= a <= hi:
             print(f"{a}: " + " | ".join(f"{b}={R[a][b]!r}" for b in sorted(R[a])))

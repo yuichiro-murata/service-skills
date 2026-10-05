@@ -64,9 +64,13 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    lists sub-programs (e.g. `SXJCB184`). An ID is unregistered only when all three lack it. The
    neighbouring `ｻﾌﾞﾌﾟﾛ利用機能一覧(工程管理)` is a caller-by-sub-program usage matrix, not the registry.
    Other WGs name their sheets differently (`品質管理`, `基準情報`'s `機能一覧`) — list the sheet names first.
+   The orchestrator may also pass `NON-SCREEN-ID` lines from `build_screen_list.py` (`<value>  <sheet>
+   <file>`): a 画面設計書 header whose 画面ID cell holds a program ID (`PXJDO601` in 画面設計書(GXJD601A)).
+   For a file in scope, report it as a step-4 header-ID error (expected: the sheet name's `(ID)`); ignore
+   lines for other files.
 2. Extract every ID of each type from its home location:
-   - プログラムID/画面ID from the 表紙 and the header rows of each sheet, matched by label
-     (`ﾌﾟﾛｸﾞﾗﾑID`/`画面ID`), not by row — see step 4 for which labels each template has.
+   - プログラムID/画面ID/ファイルID from the 表紙 and the header rows of each sheet, matched by label
+     (`ﾌﾟﾛｸﾞﾗﾑID`/`画面ID`/`ﾌｧｲﾙID`), not by row — see step 4 for which labels each template has.
    - テーブルID, in a program workbook (which has no ﾃｰﾌﾞﾙﾚｲｱｳﾄ sheet): 機能定義書 Ⅲ．入出力定義 column 5
      under the `ID` header (PXJCO125: `[35,5]`=`ID`, IDs in `[36..81,5]`), each `更新条件表(<ID>)` sheet
      name and its 更新ﾃｰﾌﾞﾙ cell `[8,16]` (`TXJCD203:個別不良項目明細` — the ID is the part before `:`),
@@ -82,15 +86,26 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
      ﾃｰﾌﾞﾙ名/構造 looks like a physical table, not a view, or vice versa).
 
    **Suffixed テーブルIDs** (`VXJCM004_31`, `TXJCM007_B`) are not violations when the base part parses
-   and a layout exists for the full ID (glob `**/07_データベース・ファイル設計書*/**/<ID>_*.xlsx`; both
-   exist under `01_Doc\07_データベース・ファイル設計書\90_JAGURﾃｰﾌﾞﾙﾚｲｱｳﾄ(4月26日時点)\`). Flag a
-   suffixed ID only when no layout or registry entry exists for it.
-4. Header-info check (checklist 1-6): within one workbook, confirm the header values (システムID,
-   計画書No, 機能ID, ﾌﾟﾛｸﾞﾗﾑID, 画面ID, 作成日) are identical across every sheet's header block (機能定義書,
-   画面設計書, ﾁｪｯｸ処理設計書, 更新条件表 all repeat this header — they should never disagree). **Label
-   sets differ by template**: 機能定義書/更新条件表 carry 機能ID (row 3) and ﾌﾟﾛｸﾞﾗﾑID (row 4);
-   画面設計書/ﾁｪｯｸ処理設計書 carry ﾌﾟﾛｸﾞﾗﾑID (row 3) and 画面ID (row 4), no 機能ID (verified on PXJCO125).
-   Pair cells by label and compare only labels both sheets have. Flag any sheet whose header
+   and a layout exists for the full ID. Resolve the layout by `xlsx-db-column-check` step 3 (exact `A6`
+   on the `^ﾃｰﾌﾞﾙﾚｲｱｳﾄ$` sheet, PH3 > PH2 > top-level, the flat `01_Doc\07_…` copy at its own level
+   only), not a filename glob: `<ID>_*.xlsx` also matches suffixed *other* tables, and a recursive
+   search offers the superseded `90_JAGURﾃｰﾌﾞﾙﾚｲｱｳﾄ(<date>時点)` snapshots. Both examples resolve in
+   `11_工程管理WG\07_データベース・ファイル設計書(仮)` (`TXJCM007_B` in `PH2`). Flag a suffixed ID only
+   when no layout or registry entry exists for it.
+4. Header-info check (checklist 1-6): within one workbook, confirm the **workbook-level** header
+   values (システムID, 計画書No, 機能ID, ﾌﾟﾛｸﾞﾗﾑID and its name, 作成日) are identical across every sheet's
+   header block (機能定義書, 画面設計書, ﾁｪｯｸ処理設計書, 更新条件表, ﾌｧｲﾙ出力/入出力仕様書 all repeat this
+   header). **Label sets differ by template**: 機能定義書/更新条件表 carry 機能ID (row 3) and ﾌﾟﾛｸﾞﾗﾑID
+   (row 4); 画面設計書/ﾁｪｯｸ処理設計書 carry ﾌﾟﾛｸﾞﾗﾑID (row 3) and 画面ID (row 4), no 機能ID (verified on
+   PXJCO125); ﾌｧｲﾙ出力/入出力仕様書 carry ﾌﾟﾛｸﾞﾗﾑID (row 3) and ﾌｧｲﾙID (row 4). Pair cells by label and
+   compare only labels both sheets have. **画面ID and ﾌｧｲﾙID are per-sheet, not workbook-wide**: each must
+   equal the `(<ID>)` in its own sheet name, and the name beside it (col 15) must be that screen's/file's
+   name — so in a multi-screen or multi-file program they *should* differ between sheets. The real defect
+   is the opposite: on PSJCO403, 画面設計書(GSJC403B/C/D) and ﾌｧｲﾙ(入)出力仕様書(FSJC018/019/020) all carry
+   `GSJC403A`/`社内加工ﾃﾞｰﾀ作成` in `[4,10]`/`[4,62]` — copies of sheet A never updated (高; the validation
+   run found only one other of PHASE3's 104 画面設計書 sheets with this, in PSJCO309). Report them as one
+   finding grouped by pattern. A row-4 **label** that differs between the left and right copies belongs
+   in the same finding (FSJC018: `[4,5]`=`画面ID`, `[4,57]`=`ﾌｧｲﾙID`). Flag any sheet whose workbook-level header
    contradicts the others in the same file. Exceptions: **作成日 may legitimately be
    later on a sheet added in a later revision** (check 表紙 Ⅲ．改訂履歴 for that sheet's addition
    before reporting); **表紙 has no header block** (its IDs sit in the body); a template with a
@@ -126,8 +141,10 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    values for one label. A `-` (or empty) copy beside a filled one is template-level drift, not a
    per-sheet defect: on PHASE2, 209 of 424 sheets have differing C/D 更新日 and ~182 sheet pairs show
    the `-` pattern, and the orchestrator's Step 3.5 rule 2 withdraws such findings. Summarise it as
-   **one 低 line per workbook**. List the
+   **one 低 line per workbook** (PSJCO403: FSJC019/020 right-copy 作成日/作成者 `-`). List the
    contradicting sheets of one workbook in a single finding grouped by pattern, not one per sheet.
+   This check owns both the contradictions and the drift line; `design-doc-formatting-consistency`
+   reports them only when this check is not in the run.
 
 5. **表紙's "Ⅱ．設計書構成" list vs the sheets actually present** (checklist item near 2-1) — run
    this as a **standard, always-on check**, not an optional one: compare every row's Customer/
@@ -156,6 +173,14 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
      exception was `PSJCO205_返品処置指示発行`). Rows are pre-numbered for the next revision. Only
      report a 改訂履歴 row as incomplete when a row **other than the last** is partially filled.
 
+   Two Customer/Developer markers are convention too (all 61 PHASE3 workbooks, measured 2026-10-06):
+   - **`画面遷移図` `-`/`-`** in 61 of 61, and none has a 画面遷移図 sheet (`ﾀﾌﾞ遷移説明`,
+     `《参考》画面項目遷移` are reference sheets, not one). Not a finding.
+   - **`詳細設計` Developer `●` with a header-only `詳細設計書(<ID>)` sheet** — 56 of 61 mark Developer
+     `●`; in 25 of them the sheet is empty below row 4 (PSJCO403 among them) and most others hold only an
+     API list or `drawio参照`. Read this `●` as "the doc type applies", not "already written" — "has real
+     content" does not apply to this row. The real defect stays the reverse one above: a populated sheet marked `-`.
+
    When a 表紙 observation looks like an omission, measure it across the sibling workbooks in the
    same PHASE folder before reporting it. Both false positives above would have been caught by one
    openpyxl pass over the folder, and the same reasoning applies to any other "this cell is blank"
@@ -166,19 +191,26 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    program's WG-specific 機能一覧 workbook under
    `01_Doc/06_システム設計書（一覧、管理台帳）/06-01_機能一覧_<WG名>.xlsx` (e.g.
    `06-01_機能一覧_工程管理.xlsx` for a 工程管理 program, `06-01_機能一覧_品質管理.xlsx` for
-   品質管理, etc.) — **not** `06-01_機能一覧_共通.xlsx`. That "共通" workbook only lists the
+   品質管理, etc.; 受注出荷 is the exception, below) — **not** `06-01_機能一覧_共通.xlsx`. That "共通" workbook only lists the
    cross-cutting `XJZ`-prefixed common functions (confirmed by dumping it: its one data sheet is
    named `共通`, ~52 rows, all `機能分類=共通(XJZ)`) and will not contain a program from any other
    WG at all — a program ID/機能ID lookup there for e.g. a `SJC`-prefixed 工程管理 program simply
    comes back "not found", which is a wrong-file miss, not a real "画面ID missing from 機能一覧"
    finding. Pick the 機能一覧 file whose WG suffix matches the target program's JOBコード domain
    (`XJC`/`SJC` → 工程管理, `XJB`/`SJB` → 受注出荷, etc.), and only fall back to `_共通.xlsx` when
-   the program itself is genuinely an `XJZ` common one. In the WG-specific sheet (sheet name matches
-   the WG, e.g. `工程管理`), the row for a given `PGMID` (around col 34) also carries the screen's
+   the program itself is genuinely an `XJZ` common one. For 工程管理, look in **both registry files from
+   step 1**: the WG sheet `工程管理` and `06-01_機能一覧_工程管理(付属機能).xlsx` sheet `付属機能` — the
+   付属機能 programs (e.g. the `SJC040` 社内加工 family, PSJCO403) are only in the latter. **受注出荷 is
+   named differently**: `06_01_機能一覧_受注出荷.xlsx` (underscore); read the sheet `受注出荷_XJB混在` and
+   skip `受注出荷_bkup`, `受注出荷_XJB混在_bkup` and `受注出荷_XJB混在_20240627bkup` (stale copies, all
+   visible). In the registry sheet, the row for a given `PGMID` (col 34) also carries the screen's
    画面/帳票/ﾌｧｲﾙID (col 49, header `画面/帳票/ﾌｧｲﾙID`) and a 処理内容 label (col 53) whose first
    line is the screen name — that's the pair to diff against the workbook's own 画面ID/画面名, since
-   this sheet has no separate dedicated 画面ID column of its own. Strip the area prefix (`^[A-Z]\.`,
-   e.g. `A.ﾛｯﾄ取消`) before comparing; a trailing `画面` on the design-doc side (`ﾛｯﾄ取消画面`, 15 of 159
+   this sheet has no separate dedicated 画面ID column of its own. 受注出荷 has them at cols 32/47/51 —
+   locate all three by the row-6 headers. A program's second and later screens/files sit on
+   continuation rows with `PGMID` blank (付属機能: PSJCO403 on row 14, GSJC403B/C and FSJC018-020 on
+   rows 15-19). Strip the area prefix (`^[A-Z]\.`,
+   e.g. `A.ﾛｯﾄ取消`; 受注出荷 uses `【…】`) before comparing; a trailing `画面` on the design-doc side (`ﾛｯﾄ取消画面`, 15 of 159
    XJC/SJC screens) is 要確認 at most. Also (still in this lighter
    category): new files have a 改訂履歴 entry marked 新規作成 (and 流用新規 files cite their 流用元
    計画書No + 改訂履歴 No).

@@ -37,7 +37,7 @@ you are your own orchestrator: dump the target per `xlsx-excel-com-dump.md`, and
 need per `reference-index.md`.
 
 **Environment (this machine).**
-- The Bash tool is broken (`add_item ("\??\C:\Program Files\Git", "/", ...) failed`) — use PowerShell.
+- The Bash tool may be broken (`add_item ("\??\C:\Program Files\Git", "/", ...) failed`) — prefer PowerShell.
 - `python` (CPython 3.13, openpyxl 3.1.5) works; `python3` is a Store stub. Write scripts with the
   Write tool and run `python <path>`.
 - Cylance blocks running a `.ps1` file: pass PowerShell inline, or `Invoke-Expression (Get-Content … -Raw)`.
@@ -49,7 +49,8 @@ need per `reference-index.md`.
 - **openpyxl cannot open every workbook**: `PXJCO130_ﾛｯﾄﾄﾚｰｽ.xlsx` raises
   `There is no item named 'xl/drawings/NULL' in the archive` (a dangling drawing relationship) while
   Excel opens it fine. If the fallback dies this way, use the COM dump for that workbook — never skip it.
-- Excel COM dump is the default reader for the target; the openpyxl live dump
+- Under `rev-program-review` the orchestrator dumps the target with Excel COM by default; a check run
+  standalone dumps it with `scripts/live_dump.py` (no Excel needed). The openpyxl live dump
   (`scripts/live_dump.py`, same output format, digest one line per cell) is the **validated** fallback
   and the standalone route — it reproduced an independent openpyxl implementation cell for cell on
   SXJCB147 (1,451 struck / 396 partial).
@@ -99,7 +100,9 @@ script**, which implements every rule below and writes the shared-dump format:
 and then `dump_cells.py` to read the result. Write your own code only when you need cells the
 script skips (hidden sheets: `--hidden`). The rules, for that case:
 
-- `openpyxl.load_workbook(path, data_only=True, rich_text=True)` (not `read_only` — it drops rich text).
+- `openpyxl.load_workbook(path, data_only=True, rich_text=True)`; `read_only=True` also keeps rich text
+  (openpyxl 3.1.5, verified on `PXJCO101` `[620,31]`) and is much faster, but has no `merged_cells` —
+  so the formatting scan must not use it.
 - **Merged ranges**: openpyxl returns `None` for every non-anchor cell. Keep it that way — Excel can
   store hidden values there (SXJCB147 `G704:P704` all hold `YOTO`), and the COM dump now drops them too.
 - **Cell-level**: `cell.font.strike` → dead; font colour gray (`rgb` with r = g = b and 80 < r < 220)
@@ -245,7 +248,7 @@ strikethrough and gray are.
 
 A one-line "N struck-through/grayed cells excluded at dump time" note in the final report is enough —
 never enumerate them as findings. The per-sheet `dead=`/`partial=` counts the dump script prints are
-exactly that number.
+exactly that number (a gray cell with no visible text still counts; that is harmless).
 
 **An empty or near-empty live dump for a sheet is meaningful, not a dump failure.** When an entire
 更新条件表/画面設計書 sheet comes back struck top to bottom — including its own header — the correct
@@ -424,8 +427,8 @@ probe the folder for some other/higher `_stepN` variant each time — STEP2 is t
 **Independently of file version, a single 区分名称 file can carry more than one group with very
 similar names — an old group and its renamed/expanded replacement coexisting side by side** — so a
 keyword search alone (e.g. searching for "ﾛｯﾄ停止区分") can silently match the wrong one. Confirmed
-for real: `09.区分名称_step2.xlsx`'s "区分名称_STEP2～" sheet contains BOTH a plain **`ﾛｯﾄ停止区分`**
-group (row 846, an old code scheme: `4`=ﾃｰﾌﾟﾛｯﾄNo, `5`=波及範囲検索, `6`=製造ﾛｯﾄNo, no `C`/`D`) AND a
+for real: `09.区分名称_step2.xlsx`'s "区分名称_STEP2～" sheet contained BOTH a plain **`ﾛｯﾄ停止区分`**
+group (row 846 — fully struck as of 2026-10-06, so the live index no longer has it; an old code scheme: `4`=ﾃｰﾌﾟﾛｯﾄNo, `5`=波及範囲検索, `6`=製造ﾛｯﾄNo, no `C`/`D`) AND a
 separately-named **`ﾛｯﾄ停止区分(ﾛｯﾄ停止指示登録)`** group (row 2249, the current scheme actually used
 by `XJC_ｼｽﾃﾑ共通設計書.xlsx`'s `ﾛｯﾄ停止ﾁｪｯｸ` sheet: `4`=品目ｺｰﾄﾞ+ﾃｰﾌﾟﾛｯﾄNo, `5`=製造ﾛｯﾄNo,
 `6`=品目ｺｰﾄﾞ+製造ﾛｯﾄNo(部分一致), through `C`/`D`). A review that matched on the shorter/plainer name

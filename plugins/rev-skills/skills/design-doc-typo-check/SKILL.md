@@ -38,8 +38,10 @@ proofread that. Confirmed false findings from raw dumps: `"GSXJC205A"` reported 
 Structured tokens — IDs, table/column names, `<alias>.<column>` expressions, numeric codes, half-width
 katakana terms that are this project's standard house style (`ﾃﾞｰﾀ`, `ﾛｯﾄ`, `ｵｰﾀﾞｰ`, `ｺｰﾄﾞ`, etc.) —
 are NOT prose and are NOT this skill's concern; those belong to the other REV skills or are simply
-normal project vocabulary. Only free-running Japanese sentences and phrases are in scope. In a typical
-program workbook, that means:
+normal project vocabulary. One exception on every sheet type: a structured token is still in scope for
+an **obvious** misspelling (`ﾛｸﾞｲﾝ画面.` with a stray period, `作場名` for `作業場名`, `祖No` for
+`層No`) — skip only style and abbreviation questions there. Otherwise only free-running Japanese
+sentences and phrases are in scope. In a typical program workbook, that means:
 
 - **表紙**: Ⅲ．改訂履歴 の 改訂内容 column (what each revision actually changed).
 - **機能定義書**: Ⅰ．機能概要 (prose bullets), Ⅲ．入出力定義 の 用途 column (short prose),
@@ -54,14 +56,19 @@ program workbook, that means:
 - **ﾁｪｯｸ処理設計書**: the `ﾁｪｯｸ内容・経緯` column (col 14, header `[8,14]` — most of the sheet's
   prose; `PXJCO125` `[35,14]`/`[37,14]` findings), the `ﾁｪｯｸ詳細` (col 59) and `ﾁｪｯｸ補足` (col 86)
   columns, error-message body text.
-- **ﾌｧｲﾙ出力仕様書** (if present): 出力条件 / 編集内容 / 備考 prose.
+- **ﾌｧｲﾙ出力仕様書 / ﾌｧｲﾙ入出力仕様書 (titled ﾌｧｲﾙ入力仕様書)** (if present): the Ⅰ．ﾌｧｲﾙ出力/入力条件
+  narrative (FSJC018 `[8,3]`), 出力条件 / 編集内容 / 備考 prose, and ※-notes.
 - **更新条件表**: the 更新概要 cell `[9,16]` (a ①②③ source list, where wrong screen IDs hide —
   `PXJCO125` `TSJCD014` `①画面(GSJC201B)`), the **更新条件** narrative `[12,16]` (label `[12,2]`), ※-notes
   in col 18 (the value half of the `INSERT`/`UPDATE` column — `TSJCA057` `[28,18]`), and ※-numbered footnotes (these are
   written in full sentences, unlike the 項目名/取得内容 columns which are mostly structured tokens).
-  A structured token is still in scope for an **obvious** misspelling (`ﾛｸﾞｲﾝ画面.` with a stray
-  period, `作場名` for `作業場名`) — skip only style and abbreviation questions there.
 - **帳票設計書** (if present): 処理の流れ (numbered narrative steps), 備考 column.
+
+**Out of scope**: designer scratch sheets that are not a doc type in 表紙 Ⅱ．設計書構成 (PSJCO403's
+`数字を調整の流れ`, `自動ｾｯﾄの動き`, `検索SQL検証`, `資料`, the `…old` copies — the dump includes them; that
+they are left visible is `design-doc-formatting-consistency`'s call, not a typo), and SQL text pasted to
+the right of the print area (画面設計書 cols 54/55, e.g. GSJC403A `[281,54]`, `[219,55]`), including its
+`--` comments.
 
 ## Procedure
 

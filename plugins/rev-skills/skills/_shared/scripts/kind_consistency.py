@@ -21,7 +21,8 @@ def main():
     ap.add_argument("--share", type=float, default=0.8)
     a = ap.parse_args()
     rows = []
-    for line in open(a.table, encoding="utf-8"):
+    a.program = a.program.upper()
+    for line in open(a.table, encoding="utf-8-sig"):
         if line.startswith("#") or not line.strip(): continue
         prog, sheet, r, c, name, nname, kind, iid = line.rstrip("\n").split("\t")
         rows.append(dict(prog=prog, sheet=sheet, r=r, c=c, name=name, nname=nname, kind=kind, id=iid))

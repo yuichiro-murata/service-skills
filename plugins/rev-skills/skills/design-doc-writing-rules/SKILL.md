@@ -1,6 +1,6 @@
 ---
 name: design-doc-writing-rules
-description: Check a program's design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules — Ⅴ．画面項目定義 per-item rules (upper-case conversion note on code inputs, button IDs in the 9xxx band, 選択 = □ without ID, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea always carry 桁数 and 入力可文字種, 入力可文字種 consistent with other screens for the same item, zoom buttons 表示 Z + 「Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 参照」), 項番 gaps/duplicates (No. columns, ﾁｪｯｸ処理 numbers, circled 機能処理概要 sections), 取得件数 at the end of every 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, screen names followed by their 画面ID, and 画面表示仕様 search conditions (LIKE needs a match mode, = has none, 名称 searches use 部分一致) and join order (INNER before LEFT). Rules about how a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Check a design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules: Ⅴ per-item rules (upper-case note on code inputs, button IDs in the 9xxx band, 選択 = □, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea carry 桁数 and 入力可文字種, 入力可文字種 consistent across screens, zoom buttons 表示 Z + Ⅳ参照), 項番 gaps/duplicates, 取得件数 at the end of each 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, screen names followed by their 画面ID, and 画面表示仕様 search conditions (LIKE needs a match mode, 名称 searches 部分一致) and join order (INNER before LEFT). How a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-writing-rules
@@ -128,7 +128,7 @@ skill's DB-length comparison.
 `xlsx-db-column-check` step 5 compares 桁数 across screens; this is the same comparison for
 入力可文字種. Scope: `TextBox`/`TextArea` rows whose 文字種 is a real value (`-`/blank is W1e; a `※n`
 footnote cannot be compared). Match items by **normalised 画面項目名** (strip whitespace, `(FROM)`/`(TO)`,
-`(1-N)`, a trailing digit), never by 画面項目ID alone — `PSJCO403` `[1309]` 作業工程GRP carries 製造ﾛｯﾄNo's
+`(1-N)`, a trailing digit), never by 画面項目ID alone — `PSJCO403` `GSJC403A` Ⅴ's 作業工程GRP row carries 製造ﾛｯﾄNo's
 `XJC0028`, which is a wrong ID (`design-doc-internal-consistency` check 3), not a 文字種 deviation.
 Two comparisons:
 - **Against other programs** — report a row whose 文字種 differs from the value other programs use
@@ -145,7 +145,8 @@ Two comparisons:
   `年月(6桁)` on `GSJC805C` `[412]` and `年月日(8桁)` on four other screens).
 Calibrated 2026-10-02 on 1,867 TextBox/TextArea rows (live text) in the 122 工程管理 `PHASE1`-`PHASE3` workbooks:
 of 231 items used on ≥ 2 sheets, 202 are consistent, and the dominant-value rule yields **13 grouped
-findings (17 cells) in 8 programs**, plus 6 within-program pairs — e.g. `PSJCO204` `GSJC204A` `[728,30]` 品目ｺｰﾄﾞ `文字列(半英数)` against `文字列(半英数記号)` in
+findings (17 cells) in 8 programs**, plus 6 within-program pairs. The examples below are that 2026-10-02 snapshot,
+not current state (`PSJCO204` was edited 2026-10-05 and no longer reproduces) — re-run the script — e.g. `PSJCO204` `GSJC204A` `[728,30]` 品目ｺｰﾄﾞ `文字列(半英数)` against `文字列(半英数記号)` in
 54 of 54 rows (a code with a symbol could not be entered; the same sheet's ﾃｰﾌﾟﾛｯﾄNo `[744,30]` and
 製造ﾛｯﾄNo `[745,30]` have the same narrowing), `PSJCO305` `GSJC305A` `[407,31]`/`[409]`
 資源ｺｰﾄﾞ1/2 `文字列(全角)` against `文字列(半英数)` 18/18, `PSJAO404` `GSJA404B` `[281]` 工程ｺｰﾄﾞ
@@ -203,8 +204,14 @@ includes 表紙 Ⅲ．改訂履歴 (`No.` at col 4), where a reused revision num
 section numbers of 機能定義書 Ⅳ (`A-①`, `A-②` … per letter), and **a run of circled step numbers inside
 one cell** — split the cell on newlines and read the line-initial ①②③…; they must not repeat or skip
 (`PXJCO125` `画面設計書(GXJC125A)` `[416,24]` ①②**②**). A `※1` or a mid-line circled reference is not a step.
+The same applies to **parenthesised step numbers** `1)`, `2)`, `3-1)`, `3-2a)` at line start — inside one cell
+or one per row down a `※n` event block of 画面設計書 Ⅳ (the block ends at the next `※n` heading). Each level
+(`n)`, `n-m)`, `n-ma)`) is its own series under its parent: `PSJCO403` `GSJC403A` ※2 `[1176,4]`/`[1177,4]`
+both `2)` with no `1)`, ※10 `[1254,6]`/`[1255,6]` both `3-2a)` (meant `3-2a`/`3-2b`). A `2-2)を繰り返して` reference
+mid-line is not a step.
 **ﾁｪｯｸ処理設計書 is the exception to the
-header rule**: its number column is col 1 under the header `ﾁｪｯｸ項目` (`[8,1]`), and **each `【…】`
+list-break rule**: its number column is col 1 under the header `No` (`[8,1]`; `[8,3]` is `ﾁｪｯｸ項目`, and when
+matching header labels normalise half-width `･`/`・` — `[8,14]` reads `ﾁｪｯｸ内容･経緯`), and **each `【…】`
 heading in col ≤ 3 ends the current list and starts a new one** (`[9,3]` `【検索ﾎﾞﾀﾝ押下時】`, `[40,3]`
 `【実行ﾎﾞﾀﾝ押下時】` on `PXJCO125`) even though it sits right of col 1 — the general rule below would never
 fire there. A heading repeated verbatim further down is still a new
@@ -271,6 +278,9 @@ Don't fix the column: a nested child block starts further right and so does its 
   (`GSJC602A` `[264,4]`, `[462,4]`) is the plain "missing" finding, listed separately.
 - A 取得件数 row present but with **no 件数** (`取得できない場合 -` only; 43 rows, against 551 `1件` and
   409 `複数件`) — 低: the reader can't tell whether the fetch is single- or multi-row (レビュー観点 No.25).
+- **An unfilled template Ⅲ** — aliases with no entity names, numbered 取得項目/検索条件 rows with nothing in
+  them, the template `取得件数 … 取得できない場合 -` (`PSJCO403` `GSJC403B` `[76,4]`-`[107,4]`, `GSJC403C`/`D` `[36,4]`-`[67,4]`) — is not
+  a 件数 finding: report "Ⅲ 未記載" once per sheet instead of a line per block.
 
 **W4 — ﾚｽﾎﾟﾝｽ定義の表記.** Call-out on 機能定義書: "「ｼｽﾃﾑ共通設計書.ﾚｽﾎﾟﾝｽ 参照」に統一". Read the body
 of 機能定義書 `Ⅶ．ﾚｽﾎﾟﾝｽ定義`. Measured over 109 sheets: 97 read exactly `※ｼｽﾃﾑ共通設計書.ﾚｽﾎﾟﾝｽ 参照`.
@@ -291,7 +301,12 @@ In 機能定義書 `Ⅳ．機能処理概要` and 画面設計書 `Ⅳ．画面�
 screen. Its header row is found by label: the row (3-5) whose col 5 reads `画面ID` gives the ID in
 col 10 and the name in col 15 (row 4 is `ﾌﾟﾛｸﾞﾗﾑID` in 04_品質管理/05_受注出荷, so never read a fixed
 `[4,10]`). Use the prebuilt list your prompt names; standalone, build it with
-`python _shared/scripts/build_screen_list.py <...\01_Doc\08_機能定義書> <out.tsv>` (~9 min cold). Normalise the header name first: some end in `画面` (`受入入力画面`),
+`python _shared/scripts/build_screen_list.py <...\01_Doc\08_機能定義書> <out.tsv>` (~9 min cold). Its
+columns are `name`, `screen_id` (header), `sheet`, `workbook`, `sheet_id` (the ID in `画面設計書(<ID>)`).
+**Key a screen by `sheet_id` when present**, not the header ID: copied sheets keep a stale header
+(`PSJCO403` `GSJC403B`/`C`/`D` all carry `GSJC403A` in `[4,10]`), so keying by header hides the program's own
+screens and W5 ends up proposing another program's ID (`GSJC404B`). A header ID ≠ sheet-name ID is
+`naming-standard-compliance`'s finding, not W5's. Normalise the header name first: some end in `画面` (`受入入力画面`),
 most don't, so match `name` + optional `画面`. The program's **own** screens count too
 (`PSJCO602` `[52,4]` `棚卸用仕掛在庫ﾃﾞｰﾀ作成画面を表示する` → `(GSJC602A)`).
 **The screen must be the object of the verb** — `…画面に遷移する` / `…画面に戻る` / `…画面を起動する` /
@@ -342,15 +357,18 @@ LIKE rows), `Y.取引先名(部分一致)` (70), occasionally `(完全一致)`; 
 `'%'||…||'%'` (those appear only in pasted SQL samples to the right, e.g. `PSJCO403` col 54, which are
 out of scope). An operator cell holding `※n` (`PXJCO128` `GXJC128B` `[315,24]` `※8`: the operator
 depends on 停止区分) is defined by that footnote — judge the footnote, not the cell.
-A `※n` on the row points to a footnote `※n.…` (or `※n …`) at the block's label column — **it can sit far below**
+A `※n` on the row points to a footnote `※n.…` (or `※n …`) at or left of the block's label column, possibly one
+shared by several blocks (`PSJCO403` `GSJC403A` `[534,5]` `※1 G1)の検索条件が指定された場合のみの条件` serves
+col-6 blocks above it) — **it can sit far below**
 (`PXJCO131` `GXJC131A` `[237]` → `[615,4]`), so resolve it to the next `※n` footnote line after the row,
 not within a fixed window. Joins are written as their own tables, one per joined alias:
 `結合条件(A LEFT JOIN B)` / `(A INNER JOIN B)` / `(A LEFT OUTER JOIN B)` / `結合条件 A INNER JOIN B` /
 `(A,B LEFT JOIN C)` at the block's label column, each followed by numbered `=` rows; `(+)` notation is
 not used.
 
-**W6a — 検索条件の演算子・一致方法 (No.21/22).** "Screen search input" below means a row whose right
-side is the `画面` alias (`Y.…`, `Y.G1).…`) **and** whose own note or resolved `※n` footnote says the
+**W6a — 検索条件の演算子・一致方法 (No.21/22).** "Screen search input" below means a row with the `画面`
+alias (`Y.…`, `Y.G1).…`) on **either** side — `Y.G1).出荷日From <= A.出荷日` (`PSJCO403` `GSJC403A`
+`[364,8]`/`[471,8]`) counts; "left side" below then means the non-`Y` side — **and** whose own note or resolved `※n` footnote says the
 condition applies only when the value is entered (`値が入力されていた場合のみ検索条件に含む`,
 `未入力の場合、検索条件から除外`, `…に入力がある場合のみ…`, `G1)の検索条件が指定された場合のみ…`). A `Y.` row
 without such a note is usually a key lookup (self-check sample `GXJA802A` `[233]` `A.取引先ｺｰﾄﾞ = Y.取引先ｺｰﾄﾞ`, a

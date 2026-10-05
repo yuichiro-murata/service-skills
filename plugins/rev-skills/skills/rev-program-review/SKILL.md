@@ -105,7 +105,7 @@ to the next one unless the user says "同じ観点で" or similar.
    `_shared/xlsx-excel-com-dump.md`, section "dump once, share the text" — that file ships **inside
    this plugin** (`<plugin root>/skills/_shared/`), not under `~/.claude/skills/`; glob
    `**/rev-skills/**/skills/_shared/xlsx-excel-com-dump.md` if the path doesn't resolve. (Exception:
-   `design-doc-formatting-consistency` still needs live Excel COM access for its font/merge scan;
+   `design-doc-formatting-consistency` reads fonts/merges itself (openpyxl preferred, COM as fallback);
    only the bulk text dump is shared.)
    `**/rev-skills/**/skills/_shared/xlsx-excel-com-dump.md` typically matches several copies — the
    git-tracked marketplace copy (`.claude/plugins/marketplaces/rev-skills/plugins/rev-skills/...`)
@@ -143,7 +143,8 @@ to the next one unless the user says "同じ観点で" or similar.
      WGs, minus the `agent-guide.md` exclusions) — when `design-doc-writing-rules` is selected (W5):
      `python _shared/scripts/build_screen_list.py <...\01_Doc\08_機能定義書> lookup_screen-name_08_機能定義書_ALL.tsv`
      (4–9 min cold; finds the header row by its `画面ID` label, since row 4 is ﾌﾟﾛｸﾞﾗﾑID in 04_品質管理 /
-     05_受注出荷; prints `NON-SCREEN-ID` lines for a 画面ID cell holding a program ID — a doc defect
+     05_受注出荷; skips stale copies; writes the sheet-name ID as a 5th column for W5; prints `NON-SCREEN-ID`
+     (a 画面ID cell holding a program ID) and `HEADER-MISMATCH` (header 画面ID ≠ the sheet's own ID) lines — doc defects
      worth passing to `naming-standard-compliance`). Fresh while its `# source-count` and
      `# source-newest-mtime-utc` lines match the folder.
    - **入力可文字種 table** — when `design-doc-writing-rules` is selected (W1f):
@@ -156,7 +157,8 @@ to the next one unless the user says "同じ観点で" or similar.
    this skill only decides *which* checks run. **Each agent's prompt must say**: read
    `_shared/agent-guide.md` (not the whole of `xlsx-excel-com-dump.md`), the dump directory and
    `_DELETED_DIGEST.txt` path, the per-sheet `dead=`/`partial=` counts the dump printed, and the
-   index/lookup paths that check uses. The orchestrator itself
+   index/lookup paths that check uses — and that the workbook must never be saved. Do not tell the
+   formatting agent to load read-only: its scan needs `merged_cells`, which `read_only=True` lacks. The orchestrator itself
    reads both `agent-guide.md` and `xlsx-excel-com-dump.md`, since it produces the dump.
 4. Do **not** post a status update as each agent finishes. Wait until every check in the batch has
    completed, then compose and post **one** merged report.

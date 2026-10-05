@@ -13,14 +13,21 @@ with the file (not as strings — Python and PowerShell print different fraction
 
 usage: python build_kbn_index.py <09.区分名称_step2.xlsx> <out.json>
 """
-import datetime, json, os, re, subprocess, sys, tempfile
+import datetime, json, os, re, shutil, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from dump_cells import load, rows
 
 def main():
+    if len(sys.argv) != 3: sys.exit(__doc__)
     src, out = sys.argv[1], sys.argv[2]
     tmp = tempfile.mkdtemp(prefix="kbn_")
+    try:
+        build(src, out, tmp)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+def build(src, out, tmp):
     subprocess.run([sys.executable, os.path.join(HERE, "live_dump.py"), src, tmp,
                     "--sheets", "^区分名称_STEP2", "--prefix", "KBN", "--max-col", "20"],
                    check=True, stdout=subprocess.DEVNULL)

@@ -543,15 +543,19 @@ foreach ($ws in $wb.Worksheets) {
                 $isGray = (-not ($col -is [System.DBNull])) -and (Test-Gray $col)
                 $key = (([int64]$r) -shl 20) -bor ([int64]$c)   # key stays array-relative
                 $aC  = $c + $c0                                # digest records absolute coords
-                if (($s -is [System.DBNull]) -and ($cell.Value2 -isnot [string])) {
+                # Mixed = strikethrough OR colour is DBNull (a partly-gray cell has strike False but mixed
+                # colour; openpyxl's classify drops its gray runs, so COM must too).
+                $mixed = ($s -is [System.DBNull]) -or ($col -is [System.DBNull])
+                if ($mixed -and ($cell.Value2 -isnot [string])) {
                     # mixed font on a number/date cell: Characters() has nothing to walk — keep it live
-                } elseif ($s -is [System.DBNull]) {
+                } elseif ($mixed) {
                     $raw = "$($cell.Value2)"; $lv = ""
                     for ($i = 1; $i -le $raw.Length; $i++) {
                         $ch = $cell.Characters($i, 1)
                         if ($null -eq $ch) { $lv = $raw; break }   # see "Characters() returns $null" below
-                        if (-not $ch.Font.Strikethrough) { $lv += $ch.Text }
+                        if (-not $ch.Font.Strikethrough -and -not (Test-Gray $ch.Font.Color)) { $lv += $ch.Text }
                     }
+                    if ($lv -eq $raw) { continue }   # mixed colour but nothing struck or gray: plain live cell
                     if ($lv.Trim().Length -eq 0) {
                         [void]$dead.Add($key); $nDead++
                         $deleted.Add([PSCustomObject]@{S=$n; R=$ar; C=$aC; Kind='DEL'; Text=$raw})
@@ -766,7 +770,7 @@ Confirmed on this machine (PowerShell 7.6.6): a `TXJAM023_工程ﾏｽﾀ.xlsx` 
 `dumpFormat` both matched still failed, and a 12-file batch whose cache was fully warm reported all
 12 as misses. The `[DateTime]` itself keeps full precision — only its stringification loses it — so
 comparing `.ToUniversalTime().Ticks` recovers the match exactly. The `Test-MTimeMatch` helper in both
-scripts above does that and accepts either shape, since Windows PowerShell 5.1 and
+scripts below does that and accepts either shape, since Windows PowerShell 5.1 and
 `ConvertFrom-Json -AsHashtable` leave the value as a string.
 
 The same trap applies to any other `meta.json` field you add that holds a date. Keep comparisons on
@@ -839,10 +843,9 @@ name patterns.** Two confirmed cases:
 reaches `$OnlySheetPatterns` at all. Its sheet selection is the index builder's business and works
 by header detection, not by name; see `_shared/reference-index.md`.
 
-Leave `$OnlySheetPatterns` `$null` (the default) for file types with no such known-safe restriction
-(`09.区分名称_step2.xlsx`, `05.ｼｽﾃﾑ共通設計書.xlsx`, `06-*.xlsx`, `07.共通項目取得.xlsx`, the
-checklist file, `04.ﾒｯｾｰｼﾞ管理_共通.xlsx` — these either have few sheets
-already or every sheet genuinely gets read by some check). If none of the given patterns match any
+Leave `$OnlySheetPatterns` `$null` (the default) for file types with no such known-safe restriction —
+but note none of the REV masters belongs here any more (`09.区分名称` → `build_kbn_index.py`; `05`, `06-*`,
+`07`, `04` → `live_dump.py` with `--sheets`). If none of the given patterns match any
 sheet in a given workbook (a doc-shape exception), the script automatically falls back to dumping
 every sheet and says so — it never silently drops content.
 
@@ -1009,6 +1012,10 @@ that one REV, so a persistent cache buys nothing there and would only grow the c
 one-off entries).
 
 ### Batch variant: checking many reference files in ONE Excel session
+
+**Not for REV masters.** This cache writes raw `Value2` with struck text, and ﾃｰﾌﾞﾙﾚｲｱｳﾄ files carry
+struck columns; every REV check reads its layouts live with `scripts/live_dump.py` (one out_dir per
+file, `--sheets "^ﾃｰﾌﾞﾙﾚｲｱｳﾄ$" --prefix <ID>`). Keep this only for a caller that wants raw values.
 
 **Use this instead of the single-file version above whenever you already know you need to check more
 than a couple of reference files up front** — most commonly, every テーブルレイアウト file for the
@@ -1192,7 +1199,7 @@ the cache key), same Cylance constraint (paste inline, never save as a standalon
 same read-the-resulting-`.txt`-files-with-Read-tool usage afterward. Build the `$Files` list from
 whatever table IDs/paths you already resolved (e.g. step 3's phase-precedence resolution in
 `xlsx-db-column-check`) before running this once, rather than looping the single-file script
-per table.
+per table. (Again: not for REV layout reads — see the note at the top of this section.)
 
 ## When the dump cascade fails on some sheets — re-verify every finding on those sheets before reporting
 

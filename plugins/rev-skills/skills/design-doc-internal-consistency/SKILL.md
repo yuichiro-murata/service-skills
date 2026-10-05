@@ -1,6 +1,6 @@
 ---
 name: design-doc-internal-consistency
-description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency — e.g. every screen event is reflected in the processing overview, response definitions are registered, every screen-item ID / message ID is registered in its master list, screen layout/item-definition/control-spec agree (including item ORDER matching between Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 and Ⅴ．画面項目定義, not just which items are present), exclusive-control is present when a program updates a table, process/check order vs button order, and 区分名称 references resolving in 09.区分名称_step2.xlsx. The self-check writing rules (Ⅴ per-item rules, 項番) live in `design-doc-writing-rules`. Grounded in this project's own official review checklist. Does NOT cover the Ⅲ．入出力定義 (I/O table) completeness check — that's the more involved `design-doc-io-table-check` skill, split out separately. Use when the user asks to レビュー/REV a program's 機能定義書 or 画面設計書, or asks whether a design doc is "internally consistent" / "漏れがないか", or whether screen-item ordering matches across sections. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency: every screen event reflected in the processing overview, responses registered, screen-item/message IDs registered in their masters, Ⅳ message text matching its ID (No.31), layout/item-definition/control-spec agreeing (incl. Ⅳ↔Ⅴ item order, ○/〇 in Ⅵ, yyyy/MM/dd in 表示形式), exclusive control present when the program updates, process/check order vs button order, and 区分名称 references resolving in 09.区分名称_step2.xlsx. Not the Ⅲ．入出力定義 check (`design-doc-io-table-check`) nor the self-check writing rules (`design-doc-writing-rules`). Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書, or whether a design doc is internally consistent / 漏れがないか. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-internal-consistency
@@ -194,7 +194,8 @@ exact sheet/cell for every finding so it's actionable.
      hyphenated `04.ﾒｯｾｰｼﾞ管理` ID.
    - **Procedure.** (a) Event rows: split ﾒｯｾｰｼﾞ into message lines; drop blank lines, `※…` note lines,
      bind-variable legends (`{0}:…`), condition-only lines (a whole-line `(…)` such as `(処理前)` /
-     `(新規登録の場合)`, or a line ending in `場合`/`時`), and lines whose body is `-` or `(ﾒｯｾｰｼﾞなし)`
+     `(新規登録の場合)`, or a line ending in `場合`/`時`, optionally followed by `:`/`：` — `PSJCO403`
+     `GSJC403A` `[1147,43]` `明細未保存時:` above its message), and lines whose body is `-` or `(ﾒｯｾｰｼﾞなし)`
      (`PXJCO161` `GXJC161B` `[1976]` 処理後:(ﾒｯｾｰｼﾞなし) is a statement, not a missing ID); strip trailing
      `※3,※4` references. A line may start with a label (`処理前:`, `完了後、…場合：`) — compare against
      the whole line **and** every tail after a `:`/`：`, rather than stripping a label by pattern
@@ -250,8 +251,9 @@ exact sheet/cell for every finding so it's actionable.
    - **Exemptions.** A ﾒｯｾｰｼﾞ cell holding only `※n` (`PSJCO306` `[561]` `処理前:※1`) — its message and ID
        are in the footnote (`[563]` `SJC6005`), check them there. IDs a message line's `※3,※4,※5` point
        to (`PSJAO601` `GSJA601A` `[1669]` `SJA8003`/`8005`/`8006`) are compared in their footnotes, not
-       against the event row. An ID with a prefix whose dictionary has no index (`XJB`/`SJB`, `XJD`/`SJD`)
-       is the cross-WG note above, not a mismatch. Order is not checked: label pairing
+       against the event row. Builders exist for all five dictionaries (`_shared/reference-index.md`);
+       treat an ID as unresolvable only if its prefix's index was not built for this run — then it is
+       the cross-WG note above, not a mismatch. Order is not checked: label pairing
        (`処理前：`/`処理後：`) is optional and most rows rely on line order. Report one line per row, with
        the Ⅳ cell, the ID, both texts, and the fix when the corpus names one.
 
@@ -318,9 +320,15 @@ exact sheet/cell for every finding so it's actionable.
    decide which one to resequence.
 
 7. **5-4 — Exclusive-control checks present when updating.**
-   If any 更新条件表 sheet exists for this program (i.e. it writes to a table), confirm
+   If the program writes to a table — any 更新条件表 sheet exists, **or** 機能定義書 Ⅲ．入出力定義 has a `○`
+   under its `C`/`U`/`D` header for any table (`PSJCO403` `[105,23]`-`[105,26]`; TXJAM100, TSJCD400-404, TXJCM008
+   at `[106]`-`[111]`, yet no 更新条件表 sheet) — confirm
    ﾁｪｯｸ処理設計書 mentions a 排他ﾁｪｯｸ, and confirm "Ⅴ．画面項目定義" has a hidden 排他ﾌﾗｸﾞ item. Flag
    if a program updates a table but has neither.
+
+   **Copied screen sheets.** If two 画面設計書 sheets of the program have identical live-dump text (hash the
+   per-sheet dump files; `PSJCO403` `GSJC403C` ≡ `GSJC403D`), report one 要確認 line — a copy-paste that
+   was never specialised — rather than letting checks 5/6 repeat each finding on both sheets.
 
 8. **(moved)** The Ⅴ．画面項目定義 per-item writing rules (upper-case note, button-ID band, 選択, No,
    TextBox 桁数/入力可文字種) are now `design-doc-writing-rules` W1.
@@ -379,13 +387,14 @@ every verdict; counts and examples are one snapshot.
       a struck row is not a separator (`製造条件表示区分`: rows 2011-2012 struck, its `入力ﾀｲﾌﾟ 2/4`
       still belong to it). A hand-built index that misses either title shape produced false "missing"
       findings in calibration.
-    - **Parsing the reference**: take the text after `区分名称.` up to `参照`/whitespace; drop an
+    - **Parsing the reference**: take the text after `区分名称.` — or after `09.区分名称_step2.` when no
+      `区分名称.` follows (`PSJCO403` `GSJC403A` `[1401,25]` `09.区分名称_step2.社内加工状態 参照`) — up to `参照`/whitespace; drop an
       unbalanced trailing `)` (it closes an outer `区分名称(ｼｽﾃﾑ共通設計書.区分名称.製造ｵｰﾀﾞｰ状態)`); keep a
       `(qualifier)` as part of the name; resolve `group.value` (value must be one of the group's names) and
       `group.qualifier` → `group(qualifier)` before calling anything missing.
     - Measured: 525 references, ~441 resolve once the index handles both title shapes. Report:
-      - **placeholder `区分名称.XXXX`** — 中 (≈30, `PSJCO403`/`404`/`405`, plus `検索区分(XXXX)` in
-        `PSJCOB01`); the 区分 was never decided;
+      - **placeholder `区分名称.XXXX`** — 中 (≈30 on 2026-10-01, `PSJCO403`/`404`/`405`, plus `検索区分(XXXX)` in
+        `PSJCOB01`; `PSJCO403` has none as of 2026-10-06); the 区分 was never decided;
       - **group not in the master** — 中. Confirmed: `PXJCO129` `GXJC129B` `[701,26]` `区分名称.ﾛｯﾄ識別`,
         where the item and its 説明 say `ﾛｯﾄ種別` and the master has `ﾛｯﾄ種別` (row 1016) — a wrong name,
         not a missing registration; say the likely intended group when a near name exists. Other

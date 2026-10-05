@@ -90,8 +90,11 @@ screen-item IDs: `R` + `XJC`/`SJC` → `01_Doc\06_システム設計書（一覧
 `06-03_帳票一覧_工程管理.xlsm` holds both `RXJC*` and `RSJC*` — so route per ID and deduplicate the
 files, rather than assuming one file per program.
 
-Read it **live** — `_shared/scripts/live_dump.py <registry> <out> --sheets "^帳票一覧"` — not
+Read it **live** — `_shared/scripts/live_dump.py <registry> <out> --sheets "^帳票一覧(\([^)]*\))?$"` — not
 through the COM cross-session cache, which keeps struck text (see the rename-in-place rule below).
+Anchor the regex: an unanchored `^帳票一覧` also takes the backup sheet `帳票一覧(受注出荷)_bak` in
+`06-03_帳票一覧(SJB_受注出荷).xlsm`. Verified 2026-10-06 against all six 06-03 files — the anchored
+pattern takes exactly one sheet each (`帳票一覧`, `帳票一覧(工程管理)`, `(共通)`, `(品質管理)`, `(受注出荷)`).
 The registry sheet is
 `帳票一覧(<WG>)`: header at row 4, data from row 5 —
 `No.(1) | 帳票ID(2) | 帳票名称(3) | 編成(4) | RL(5) | BF(6) | BL(7) | 区分(8) | 備考(9) | 計画書No.(10)`.
@@ -196,8 +199,10 @@ names the 取得項目 directly (`RXJC041`'s `指示工程ｺｰﾄﾞ+工程名
 
 **C5 — 画面項目IDの登録.** Every ID in a `画面項目ID` cell must be registered in the
 `82.画面項目辞書_*.xlsx` its prefix routes to — build/read the index per `_shared/reference-index.md`
-(do **not** dump the dictionary workbook wholesale). If the index is stale and you cannot run COM,
-build it with openpyxl (`read_only`, the ID/name columns the builder's sheet table names) and say so. Split multi-ID cells on newline. Also flag the
+(do **not** dump the dictionary workbook wholesale). **Under the orchestrator**, a named index that is
+missing or stale means "say so and stop" (`agent-guide.md`) — do not rebuild it. **Standalone** only, if
+the index is stale and you cannot run COM, build it with openpyxl (`read_only`, the ID/name columns the
+builder's sheet table names) and say so. Split multi-ID cells on newline. Also flag the
 opposite shape: a print item in a 段落ﾀｲﾄﾙ or ﾍｯﾀﾞｰ table with **no** 画面項目ID at all where its
 siblings in the same table all have one — the column exists so that the printed label can be
 multilingual, and a blank means the label is hardcoded.
@@ -234,8 +239,8 @@ Re-read the cells behind each candidate finding. The traps specific to this shee
 - treating the merged `出力項目名` repetition as ten separate items;
 - flagging the Ⅱ．帳票仕様 boilerplate (`明細部 = -` etc.) — see C2's calibration warning;
 - treating a `(n)` block reference in `参照先` as an undefined alias;
-- parsing a dump record that a newline inside a cell split across physical lines: join every line
-  that does not start with `[` onto the previous one first;
+- reading the dump line by line, which truncates a cell whose value contains a newline: parse it
+  with `_shared/scripts/dump_cells.py` (`load()` groups by the `[r,c]=` tokens);
 - resolving a block-scoped alias against the wrong block (C3) — the most likely source of a wrong
   "undefined alias" or "unfetched column" finding;
 - calling a renamed-in-place 帳票一覧 row unregistered (see step 2 — this has happened).

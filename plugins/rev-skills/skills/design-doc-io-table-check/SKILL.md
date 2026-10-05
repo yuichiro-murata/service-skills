@@ -1,6 +1,6 @@
 ---
 name: design-doc-io-table-check
-description: Check whether a program's 機能定義書「Ⅲ．入出力定義」table (the CRUD list of every DB table/file the program touches) is complete and accurate in both directions — every table actually used anywhere in 画面設計書/更新条件表/帳票設計書 (including via delegation to `07.共通項目取得.xlsx`) is declared with the right C/R/U/D flags, and every declared table is genuinely used and has a real DB一覧 entry + テーブルレイアウト file. This is the single most complex, highest-yield check in a program REV — deep delegation-tracing, WG-folder DB-layout lookups with PH2/PH3 precedence, exact-ID-match discipline, and struck-through-block exclusion all apply — so it is split out from its lighter sibling `design-doc-internal-consistency` (event/response/screen-item-ID/message-ID/three-way-match/exclusive-control checks) to get undivided attention. Use when the user asks to check 入出力定義表/CRUD一覧 completeness, or whether a design doc's declared tables match what it actually uses. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Check whether a program's 機能定義書「Ⅲ．入出力定義」CRUD list is complete and accurate in both directions: every table used in 画面設計書/更新条件表/帳票設計書/ﾌｧｲﾙ入出力仕様書 (including via 07.共通項目取得 delegation) is declared with the right C/R/U/D flags, and every declared table is really used and has a DB一覧 entry and a ﾃｰﾌﾞﾙﾚｲｱｳﾄ file. The highest-yield check in a program REV (delegation tracing, PH2/PH3 layout precedence, exact-ID matching, struck-block exclusion), split from `design-doc-internal-consistency`. Use when the user asks to check 入出力定義表/CRUD一覧 completeness, or whether declared tables match what the doc actually uses. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-io-table-check
@@ -20,13 +20,17 @@ ID's JOBコード (characters 2-4): `XJC`/`SJC` → `06-06_DB一覧_工程管理
 `XJB`/`SJB` → `_受注出荷`, `XJD`/`SJD` → `_品質管理`, `XJZ`/`SJZ` → `_共通` (all in
 `01_Doc\06_システム設計書（一覧、管理台帳）`; prefixes confirmed against each file's live ID column,
 2026-10-01). A JA table may also sit on 工程管理's `作成状況一覧` (98 `XJA` + 72 `SJA` IDs there) — either
-registration counts. When resolving a layout, ignore the older copies under `VIEW\`,
-`STEP1暫定テーブル\`, `90_JAGURﾃｰﾌﾞﾙﾚｲｱｳﾄ(4月26日時点)\` and `10_共通WG` mirrors unless no flat-level/PHASE
-copy exists (`xlsx-db-column-check` step 3 has the precedence) — the JAGUR folder alone holds ~30 of
-`PXJCO125`'s tables, some under old names (`TXJCD407_ﾁｪｯｸｼｰﾄ実績.xlsx`). Delegated blocks: see
+registration counts. **Resolve layouts by `xlsx-db-column-check` step 3 alone** — its rule 4 is the
+single layout-scope rule: `VIEW\`, `STEP1暫定テーブル\`, `90_JAGURﾃｰﾌﾞﾙﾚｲｱｳﾄ(<date>時点)\` and `10_共通WG`
+mirrors are never a fallback, and a table found only there is "layout not present" (name the old copy).
+The JAGUR folder alone holds ~30 of `PXJCO125`'s tables, some under old names
+(`TXJCD407_ﾁｪｯｸｼｰﾄ実績.xlsx`), which is why no fallback is allowed. Delegated blocks: see
 "Delegation depth" below. Anything visible in the dump is live evidence; removed content lives in
 `_DELETED_DIGEST.txt`, which this check needs only to explain why a declared table has no live usage
-left. Sources: 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/帳票設計書/ﾌｧｲﾙ出力仕様書.
+left. Sources: 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/帳票設計書/ﾌｧｲﾙ出力仕様書, and
+`ﾌｧｲﾙ入出力仕様書(<ID>)` / `ﾌｧｲﾙ入力仕様書(<ID>)` — their Ⅱ `入出力先` names the table a file is loaded into
+(`PSJCO403` `ﾌｧｲﾙ入出力仕様書(FSJC018)` `[15,18]=TSJCD401:社内加工予定金額`, a 洗替 target per Ⅳ B-⑤): that
+is usage (C/D for 洗替, C/U for 登録/更新 — read Ⅳ's verb), and the file ID itself is an `F…` row.
 
 ## Procedure
 
@@ -57,13 +61,17 @@ left. Sources: 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更�
    deprecated one is simply absent, in both diff directions.
 5. Require an **exact** ID string match throughout (never prefix/substring) — suffix variants
    (`WF`, numeric suffixes like `_31`) are different tables from their base ID, and this applies to
-   locating the DB layout file too, not just the diff itself.
+   locating the DB layout file too, not just the diff itself. **Before matching, strip a developer
+   schema prefix** — `HAYA_TSJCD403` in `PSJCO403` `画面設計書(GSJC403A)`'s col-54 SQL `[295,54]` is
+   `TSJCD403` — and note the prefix once (低). Only a leading `<NAME>_` before a table ID; suffixes are
+   never stripped.
 6. Diff declared vs. used in both directions, then separately verify each C/R/U/D letter against
    what the live references actually do (a table can be "used" without every declared letter being
    backed by a real operation, or vice versa). Also confirm DB一覧 registration and テーブルレイアウト
    existence — search the correct top-level `<WG番号>_<WG名>WG\07_データベース・ファイル設計書(仮)`
    folder (PH3 > PH2 > top-level precedence), plus `01_Doc\07_データベース・ファイル設計書\` for
-   基準情報(JA)-prefix common tables, before ever reporting a layout as missing.
+   基準情報(JA)-prefix common tables, before ever reporting a layout as missing. A C/U/D letter with
+   **no 更新条件表 sheet behind it** is not skipped — see "No 更新条件表 for a written table" below.
 
 **Detailed rules and confirmed examples:**
 
@@ -196,6 +204,14 @@ Diff the two sets:
   on without checking that the R itself was missing from the flags. Flag any letter present in
   actual usage but absent from the row, and vice versa (a flagged letter with no matching
   operation anywhere).
+- **No 更新条件表 for a written table.** When Ⅲ marks C/U/D (`○`/`●`) for a table that has no
+  `更新条件表(<ID>)` sheet, don't skip the letter check and don't call the letters unbacked: judge them
+  from Ⅳ．機能処理概要's wording (登録 → C, 更新 → U, 削除 → D, 洗替 → D+C) and mark each verdict 要確認.
+  Then report the missing sheets **once**, as one finding listing every such table — this check owns
+  it; `xlsx-db-column-check` and `update-condition-completeness` defer to it. `PSJCO403` (2026-10-06)
+  has no 更新条件表 sheet at all while Ⅲ `[106,5]`-`[111,5]` marks C/U/D on TXJAM100, TSJCD400-402,
+  TSJCD404 and TXJCM008, and Ⅳ B-③/B-⑤ point at a `【更新条件表(TSJCD404) 洗替登録】` `[170,30]`/`[180,30]`
+  that does not exist — cite such dangling pointers in the same finding.
 - **An `F…` ID in Ⅲ．入出力定義 is a file, not a table** (`FXJA020` 取引先ﾏｽﾀﾌｧｲﾙ, `FSJC051`
   損金一覧ﾃﾞｰﾀ). It has no DB一覧 row and no ﾃｰﾌﾞﾙﾚｲｱｳﾄ by design, so never report it as
   unregistered or layout-less. Its registration (`06-04_ﾌｧｲﾙ一覧_<WG>.xlsm`) and its agreement with the
@@ -208,19 +224,22 @@ Diff the two sets:
   the shared tables, so checking it for a WG's own table reports a false "unregistered". Note the WG file carries **two overlapping
   table lists on two visible sheets with different header labels** — `作成状況一覧` (header row 1,
   `ﾃｰﾌﾞﾙID`/`ﾃｰﾌﾞﾙ名`) and `DB一覧` (header row 35, `ID`/`名称`) — and neither is a superset of the
-  other. Check both before reporting a table as unregistered. Re-measured 2026-10-01 on a live dump
-  (source length 401,141 / mtime `2026-09-08T09:55:22Z`; distinct ID-shaped cells per sheet): **353 live
-  IDs on `作成状況一覧` and 211 on `DB一覧`, sharing 180 — 31 only on `DB一覧`, 173 only on
-  `作成状況一覧`.** Struck `DB一覧` rows are retired — the live dump already drops them; never count
-  them as registered. These figures are dated: re-measure rather than trust them, since the registries
-  are edited during a review cycle. The third visible sheet (`改訂履歴`) is not a table list at all.
+  other. Check both before reporting a table as unregistered. Measured 2026-10-01 on a live dump
+  (source length 401,141 / mtime `2026-09-08T09:55:22Z`; distinct ID-shaped cells per sheet): 353 live
+  IDs on `作成状況一覧` and 211 on `DB一覧`, sharing 180. Re-measured **2026-10-06** (length 399,384 /
+  mtime 2026-10-03): `作成状況一覧` is 355 rows / 353 IDs, `DB一覧` 212 IDs (dead=28 partial=19). Struck
+  `DB一覧` rows are retired — the live dump already drops them; never count them as registered. These
+  figures go stale within days: re-measure rather than trust them. The third visible sheet (`改訂履歴`) is not a table list at all.
   When resolving a table to its layout file, confirm the ID in the **`ﾃｰﾌﾞﾙﾚｲｱｳﾄ` sheet's** `A6`
   cell (under the `ﾃｰﾌﾞﾙID` label in `A5`): a `<ID>_*.xlsx` glob also matches suffixed *other* tables
   (`TXJCM003_B`, `TXJAM008_IN`), and accepting one silently checks the wrong table's column list.
   Take `A6` from that sheet specifically — the `旧ﾃｰﾌﾞﾙﾚｲｱｳﾄ` sheets in the same workbook hold the
   legacy ID there (`FDMBM03`, `FDCJM03` in `TXJCM003_製造ｵｰﾀﾞｰ.xlsx`), so reading the wrong sheet
   makes the correct file look like a mismatch. Select that sheet by exact name (`^ﾃｰﾌﾞﾙﾚｲｱｳﾄ$`): dated
-  snapshots such as `ﾃｰﾌﾞﾙﾚｲｱｳﾄ_20251002時点` carry the same `A6` and would pass the check.
+  snapshots such as `ﾃｰﾌﾞﾙﾚｲｱｳﾄ_20251002時点` carry the same `A6` and would pass the check. Two files
+  with the same `A6` in one phase folder (PH3 `TSJCD401_社内加工(予定金額).xlsx` and
+  `TSJCD401_社内加工予定金額ﾃﾞｰﾀ(IS).xlsx`, different columns) are settled by matching `F6` against the
+  DB一覧 名称 — `xlsx-db-column-check` step 3 rule 2 — and the duplicate is reported once as 要確認.
   **The DB design folder for a WG is a TOP-LEVEL project folder named
   `<WG番号>_<WG名>WG\07_データベース・ファイル設計書(仮)` (e.g. `11_工程管理WG\07_データベース・
   ファイル設計書(仮)`) — a sibling of `01_Doc`, NOT nested inside it**, even though most other

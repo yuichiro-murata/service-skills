@@ -65,20 +65,22 @@ def main():
     ap.add_argument("workbook"); ap.add_argument("out_dir")
     ap.add_argument("--prefix"); ap.add_argument("--sheets"); ap.add_argument("--hidden", action="store_true")
     ap.add_argument("--max-col", type=int)
+    ap.add_argument("--include-detail", action="store_true", help="also dump 詳細設計*/画面ｲﾒｰｼﾞ sheets")
     a = ap.parse_args()
     os.makedirs(a.out_dir, exist_ok=True)
     base = os.path.splitext(os.path.basename(a.workbook))[0]
-    prefix = a.prefix or base.split("_")[0]   # pass --prefix when two inputs share a first token
+    m = re.search(r"[PS][XS]J[A-Z][OB][0-9A-Z]{3}", base)   # 完了_阿部_PXJDO101_… -> PXJDO101
+    prefix = a.prefix or (m.group(0) if m else base.split("_")[0])   # pass --prefix when two inputs share a first token
     wb = openpyxl.load_workbook(a.workbook, data_only=True, rich_text=True)
     digest = []; summary = []
     for ws in wb.worksheets:
         n = ws.title
         if ws.sheet_state != "visible" and not a.hidden: continue
         if a.sheets and not re.search(a.sheets, n): continue
-        if n.startswith("詳細設計") or "画面ｲﾒｰｼﾞ" in n:
+        if (n.startswith("詳細設計") or "画面ｲﾒｰｼﾞ" in n) and not a.include_detail:
             summary.append(f"{n}\t{ws.max_row}x{ws.max_column}\tskipped"); continue
         lines = []; nd = npart = 0
-        for row in ws.iter_rows(max_col=a.max_col):
+        for row in ws.iter_rows(max_col=a.max_col or None):
             parts = []
             for c in row:
                 live, kind, removed = classify(c)
@@ -95,6 +97,7 @@ def main():
               "# An empty list below means nothing on the dumped sheets was struck or gray.\n")
     dname = f"_DELETED_DIGEST_{a.prefix}.txt" if a.prefix else "_DELETED_DIGEST.txt"
     open(os.path.join(a.out_dir, dname), "w", encoding="utf-8").write(header + "\n".join(digest))
+    if not summary: print(f"WARNING: no sheet matched (--sheets {a.sheets!r}); only the digest was written", file=sys.stderr)
     print("\n".join(summary))
 
 if __name__ == "__main__":

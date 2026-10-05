@@ -45,6 +45,8 @@ takes A1. Convert at write time (column index → letter: repeatedly `((n-1) % 2
 `n = (n-1) \ 26`), and when a finding spans several cells list them comma-separated
 (`AC571, AC572, AC573`). Keep the sheet name in the separate `対象シート` column as before.
 
+(Colours are Excel COM `.Interior.Color` integers, which are BGR. For openpyxl use the RGB hex: `12419407`=`4F81BD`, `13551615`=`FFC7CE`, `14083324`=`FCE4D6`, `15922414`=`EEF4F2`, `14277593`=`D9DBD9`, `13421823`=`FFCCCC`, `13434879`=`FFFFCC`, `16772300`=`CCECFF`.)
+
 Row 3 is blank. Row 4 is the header, 10pt bold on fill
 `14277593`, centred horizontally, top-aligned, wrapped:
 
@@ -59,7 +61,7 @@ everything else left-aligned. **Fill only A-H and M — columns I-L (対応要�
 `重要度` takes one of 高 / 中 / 低 / 要確認 and is coloured by **direct cell fill, not conditional
 formatting** (the existing files have zero `FormatConditions`): 高 = `13421823` + bold, 中 =
 `13434879`, 要確認 = `16772300`, 低 = left white. `分類` names the check the finding came from
-(入出力定義 / 内部相互参照 / DBｶﾗﾑ / ID採番/記述ﾙｰﾙ / 更新条件表 / 帳票 / ﾌｧｲﾙ出力 / 記述ﾙｰﾙ / 誤字脱字 / 体裁), and `指摘ID` is
+(入出力定義 / 内部相互参照 / DBｶﾗﾑ / ID採番 / 更新条件表 / 帳票 / ﾌｧｲﾙ出力 / 記述ﾙｰﾙ / 誤字脱字 / 体裁), and `指摘ID` is
 `<分類の連番>-<その中の連番>` (`2-13`), with column A a plain 1..N counter. Use the bare `体裁` the
 existing files use — not `体裁(ﾌｫﾝﾄ)`/`体裁(結合)`, which this file previously specified and which no
 copy of the list actually contains.
@@ -92,8 +94,9 @@ Two PowerShell traps in the builder itself, both of which abort the run:
   `Remove-Item on system path '/' is blocked` — nothing runs at all. `SaveAs` with
   `$excel.DisplayAlerts = $false` overwrites an existing file without any prompt; just call it.
 
-**The LAST `Chart.Export` in a loop comes back blank — always export one throwaway range after the
-one you care about.** Confirmed twice in a single run on `PSJCO307`: a 4-band export loop wrote
+**A `Chart.Export` can come back blank — always export one throwaway range after the last band, keep
+each band to ≤ ~16 list rows, and size-check every PNG (not only the last).** A tall 33-row band in the
+middle of a loop also came back as a 9.6 KB blank on `PSJCO403`; splitting it into 16/17-row bands fixed it. Confirmed twice in a single run on `PSJCO307`: a 4-band export loop wrote
 bands 1-3 correctly and band 4 as a ~3KB blank PNG; re-running with three different bands wrote the
 first two correctly and the third (the header band) as a ~1.5KB blank. The `Activate()` was present
 every time, so this is not the missing-Activate failure below — it is the final iteration

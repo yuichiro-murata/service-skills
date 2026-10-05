@@ -1,6 +1,6 @@
 ---
 name: file-output-spec-check
-description: Review a program's ﾌｧｲﾙ出力仕様書(<ﾌｧｲﾙID>) sheets — the file/download output specification that no other REV skill reviews in its own right. Checks that the ﾌｧｲﾙID agrees everywhere it is written (sheet name, 3C/3D header, Ⅰ's 出力ｺｰﾄﾞ argument, 機能定義書 Ⅲ．入出力定義 and its 【ﾌｧｲﾙ出力仕様書(…)】 pointers), that the file is registered in 06-04_ﾌｧｲﾙ一覧_<WG>.xlsm under this program, that Ⅱ．ﾌｧｲﾙ出力仕様's fixed rows are filled in, that a 共通ﾀﾞｳﾝﾛｰﾄﾞ file carries its three standard annotations, that every ﾍｯﾀﾞｰ item has a 画面項目ID in the right number band and registered in 82.画面項目辞書, that the ﾍｯﾀﾞｰ and 明細 item lists agree, that every 明細 reference resolves to a real 画面設計書 block / 参照ﾃｰﾌﾞﾙ alias, that 編集方法 uses the common-design vocabulary and matches the value's format, that No is not output, and — when a ﾌｧｲﾙﾚｲｱｳﾄ workbook exists — that the spec agrees with it. Distinct from report-design-check (帳票設計書 only; explicitly does not read this sheet) and xlsx-db-column-check (column existence). Use when the user asks to REV ﾌｧｲﾙ出力仕様書/ﾀﾞｳﾝﾛｰﾄﾞﾌｧｲﾙ/CSV・TSV出力の仕様. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Review a program's ﾌｧｲﾙ出力仕様書(<ﾌｧｲﾙID>) sheets (and ﾌｧｲﾙ入出力/入力仕様書 where they apply): the ﾌｧｲﾙID agrees everywhere it is written, the file is registered in 06-04_ﾌｧｲﾙ一覧_<WG> under this program, Ⅱ's fixed rows are filled, a 共通ﾀﾞｳﾝﾛｰﾄﾞ file has its three standard notes, ﾍｯﾀﾞｰ items have registered 画面項目IDs in the right band, ﾍｯﾀﾞｰ and 明細 lists agree, 明細 references resolve, 編集方法 uses the common vocabulary, No is not output, and the spec matches its ﾌｧｲﾙﾚｲｱｳﾄ when one exists. Distinct from report-design-check (帳票設計書 only) and xlsx-db-column-check. Use when the user asks to REV ﾌｧｲﾙ出力仕様書/ﾀﾞｳﾝﾛｰﾄﾞﾌｧｲﾙ/CSV・TSV出力の仕様. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # file-output-spec-check
@@ -12,11 +12,20 @@ this skill existed, nothing reviewed this sheet at all: `report-design-check` ex
 (レビュー観点 No.65-69 plus the call-outs on its `ﾌｧｲﾙ出力仕様書(FXJA002)` sample sheet). This skill
 is the automatable part of that block.
 
-**A program with no visible `ﾌｧｲﾙ出力仕様書(*)` sheet is not in scope.** Say so in one line and stop.
+**A program with no visible `ﾌｧｲﾙ出力仕様書(*)` sheet — and no input spec (below) — is not in scope.**
+Say so in one line and stop.
 Hidden ones are out of scope too (the shared dump's default): across the project most hidden copies
 are untouched template stubs named `ﾌｧｲﾙ出力仕様書(FXJDXXX)` / `ﾌｧｲﾙ出力仕様書()`, or withdrawn ones
 renamed `削除)ﾌｧｲﾙ出力仕様書(…)`. Also out of scope: sheets that merely share the prefix but are not a
 spec — `ﾌｧｲﾙ出力ｲﾒｰｼﾞ`, `ﾌｧｲﾙ出力のｲﾒｰｼﾞ→` (mock-ups) — and a `…_様式` companion sheet.
+
+**Input specs — `ﾌｧｲﾙ入出力仕様書(<ID>)` / `ﾌｧｲﾙ入力仕様書(<ID>)` — are file specs too, with a different
+shape** (`PSJCO403` `ﾌｧｲﾙ入出力仕様書(FSJC018)`: header `ﾌｧｲﾙ入力仕様書`, Ⅰ．ﾌｧｲﾙ入力条件 with no 出力ｺｰﾄﾞ,
+Ⅱ labels `入出力ﾌｧｲﾙ名`/`入出力ﾌｧｲﾙ形式`/`入出力先`/`ﾍｯﾀﾞｰ`, Ⅲ `入力内容` with no 画面項目ID). Count them
+as spec sheets for **F2** (so their registry rows are not "registered but no spec sheet"), apply **F1**
+places 1, 2, 4 and 5 (no 出力ｺｰﾄﾞ exists), and **F9** when a layout exists. F3-F8 are written for the
+output template and do not apply — say so in one line rather than running them. A workbook whose only
+file specs are input specs is in scope for those checks.
 
 ## Environment
 
@@ -76,7 +85,8 @@ Parsing rules that matter:
 
 ### 1. Get the dump, and enumerate the file specs
 
-From the shared dump, list every visible `ﾌｧｲﾙ出力仕様書(<ID>)` sheet. You will also need, from the
+From the shared dump, list every visible `ﾌｧｲﾙ出力仕様書(<ID>)` sheet, and separately every
+`ﾌｧｲﾙ入出力仕様書(<ID>)` / `ﾌｧｲﾙ入力仕様書(<ID>)` (see the scope note above). You will also need, from the
 same dump: the `機能定義書(*)` sheet (F1) and every `画面設計書(*)` sheet (F7).
 
 ### 2. Read the ﾌｧｲﾙ一覧 registry for each file ID's WG
@@ -135,6 +145,11 @@ line per sheet, not an F1 mismatch.
 
 Also compare the ﾌｧｲﾙ名称 (`[4,15]`) with the registry's `ファイル名称` and the 入出力定義 row's name.
 
+**A Ⅲ．入出力定義 with no `F…` row at all while the workbook has file specs is a finding**, not "place
+4 not applicable": `PSJCO403` (2026-10-06) declares only tables (`[106,5]`-`[116,5]`) beside FSJC018/019/020.
+Report it as **one** line listing every undeclared file ID — or leave it to `design-doc-io-table-check`'s
+"used but not declared" diff when that check is in the run, so it is not reported twice.
+
 **F2 — ﾌｧｲﾙ一覧への登録.** Every live file ID must have a live registry row; that row's `備考` should
 name this program's function (compare against the 3C `ﾌﾟﾛｸﾞﾗﾑ名` `[3,15]`, allowing the `付属機能/`
 prefix and a `(ｻﾌﾞﾌﾟﾛ)`/`(ﾊﾞｯﾁ)` suffix). Report both directions: a spec with no registry row, and a
@@ -156,7 +171,8 @@ report those as one grouped low-severity line per workbook, not one finding each
 `部材・治工具発注在庫管理`, the program is ﾃｰﾌﾟﾛｯﾄ管理) is a copied header — say so.
 
 Compare the registry's `編成` (`TSV`/`CSV`/`EXCEL`) with Ⅱ `出力方法` **only for a non-共通ﾀﾞｳﾝﾛｰﾄﾞ file**
-that states a fixed format. For a 共通ﾀﾞｳﾝﾛｰﾄﾞ file the user picks the format at run time, and the
+that states a fixed format. Normalise first: NFKC, upper-case, drop `形式`, and read `XLSX`/`XLS`/`Excel`/
+`ｴｸｾﾙ` as `EXCEL` — `FSJC019` `[21,18]=XLSX形式` and `FSJC018`'s `入出力ﾌｧｲﾙ形式` `Excel形式` both mean `EXCEL`. For a 共通ﾀﾞｳﾝﾛｰﾄﾞ file the user picks the format at run time, and the
 registry's `TSV` is just the default — never a finding.
 
 **F3 — Ⅱ．ﾌｧｲﾙ出力仕様の記入漏れ.** The section is a fixed label list in col 4 with the value in
@@ -254,7 +270,10 @@ What survives is real, and it is exactly the kind of defect this check exists fo
 **F7 — 明細の参照先の解決.** The 明細 `参照先` column (col 17) names where each value comes from:
 
 - `①` / `②` … → a symbol defined in Ⅰ．ﾌｧｲﾙ出力条件 by a line ending `… ①`
-  (`画面設計書(GSJC901A) - (6)明細情報取得 参照 … ①`);
+  (`画面設計書(GSJC901A) - (6)明細情報取得 参照 … ①`), **or by a `参照先定義` row** in Ⅱ or just above
+  the 明細 table (`PSJCO403` `FSJC019` `[53,5]=参照先定義 | [53,11]=①画面(GSJC403A)`; Ⅱ `[18,4]` likewise).
+  A symbol defined as `画面(<画面ID>)` resolves to that screen's Ⅴ．画面項目定義 — check the 明細 values
+  against its 画面項目名, as for a 参照ﾃｰﾌﾞﾙ alias that points at a screen area (below);
 - `(n)` → **usually the block number of the delegated 画面設計書's Ⅲ．画面表示仕様, not of Ⅰ.** The common
   shape is Ⅰ `(1)ﾀﾞｳﾝﾛｰﾄﾞﾃﾞｰﾀ取得` → `※画面設計書(GSJC208A) Ⅲ.画面表示仕様 (7)明細ﾃﾞｰﾀ取得　参照`, and the
   明細 rows then say `(7)`. Measured on the 26 sheets whose 明細 uses `(n)`: reading `(n)` as Ⅰ's own
@@ -268,7 +287,10 @@ What survives is real, and it is exactly the kind of defect this check exists fo
   Ⅰ used to read `(1)…画面設計書(GXJC128A).Ⅲ.画面表示仕様(1) 参照`, the block was restructured on
   2026/6/9 into `(1)ﾌｧｲﾙ出力先情報取得` + `(2)ﾀﾞｳﾝﾛｰﾄﾞﾃﾞｰﾀ取得` (old line struck — see
   `_DELETED_DIGEST.txt`), and every 明細 `(1)` was left behind. Check the digest to say so; the fix is
-  `(2)`. `PXJCO193` `FXJC018` has the same shape.
+  `(2)`. `PXJCO193` `FXJC018` has the same shape. Suggest a replacement block only when Ⅰ has exactly
+  one data block (one with 取得項目 or a delegation to one) and the 明細 values are in it; with several
+  candidates, list them and leave the choice to the designer — "has 取得項目" alone does not identify
+  the right block.
   (b) **Ⅰ has no block numbered `(n)`** (its blocks are unnumbered `・ﾌｧｲﾙ出力先情報取得` or use other
   numbers) → `(n)` is the delegated 画面設計書 Ⅲ block number; resolve it there (`PSJCO208`).
   Report a `(n)` that resolves in neither. Ⅰ's block titles sit in col 3 on some sheets and col 4 on
@@ -282,7 +304,8 @@ What survives is real, and it is exactly the kind of defect this check exists fo
 - `A` / `B` … → an alias in Ⅰ's `参照ﾃｰﾌﾞﾙ` / `参照ｴﾝﾃｨﾃｨ` list;
 - `-` → a literal (every ﾍｯﾀﾞｰ row) or a computed value.
 
-Check that every symbol/block/alias used is defined in Ⅰ, and follow each delegation: the named
+Check that every symbol/block/alias used is defined in Ⅰ (or, for a circled symbol, a `参照先定義`
+row), and follow each delegation: the named
 `画面設計書(<画面ID>)` sheet must exist in the workbook and its Ⅲ．画面表示仕様 must have the named
 block (match `(n)` and the block title; titles drift, so a matching number with a different title is
 a lower-confidence note, a missing number is a finding). Then check each 明細 `項目名・出力値` against

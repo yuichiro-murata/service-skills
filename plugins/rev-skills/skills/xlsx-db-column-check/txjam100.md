@@ -1,7 +1,8 @@
 # xlsx-db-column-check — TXJAM100 (検索条件保存ﾏｽﾀ) checks
 
 Loaded by `xlsx-db-column-check` step 6 only when a 更新条件表 targets TXJAM100. Columns and dump
-conventions are those of the main SKILL.md (steps 3 and 5).
+conventions are those of the main SKILL.md (steps 3 and 5). When Ⅲ declares TXJAM100 as written but
+no such sheet exists, nothing here can run — step 6 of the main file says how to report that.
 
 ### 6. Redundant code+name persistence in 検索条件保存マスタ-style generic tables
 

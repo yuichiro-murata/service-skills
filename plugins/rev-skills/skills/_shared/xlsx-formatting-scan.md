@@ -13,7 +13,7 @@ never got updated when the left side did).
 gray-out are applied while the workbook is open and never reach the agents (see
 `xlsx-excel-com-dump.md`), but font and merge span have no equivalent — this skill reads them from the
 workbook itself. Since only this skill reads the result, that is correct: don't try to fold it into
-the shared dump for the other eight, which never look at it.
+the shared dump for the other nine, which never look at it.
 
 ## Which cells to scan
 
@@ -86,15 +86,27 @@ every 更新条件表. Instead:
 
 1. **Compare column spans only.** Height differences between records of a list are expected (a
    record grows with its text).
-2. **Compare only cells of the same role** — the same normalised label (whitespace stripped) in the
-   same column, or sibling records of one list (same column, between the list's header row and its
-   footer such as `特記事項`). Never pair a label cell with a value cell.
+2. **Compare only cells of the same role inside ONE table** — sibling records of one list or block
+   (same column, between its header row, e.g. `取得項目`/`検索条件`/`結合条件(…)`, and its end: the next
+   block header, `取得件数`, or a footer such as `特記事項`). Never pair a label cell with a value cell,
+   and never pair cells across tables because their labels match: Ⅲ's query blocks and Ⅳ/Ⅴ/Ⅵ reuse
+   the same names (`画面`, `ﾛｸﾞｲﾝ情報`, `A.ﾎﾞﾃﾞｨ1`) at different spans by design. Skip placeholder cells
+   (`-`, blank). The sheet-wide "same normalised label in the same column" rule gave **~230 candidates
+   on PSJCO403 画面設計書 A-D, none real**, and the 3-sheet signature exclusion below did not thin them.
 3. **Subtract template signatures** — `(column, span A, span B, normalised labels)` tuples that recur
    on 3 or more sheets of the workbook, or across sibling workbooks in the same PHASE folder, are the
    template, not a defect.
 
 What survives is a lead for the content cross-check (SKILL.md step 3): a duplicated header block whose
-right-side copy kept stale content, or one list row merged differently from its siblings. A whole
+right-side copy kept stale content, or a few rows inside one block merged differently from the rest
+of that block — the useful shape, usually a paste remnant. PSJCO403 GSJC403A (6)-①/③: the `結合条件`
+row `[559,26]`/`[615,26]` breaks its block's 1×4 span, and the content check found the block's
+検索条件 (`A.JOBｺｰﾄﾞ`/`A.ｷｰ1-3`) pasted from a 共通ｺｰﾄﾞﾏｽﾀ query into a TSJCD401 one.
+
+**Out of scope for the font and merge checks**: undated designer memos and pasted SQL right of the
+print area (body rows, cols 53-104 — e.g. GSJC403A `[19,55]`, `[281,54]`). They follow no template, so
+every cell would "deviate". Whether such leftovers should stay is one 低 content line at most, not a
+per-cell font or merge finding. A whole
 block shifted off the template's columns (PXJCO125 更新条件表(TXJCM006): its 取得条件 blocks sit one
 column right of every other 更新条件表) is a different shape: catch it by comparing a sheet's anchor
 columns against the sibling sheets of the same template, not by span.

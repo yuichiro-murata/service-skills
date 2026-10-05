@@ -1,6 +1,6 @@
 ---
 name: xlsx-db-column-check
-description: Check whether a function-definition Excel doc (機能定義書/画面設計書/更新条件表) references DB columns that don't actually exist in the corresponding table-layout (テーブルレイアウト) Excel files, AND whether each screen item's declared 桁数 matches that column's 桁数 in the layout. Distinct from design-doc-io-table-check, which checks whether a table is *declared* in the Ⅲ．入出力定義 CRUD list at all — this skill instead checks whether the *columns* referenced within an already-used table actually exist, and whether they are declared at the right length: a column can exist and still be wrong, e.g. a 工程名 TextBox declared 桁数=30 against a 工程ﾏｽﾀ column of NVARCHAR2(60) silently truncates on entry and display. Also flags a project-specific anti-pattern in 検索条件保存マスタ-style generic tables (e.g. TXJAM100): persisting both a master-entity code (品目コード等) AND its master-derived display name (KC品名等) together, when only the code should be stored and the name should come from a JOIN at read-time — but ONLY when the screen shows that name as a Label; a name the user types into a TextBox is an independent search condition and persisting it is correct. Conversely, also flags a search condition the user enters that is NOT saved to TXJAM100 at all (self-check レビュー観点 No.47 "検索条件の項目が全てあるか"). Use when the user asks to verify a program's design doc against DB/file design docs, e.g. "このファイルが使っているカラムが、DB設計書のファイルに存在するか確認して" or "存在しないカラムを使っていたら教えて". For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Check whether a design doc (機能定義書/画面設計書/更新条件表) references DB columns that do not exist in the table's ﾃｰﾌﾞﾙﾚｲｱｳﾄ, and whether each screen item's 桁数 matches the column's length (e.g. a 工程名 TextBox of 30 against NVARCHAR2(60)). For 検索条件保存ﾏｽﾀ (TXJAM100) it also flags a saved master-derived name shown as a Label (only the code should be stored) and a typed search condition that is not saved (self-check No.47). Distinct from design-doc-io-table-check, which asks whether a table is declared at all. Use when the user asks to verify a program's design doc against the DB design files, e.g. 「使っているカラムがDB設計書に存在するか確認して」「存在しないカラムを使っていたら教えて」. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # xlsx-db-column-check
@@ -88,6 +88,20 @@ stripping all whitespace (half/full-width spaces and newlines: `[14,16]=　INSER
 A subquery inside a 検索条件 introduces its own alias (`(SELECT … FROM TXJCM006 Z …)`): resolve `Z.` to
 the subquery's table for that cell only.
 
+**Three more reference shapes** (`PSJCO403` `画面設計書(GSJC403A)`, 2026-10-06):
+- **Colon instead of dot** — `[732,19]=G:依頼先事業所ｺｰﾄﾞ`, `[733,19]=I:依頼先事業所ｺｰﾄﾞ件数`. Treat `<alias>:<x>`
+  as `<alias>.<x>` and note the notation once at 低. When the alias is a block reference (`I` = `(8)-②…取得`),
+  `<x>` is that block's 取得項目, not a table column.
+- **Physical name** — `[118,19]=A.KEY3` (A=TXJAM008, whose layout has `[21,3]=ｷｰ3` / `[21,12]=KEY3`).
+  Match against the layout's 項目ID (`[r,12]`) as well as 項目名 before calling a column missing.
+- **Concatenation** — `[360,8]=A.依頼先事業所ｺｰﾄﾞ||A.依頼先加工部門ｺｰﾄﾞ`. Split on `||` and check each part;
+  for step 5 treat it as a composite. A part you cannot resolve (an expression, a literal, a block
+  output) is skipped with a one-line note, never reported as missing.
+
+**ﾌｧｲﾙ入出力仕様書 / ﾌｧｲﾙ入力仕様書 sheets** name a table in `入出力先` (`ﾌｧｲﾙ入出力仕様書(FSJC018)`
+`[15,18]=TSJCD401:社内加工予定金額`), but their Ⅲ rows are file columns (`A列: 1=依頼先…`), not DB column
+references — nothing to harvest unless the sheet carries its own 参照ｴﾝﾃｨﾃｨ block.
+
 **Resolve a circled source (`③`/`④`…) through the block's own 更新概要 before calling a column unknown.**
 `更新条件表(TSJCD101)` `[9,16]` defines `④ﾃｰﾌﾟﾛｯﾄ情報取得(No.3)`; `No.3` is the side block whose table cell
 is `共通項目取得(工程管理).ﾃｰﾌﾟﾛｯﾄ情報取得`. Mapping `④`'s values (`[28,18]=[KEY]製造年月`) by name to a
@@ -127,6 +141,19 @@ unchecked and say so — never against a guessed table.
    `TXJAM008_IN_共通ｺｰﾄﾞﾏｽﾀ受信.xlsx` (`TXJAM008_IN`) is a fourth trap on that same table. The `A6`
    check overrides the phase order in step 3: a higher-priority file whose `A6` disagrees is not the
    file.
+   **Two layouts with the same `A6` in the same phase folder** defeat both the `A6` check and PH3 > PH2.
+   Choose by name: compare each layout's `F6` (`[6,6]`, the table name) with the DB一覧 名称 for that ID
+   after NFKC and stripping whitespace and `()`/`（）`; use the one that matches. The duplicate itself is
+   a 要確認 finding owned by `design-doc-io-table-check` when it is in the run (report it here only
+   without it). Live case (2026-10-06), `11_工程管理WG\…(仮)\PH3`: `TSJCD401_社内加工(予定金額).xlsx`
+   (`F6`=`社内加工予定金額`, 18 columns, 予定金額/依頼先加工部門/生産日…) and
+   `TSJCD401_社内加工予定金額ﾃﾞｰﾀ(IS).xlsx` (`F6`=`社内加工予定金額ﾃﾞｰﾀ(IS)`, 17 columns, 稼働日/月産予定金額…);
+   `06-06_DB一覧_工程管理` `DB一覧` row 255 says `社内加工(予定金額)`, so the first is the file. When
+   neither or both match, check against neither and report it as unresolved.
+   **A developer schema prefix is not part of the ID**: col-54 SQL samples carry `HAYA_TSJCD403`,
+   `HAYA_TSJCM410` (`PSJCO403` `画面設計書(GSJC403A)` `[295,54]`, `[324,54]`). Strip a leading `<NAME>_` when
+   what remains is a table ID, then match exactly; mention the prefix once (低). This is a prefix rule
+   only — `TXJCM003_B`/`TXJAM008_IN` suffixes stay different tables.
 3. If the same ID exists under more than one phase folder, resolve by **PH3 > PH2 > top-level** —
    never by file-modified date. **When the layout is from a later phase than the doc's own `PHASE`
    folder**, a column or length that exists only in that later layout is 要確認, not 中: word it
@@ -141,6 +168,10 @@ unchecked and say so — never against a guessed table.
    of the very same tables (`TXJAM023_工程ﾏｽﾀ.xlsx` exists in two of them). Those are superseded
    snapshots: a recursive search here silently offers them as candidates, and their `A6` matches, so
    the step-2 ID check does not catch it. Take the copy at the folder's own level and no other.
+   **This is the one layout-scope rule for every REV skill** (`design-doc-io-table-check` and
+   `update-condition-completeness` defer to it): those snapshot folders, and `10_共通WG` mirrors, are
+   never a fallback. A table found only there is rule 7's "design file not present" — name the
+   snapshot path in that line so the designer can see where the old copy sits.
 5. For a table owned by **11_工程管理WG**, trust its own WG-folder copy — no further
    cross-checking needed. For a table owned by **any other WG**, also check the flat `01_Doc\...`
    copy from step 4; if the two disagree, prefer the one with a strict column superset (treat a
@@ -200,6 +231,11 @@ authoritative list of columns that actually exist. **Stop the list at the first 
 For each `{table_id: [referenced columns]}` from step 2, check each referenced column name against
 the actual 項目名 list from step 3's dump for that table.
 
+**A 更新条件表's own 項目名 rows (the 更新ﾃｰﾌﾞﾙ's column list) belong to `update-condition-completeness`
+C1 when that check is in the run** — skip them here, or the same "not in the layout" line is reported
+twice. Still check that sheet's value-source cells and side blocks (they name *other* tables), and
+check the 項目名 rows yourself when running without it.
+
 - **Exact miss** (referenced name has no match at all in the real table, including no
   similarly-named field holding the same kind of data): report as a clear finding — cite the
   design-doc sheet/cell where it's referenced and state that the table has no such column.
@@ -246,11 +282,15 @@ in scope** (`GXJC128A` `[473,24]` 層No is `ComboBox` and `3`, and it checks out
 桁数 cell.
 
 **A `-` is normally not a finding — with one exception.** A `-` means "no length applies", so skip it
-silently. But when **the same 画面項目名 carries a number on another screen of the same program**, the
-`-` is a 記載漏れ and you should report it. Confirmed on `PXJCO128`: `GXJC128B` `[535,24]` 停止日 is a
-`TextBox`, 入力可=`年月日(8桁)`, 必須○, yet its 桁数 is `-`, while `GXJC128A`'s `[492,24]`/`[494,24]`
-停止日(FROM)/(TO) are both `8`. Report that as a low-severity 記載漏れ, separate from the
-mismatch findings.
+silently. But when **the same 画面項目名 carries a number elsewhere in the program — another screen,
+or another 領域 of the same screen** — the `-` is a 記載漏れ. Confirmed on `PXJCO128`: `GXJC128B`
+`[535,24]` 停止日 is a `TextBox`, 入力可=`年月日(8桁)`, 必須○, yet its 桁数 is `-`, while `GXJC128A`'s
+`[492,24]`/`[494,24]` 停止日(FROM)/(TO) are both `8`. Within one screen: `PSJCO403` `GSJC403A` G1
+依頼先ｺｰﾄﾞ `[1369,23]=10` (ComboBox) vs G2 依頼先ｺｰﾄﾞ `[1390,23]=-` (TextBox, 必須○). Report it as a
+low-severity 記載漏れ, separate from the mismatch findings, citing the numbered sibling.
+**When `design-doc-writing-rules` is in the run, leave a `-` on a `TextBox`/`TextArea` to its W1e**,
+which reports every such `-` (both examples above are W1e's); report here only a `-` on another
+control type (a `ComboBox`) that has a numbered sibling.
 
 **Mapping a screen item to its DB column**, strongest evidence first:
 
@@ -355,7 +395,14 @@ template, not an omission; don't report it.
 **Only when a 更新条件表 targets `TXJAM100` (or another generic-column 検索条件保存-style table), read
 `txjam100.md` in this skill's folder and run it.** It holds the redundant code+name persistence gate
 (a Label name must not be saved; a TextBox name must — self-check No.47, decided with the user), the
-save-coverage check 6b and the restore-table slot cross-check. A program with no such sheet skips it.
+save-coverage check 6b and the restore-table slot cross-check. A program that neither declares nor
+writes TXJAM100 skips it.
+
+**Declared but no sheet is not "skip silently".** When Ⅲ．入出力定義 marks C/U/D for TXJAM100 but no
+`更新条件表(TXJAM100)` sheet exists (`PSJCO403`, 2026-10-06: `[106,5]=TXJAM100` C/R/D, and the workbook has
+no 更新条件表 sheet at all), there is nothing to run 6/6b against: say in one line that the TXJAM100
+checks could not run and why, mark it 要確認, and leave the missing-sheet finding itself to
+`design-doc-io-table-check` step 6 when it is in the run (report it here only without it).
 
 ### 7. Reporting
 

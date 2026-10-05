@@ -2,8 +2,11 @@
 TextBox/TextArea row of 画面設計書 Ⅴ．画面項目定義 across a WG's design-doc folder.
 
 Scope: if <root> has PHASE* sub-folders, only the workbooks directly inside them (the 工程管理 layout;
-their sub-folders hold checklists and old copies); otherwise <root> recursively, minus the agent-guide
-folder exclusions and draw.io folders. Columns are found by header label (画面項目名 / 属性 /
+their sub-folders hold checklists and old copies); otherwise <root> recursively. Stale copies are skipped
+everywhere: folders bk / draw.io / 高S<n>対応 / 90_Branches / 開発DDL作成用 / 90_JAGUR各管理台帳, files
+完了_* and the XXXXX000 sample, and sheets other than `画面設計書(<ID>)`. The program ID is taken from
+the file name by pattern (`完了_阿部_PXJDO101_…` is PXJDO101), so a program's own copy is never an
+"other program". Columns are found by header label (画面項目名 / 属性 /
 入力可文字種 or 入力可 / 画面項目ID), whitespace-normalised. Cells are read live with `live_dump.classify` (read_only +
 rich_text): struck/gray text is dropped and a partly-struck cell keeps its live part — `PXJCO101`
 `GXJC101A` `[620,31]` is struck `-` + live `文字列(半英数)`, which a plain read joins into `-文字列(半英数)`. Rows whose 文字種
@@ -20,14 +23,17 @@ warnings.filterwarnings("ignore")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from live_dump import classify
 
-EXCL = re.compile(r"(90_Branches|開発DDL作成用|\\11_単体テスト\\.*\\(サンプルデータ|参考データ)\\|90_JAGUR各管理台帳|jira_slack_notifier)")
+STALE_DIR = re.compile(r"\\(bk|draw\.io|高S\d+対応|90_Branches|開発DDL作成用|90_JAGUR各管理台帳|jira_slack_notifier)\\", re.I)
+STALE_FILE = re.compile(r"^(~\$|完了_)|XXXXX000")
+SHEET = re.compile(r"^画面設計書\([^)]+\)\s*$")
+PROG = re.compile(r"[PS][XS]J[A-Z][OB][0-9A-Z]{3}")
 NK = lambda s: re.sub(r"\s+", "", str(s or ""))
 
 def norm_name(s):
     s = NK(s)
     s = re.sub(r"\((FROM|TO|From|To)\)$", "", s)
     s = re.sub(r"\(\d+(-\d+)?\)$", "", s)
-    return re.sub(r"[0-9０-９]+$", "", s)
+    return re.sub(r"[0-9０-９①-⑳]+$", "", s)
 
 def scan(p):
     out = []
@@ -35,9 +41,10 @@ def scan(p):
         wb = openpyxl.load_workbook(p, read_only=True, data_only=True, rich_text=True)
     except Exception as e:
         return [("ERR", os.path.basename(p), str(e)[:80])]
-    prog = os.path.basename(p).split("_")[0]
+    m = PROG.search(os.path.basename(p))
+    prog = m.group(0) if m else os.path.basename(p).split("_")[0]
     for ws in wb.worksheets:
-        if not ws.title.startswith("画面設計書") or ws.sheet_state != "visible": continue
+        if not SHEET.match(ws.title) or ws.sheet_state != "visible": continue
         inV = False; cols = None
         for row in ws.iter_rows(max_col=60):
             vals = {}
@@ -63,19 +70,20 @@ def scan(p):
     return out
 
 def main():
+    if len(sys.argv) != 3: sys.exit(__doc__)
     root, out = sys.argv[1], sys.argv[2]
     phases = [d for d in glob.glob(os.path.join(root, "PHASE*")) if os.path.isdir(d)]
     files = []
     if phases:   # only the workbooks directly in PHASE*: sub-folders (draw.io\チェックシート…, JAGUR版) hold old copies
         for d in phases:
-            files += [p for p in glob.glob(os.path.join(d, "*.xls[xm]")) if not os.path.basename(p).startswith("~$")]
+            files += [p for p in glob.glob(os.path.join(d, "*.xls[xm]")) if not STALE_FILE.search(os.path.basename(p))]
     else:
         for dp, _dn, fn in os.walk(root):
             for f in fn:
                 p = os.path.join(dp, f)
-                if f.lower().endswith((".xlsx", ".xlsm")) and not f.startswith("~$") and not EXCL.search(p) \
-                        and "\\draw.io\\" not in p:
+                if f.lower().endswith((".xlsx", ".xlsm")) and not STALE_FILE.search(f) and not STALE_DIR.search(p):
                     files.append(p)
+    if not files: sys.exit(f"no workbooks found under {root}")
     with mp.Pool(min(8, os.cpu_count() or 4)) as pool:
         res = [x for r in pool.map(scan, sorted(files)) for x in r]
     errs = [x for x in res if x[0] == "ERR"]; rows = [x for x in res if x[0] != "ERR"]

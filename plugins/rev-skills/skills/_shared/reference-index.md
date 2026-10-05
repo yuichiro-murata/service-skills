@@ -41,7 +41,7 @@ prefix routing, and a report's print labels routinely cite shared `XJZ`/`SJZ` it
 per-prefix routing below matters there too) and `file-output-spec-check` (the `画面項目ID` column on
 a ﾌｧｲﾙ出力仕様書's ﾍｯﾀﾞｰ/段落ﾀｲﾄﾙ items — a 工程管理 file's header IDs are `XJC8xxx`/`SJC8xxx`, while
 a 基準情報 file's are `XJA0xxx`/`SJA0xxx`, and both route by prefix exactly as below). `xlsx-db-column-check` and `design-doc-io-table-check`
-keep using the dump cache until their masters get builders of their own.
+read their masters (ﾃｰﾌﾞﾙﾚｲｱｳﾄ, DB一覧) live with `scripts/live_dump.py` — never the COM dump cache.
 
 ## Who builds the index: the orchestrator, once, before launching agents
 
@@ -214,7 +214,11 @@ function Test-IndexFresh($indexPath, $sourcePath) {
     $head = Get-Content -LiteralPath $indexPath -TotalCount 8 -Encoding UTF8
     $m = ($head | Where-Object { $_ -like '# source-mtime-utc: *' }) -replace '^# source-mtime-utc: ',''
     $l = ($head | Where-Object { $_ -like '# source-length: *' })    -replace '^# source-length: ',''
-    return ($m -eq $src.LastWriteTimeUtc.ToString('o')) -and ($l -eq [string]$src.Length)
+    # compare as values: an index written by Python (isoformat, 6 fractional digits) never string-equals
+    # PowerShell's 'o' format (7 digits), so a string compare rebuilds it on every run
+    if (-not $m -or -not $l) { return $false }
+    $built = [DateTimeOffset]::Parse($m).UtcDateTime
+    return ([Math]::Abs(($built - $src.LastWriteTimeUtc).TotalSeconds) -lt 1) -and ($l -eq [string]$src.Length)
 }
 ```
 
@@ -222,9 +226,10 @@ function Test-IndexFresh($indexPath, $sourcePath) {
 first 8 lines. An index aggregating many sources needs a different contract — which is one of the
 reasons the table-layout index is not in this file yet.
 
-Cache root: `<user home>\.claude\skills\_cache\reference-index\`, one `.csv` per source file, named
-`idx_<kind>_<source file stem>.csv` — e.g.
-`idx_screen-item-dictionary_82.画面項目辞書_工程管理.csv`.
+Cache root: `<user home>\.claude\skills\_cache\reference-index\`, one file per artefact with its own
+extension: dictionary indexes `idx_<kind>_<source file stem>.csv` (e.g.
+`idx_screen-item-dictionary_82.画面項目辞書_工程管理.csv`), the 区分名称 index `.json`
+(`build_kbn_index.py`), and the folder-wide lookups `.tsv` (`build_screen_list.py`, `build_kind_table.py`).
 
 **A program subset does not live in the cache.** It is per-REV, not per-source, so write it beside
 that run's dump as `subset_<index file stem>.csv`. Keep the two apart deliberately: a subset copies

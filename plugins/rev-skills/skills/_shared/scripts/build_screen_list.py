@@ -1,54 +1,80 @@
 """Screen-name list for design-doc-writing-rules W5: 画面名 -> 画面ID for every visible 画面設計書 sheet
-under 01_Doc\\08_機能定義書 (all WGs), minus the agent-guide folder exclusions.
+under 01_Doc\\08_機能定義書 (all WGs).
 
-The header row is found by its LABEL: the row (3-5) whose col 5 reads 画面ID gives the ID in col 10 and
-the name in col 15. Row 4 is not always that row — in 04_品質管理 / 05_受注出荷, row 3 is 機能ID and
-row 4 is ﾌﾟﾛｸﾞﾗﾑID (PXJDO102_010_測定.xlsx), so a fixed [4,10]/[4,15] read returns program IDs.
-Sheets with no 画面ID label are skipped. Cache freshness: compare the `# source-count` and
-`# source-newest-mtime-utc` header lines with the folder (rebuild when either differs).
+Scope per WG folder (the same rule as build_kind_table.py): where a WG folder has PHASE* sub-folders,
+only the workbooks directly inside them; otherwise the folder recursively. Stale copies are skipped —
+folders bk / draw.io / 高S<n>対応 / 90_Branches / 開発DDL作成用 / 90_JAGUR各管理台帳 / jira_slack_notifier,
+files 完了_* and the XXXXX000 self-check sample, and sheets other than `画面設計書(<ID>)` (so
+`…_bak`, `_BK`, `_OLD`, `_20220706`, ` 旧` sheets are out). Cells are read live (struck/gray text
+dropped, via live_dump.classify).
 
-usage: python build_screen_list.py <root: ...\\01_Doc\\08_機能定義書> <out.tsv>
+The header row is found by its LABEL: the row (3-5) whose col 5 reads 画面ID gives the ID in col 10
+and the name in col 15 (row 4 is ﾌﾟﾛｸﾞﾗﾑID in 04_品質管理 / 05_受注出荷). The sheet-name ID is written
+too: when several sheets carry the same header ID (PSJCO403 B/C/D all say GSJC403A), W5 must use the
+sheet-name ID, and header != sheet-name is naming-standard-compliance's finding (`HEADER-MISMATCH`
+lines). A 画面ID cell holding a non-screen ID prints `NON-SCREEN-ID`.
+
+Output TSV: name, screen_id (header), sheet, workbook, sheet_id. Freshness: `# source-count` and
+`# source-newest-mtime-utc` (compare as values).
+
+usage: python build_screen_list.py <...\\01_Doc\\08_機能定義書> <out.tsv>
 """
-import datetime, os, re, sys, time, warnings
+import datetime, glob, os, re, sys, time, warnings
 import openpyxl
 warnings.filterwarnings("ignore")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from live_dump import classify
 
-EXCL = re.compile(r"(90_Branches|開発DDL作成用|\\11_単体テスト\\.*\\(サンプルデータ|参考データ)\\|90_JAGUR各管理台帳|jira_slack_notifier)")
+STALE_DIR = re.compile(r"\\(bk|draw\.io|高S\d+対応|90_Branches|開発DDL作成用|90_JAGUR各管理台帳|jira_slack_notifier)\\", re.I)
+STALE_FILE = re.compile(r"^(~\$|完了_)|XXXXX000")
+SHEET = re.compile(r"^画面設計書\(([^)]+)\)\s*$")
+
+def workbooks(root):
+    files = []
+    for wg in sorted(d for d in glob.glob(os.path.join(root, "*")) if os.path.isdir(d)):
+        phases = [d for d in glob.glob(os.path.join(wg, "PHASE*")) if os.path.isdir(d)]
+        cands = [p for d in phases for p in glob.glob(os.path.join(d, "*.xls[xm]"))] if phases else \
+                [os.path.join(dp, f) for dp, _dn, fn in os.walk(wg) for f in fn if f.lower().endswith((".xlsx", ".xlsm"))]
+        files += [p for p in cands if not STALE_DIR.search(p) and not STALE_FILE.search(os.path.basename(p))]
+    return files
 
 def main():
+    if len(sys.argv) != 3: sys.exit(__doc__)
     root, out = sys.argv[1], sys.argv[2]
-    files = []
-    for dp, _dn, fn in os.walk(root):
-        for f in fn:
-            p = os.path.join(dp, f)
-            if f.lower().endswith((".xlsx", ".xlsm")) and not f.startswith("~$") and not EXCL.search(p):
-                files.append(p)
+    files = workbooks(root)
+    if not files: sys.exit(f"no workbooks found under {root}")
     newest = max(os.path.getmtime(p) for p in files)
     t0 = time.time(); rows = []; errs = []; skipped = 0
     for p in sorted(files):
         try:
-            wb = openpyxl.load_workbook(p, read_only=True, data_only=True)
+            wb = openpyxl.load_workbook(p, read_only=True, data_only=True, rich_text=True)
         except Exception as e:
             errs.append(f"{p}\t{type(e).__name__}: {e}"); continue
         for ws in wb.worksheets:
-            if not ws.title.startswith("画面設計書") or ws.sheet_state != "visible": continue
+            m = SHEET.match(ws.title)
+            if not m or ws.sheet_state != "visible": continue
             hit = None
-            for r in ws.iter_rows(min_row=3, max_row=5, max_col=20, values_only=True):
-                if len(r) > 14 and str(r[4] or "").strip() == "画面ID":
-                    hit = r; break
+            for r in ws.iter_rows(min_row=3, max_row=5, max_col=20):
+                v = {c.column: (classify(c)[0] or "").strip() for c in r if getattr(c, "value", None) is not None}
+                if v.get(5) == "画面ID": hit = v; break
             if not hit: skipped += 1; continue
-            sid = str(hit[9] or "").strip(); name = str(hit[14] or "").strip()
+            sid, name = hit.get(10, ""), hit.get(15, "")
             if not sid or sid == "-" or not name or name == "-": skipped += 1; continue
+            rel = os.path.relpath(p, root)
+            tok = re.match(r"[A-Z]{3,4}\d{3}[A-Z0-9]?", m.group(1).strip())   # GSJA241B-基本情報 -> GSJA241B
+            sheet_id = tok.group(0) if tok else m.group(1).strip()
             if not sid.startswith("G"):   # e.g. GXJD601A's 画面ID cell holds PXJDO601 — a doc defect
-                print(f"NON-SCREEN-ID\t{sid}\t{ws.title}\t{os.path.relpath(p, root)}"); skipped += 1; continue
-            rows.append((name, sid, ws.title, os.path.relpath(p, root)))
+                print(f"NON-SCREEN-ID\t{sid}\t{ws.title}\t{rel}"); skipped += 1; continue
+            if sid != sheet_id:
+                print(f"HEADER-MISMATCH\theader={sid}\t{ws.title}\t{rel}")
+            rows.append((name, sid, ws.title, rel, sheet_id))
         wb.close()
     with open(out, "w", encoding="utf-8") as f:
-        f.write("# lookup: screen-name -> screen-id (row with col-5 label 画面ID in rows 3-5; id col 10, name col 15)\n")
-        f.write("# scope: 01_Doc\\08_機能定義書 all WGs minus agent-guide exclusions\n")
+        f.write("# lookup: screen-name -> screen-id (header row by its 画面ID label; sheet-name ID in the last column)\n")
+        f.write("# scope: 01_Doc\\08_機能定義書, per WG: PHASE* top level where present, else recursive; stale copies skipped\n")
         f.write(f"# source-count: {len(files)}\n")
         f.write(f"# source-newest-mtime-utc: {datetime.datetime.fromtimestamp(newest, datetime.timezone.utc).isoformat()}\n")
-        f.write("# columns: name<TAB>screen_id<TAB>sheet<TAB>workbook\n")
+        f.write("# columns: name<TAB>screen_id<TAB>sheet<TAB>workbook<TAB>sheet_id\n")
         for r in rows:
             f.write("\t".join(x.replace("\t", " ").replace("\n", " ") for x in r) + "\n")
     print(f"files={len(files)} screens={len(rows)} skipped={skipped} errors={len(errs)} secs={round(time.time() - t0)}")

@@ -28,8 +28,9 @@ copy, and compare values). Report a sheet only when the two copies **contradict*
 non-`-` values for the same label. A copy reading `-` (or empty) beside a filled one is template-level
 drift: on PHASE2, 209 of 424 sheets have differing C/D 更新日 and ~182 sheet pairs show the `-` pattern,
 so summarise it as **one 低 line per workbook**, never per sheet (the orchestrator's Step 3.5 rule 2
-withdraws per-sheet `-` findings anyway). When `naming-standard-compliance` is in the same run, leave
-header *value* contradictions to it and report only formatting differences between the copies.
+withdraws per-sheet `-` findings anyway). When `naming-standard-compliance` is in the same run, it owns
+both the value contradictions and that one drift line — report only formatting (font/merge)
+differences between the copies.
 
 **Don't dump or scan `詳細設計書` sheets — this is a deliberate coverage-for-tokens trade-off, not a
 claim that the sheet is always empty.** Unlike `design-doc-internal-consistency`/
@@ -52,19 +53,21 @@ mode of each and list every cell that differs — this raw list will be large an
 
 **Before reporting anything, filter out the deliberate systematic patterns** documented in the
 shared doc (revision-memo columns, section-title/header template cells, 表紙's 12pt sections,
-control-matrix group headers and shrunk two-line matrix cells, UI-mockup sheets). What's left —
+control-matrix group headers and shrunk two-line matrix cells, UI-mockup sheets), and leave undated
+memos/pasted SQL right of the print area (body cols 53-104) out of both scans. What's left —
 genuinely isolated cells, especially ones inside an otherwise-uniform repeating list — is what's
 worth reporting.
 
 ### 2. Cell-merge scan
 
-Record each merge anchor's row/column span, then compare **column spans only, among cells of the
-same role** — the same normalised label in the same column, or sibling records of one list — and
-subtract template signatures (span pairs that recur on several sheets of the workbook or across
-sibling workbooks). Row-height differences between multi-row records are expected. The shared doc
-has the exact rule and why the proximity-only version failed (891 candidates, almost none real, on
-PXJCO125). What survives is a lead: a duplicated header block whose right-side copy kept stale
-content, or one list row merged narrower/wider than its siblings.
+Record each merge anchor's row/column span, then compare **column spans only, among sibling records
+of ONE table** (one header block — never the same label across tables), skipping `-`/blank
+placeholders, and subtract template signatures (span pairs that recur on several sheets of the
+workbook or across sibling workbooks). Row-height differences between multi-row records are expected.
+The shared doc has the exact rule and why the proximity-only (891 candidates on PXJCO125) and
+same-label (~230 on PSJCO403) versions failed. What survives is a lead: a duplicated header block whose
+right-side copy kept stale content, or a few rows inside one block merged differently from the rest —
+on PSJCO403 that pointed at a pasted 共通ｺｰﾄﾞﾏｽﾀ condition block.
 
 ### 3. Cross-check anything suspicious against content, not just shape
 

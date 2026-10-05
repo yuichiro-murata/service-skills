@@ -1,6 +1,6 @@
 ---
 name: update-condition-completeness
-description: Check a program's 更新条件表(<TableID>) sheets against the table's actual ﾃｰﾌﾞﾙﾚｲｱｳﾄ — every column of the table present in the right order, no notnull column left unset on INSERT, every primary-key column set on INSERT and carried as [KEY] on UPDATE/DELETE, and the house conventions for the 共通項目 block (登録者/登録日時 only at INSERT, 更新者/更新日時 on both, 排他ﾌﾗｸﾞ 1 / +1, 更新ﾌﾟﾛｸﾞﾗﾑID=画面ID) honored. Distinct from its siblings: `xlsx-db-column-check` asks whether a referenced column exists at all, `design-doc-io-table-check` asks whether the table is declared in the Ⅲ．入出力定義 CRUD list — this skill asks whether the UPDATE/INSERT/DELETE specification for an already-declared table is complete enough to code from. Use when the user asks to check 更新条件表 completeness, NOT NULL/主キー/共通項目の設定漏れ, 登録日時が更新されていないか, or ｼｽﾃﾑ日時の書式注記(YYYY/MM/DD HH24:MI:SS形式)漏れ. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Check a program's 更新条件表(<TableID>) sheets against the table's ﾃｰﾌﾞﾙﾚｲｱｳﾄ: every column present in order (C1), notnull columns set on INSERT (C2), primary keys set on INSERT and [KEY] on UPDATE/DELETE (C3), 共通項目 conventions (登録者/登録日時 INSERT only, 更新者/更新日時, 排他ﾌﾗｸﾞ, 更新ﾌﾟﾛｸﾞﾗﾑID) (C4), optimistic lock specified (C5), 更新条件 trigger matching a real screen event (C6), ①②… sources defined (C7), ｼｽﾃﾑ日時 format notes (C8), and 更新概要「①画面(画面ID)、②ﾛｸﾞｲﾝ情報」(C9). Asks whether the UPDATE/INSERT/DELETE spec is complete enough to code from — not whether a column exists (xlsx-db-column-check) or the table is declared (design-doc-io-table-check). Use when the user asks to check 更新条件表 completeness, NOT NULL/主キー/共通項目の設定漏れ or ｼｽﾃﾑ日時の書式注記漏れ. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # update-condition-completeness
@@ -101,7 +101,9 @@ Rules that make the parse reliable:
 
 If `rev-program-review` already dumped it, read those scratchpad files. Otherwise dump it live with `python _shared/scripts/live_dump.py <workbook> <out_dir>`
 (openpyxl; same format and digest as the shared dump). Only `更新条件表(*)` sheets matter for this check, plus the
-機能定義書 and 画面設計書 sheets for the trigger cross-check in step 5 C6.
+機能定義書 and 画面設計書 sheets for the trigger cross-check in step 4 C6. A table Ⅲ．入出力定義 marks
+C/U/D but which has no 更新条件表 sheet at all is `design-doc-io-table-check` step 6's finding, not this
+check's — there is nothing here to review.
 
 ### 2. Resolve each 更新ﾃｰﾌﾞﾙ to its layout file
 
@@ -185,7 +187,9 @@ for that column); a row whose 項目名 exists in **no** layout column; and a ro
 from the layout (low confidence on its own — report only when it coincides with added/removed
 columns, since it is then evidence the sheet was patched by hand rather than regenerated). A missing
 non-key column in a **DELETE-only** block is 低 (the statement never writes it). Skip notes-only
-sheets such as `更新条件表(その他)` (no `No.`/`項目名` header row).
+sheets such as `更新条件表(その他)` (no `No.`/`項目名` header row). **This check owns the "項目名 not in
+the layout" finding for a 更新条件表's own rows** — `xlsx-db-column-check` skips those rows when this
+check is in the run, so report it here even though it looks like a column-existence finding.
 
 **Pair the two directions before reporting.** When a "missing" layout name and an "extra" sheet name
 are near-matches — one is a prefix or substring of the other, they are within **Damerau distance ≤ 2**
