@@ -175,6 +175,86 @@ exact sheet/cell for every finding so it's actionable.
      check the relevant `82.画面項目辞書_*` file's dictionary sheets (the `ＩＤ`+`連番` split, same as
      a normal screen-item ID lookup) before concluding it's unregistered.
 
+   **4a — Ⅳ のﾒｯｾｰｼﾞ文言 ↔ 画面項目ID の一致 (self-check `レビュー観点` No.31 「共通のメッセージと画面項目IDが
+   一致しているか」).** Check 4 asks whether a cited ID is registered; 4a asks whether the text written
+   beside it is the text registered *for that ID*. Run it on every Ⅳ area (300 of the 358 rows below
+   are in `共通`, but G-area events carry confirms too, e.g. `PSJCO309` `GSJC309A` `[1224]`).
+   - **Anatomy.** Resolve the ﾒｯｾｰｼﾞ and 画面項目ID columns by header label per area, and read **every**
+     column labelled 画面項目ID: `PXJCO152` `GXJC152A` `[497]` has the label at both col 54 and col 58,
+     and `[502]` writes `XJZ7006` in 54 and `XJC7017` in 58 — reading only one of them reported a
+     missing ID that is not missing (found by validating this rule). Two layouts carry the pairing:
+     (1) **event row** (No. is a number): ﾒｯｾｰｼﾞ holds the dialog text, one message per line, usually
+     `処理前:…⏎処理後:…`; 画面項目ID holds the IDs, one per line or comma-separated, sometimes labelled
+     (`処理前：XJZ7012⏎処理後：SJZ7013`). (2) **footnote/dialog block** under the event table: the event
+     row's ﾒｯｾｰｼﾞ is only `※4`, and below it a line whose ID column reads `画面項目ID` opens a block in
+     which each message line carries its own ID on the same row (`PXJCO101` `GXJC101C` `[712]`-`[723]`),
+     or a dialog table `ﾒｯｾｰｼﾞ | <text> | <ID>` (`PXJCO192` `GXJC192A` `[873]`). The IDs are the
+     unhyphenated `MESSAGE` entries of `82.画面項目辞書_*` — of 468 IDs on event rows, 450 are in the
+     `7xxx` band, 7 `6xxx` (`SJC6002`, `XJC6001`), 6 基準情報 `8xxx` (`SJA8001`-`8006`) — and only one is a
+     hyphenated `04.ﾒｯｾｰｼﾞ管理` ID.
+   - **Procedure.** (a) Event rows: split ﾒｯｾｰｼﾞ into message lines; drop blank lines, `※…` note lines,
+     bind-variable legends (`{0}:…`), condition-only lines (a whole-line `(…)` such as `(処理前)` /
+     `(新規登録の場合)`, or a line ending in `場合`/`時`), and lines whose body is `-` or `(ﾒｯｾｰｼﾞなし)`
+     (`PXJCO161` `GXJC161B` `[1976]` 処理後:(ﾒｯｾｰｼﾞなし) is a statement, not a missing ID); strip trailing
+     `※3,※4` references. A line may start with a label (`処理前:`, `完了後、…場合：`) — compare against
+     the whole line **and** every tail after a `:`/`：`, rather than stripping a label by pattern
+     (message text itself can contain a colon: `計画年月(計画年月:{0})…`). (b) Footnote rows (No. not a
+     number, an ID in the ID column): the text is everything left of the ID column on that row; skip a
+     label-only line (`処理後：` `[714]` — its messages follow on the next lines), and read a message
+     that wraps onto the next line by joining the following rows up to the next row whose ID column is
+     filled (`PXJCO101` `[698]`-`[699]` `『製造ｵｰﾀﾞｰ反映しません。よろしいですか？⏎
+     (ｷｬﾝｾﾙを選択した場合は、反映処理を実行します。)』` = `XJC7005`). (c) Look each ID up — unhyphenated
+     in the dictionary index (routing as check 3; the `日本語` value is the text), hyphenated in
+     `04.ﾒｯｾｰｼﾞ管理_*` (routing above; the message-text column). (d) Normalise both sides: NFKC
+     (full/half width, `？`/`?`), remove whitespace, `。`, `、`, `「」`, and turn every bind variable —
+     `{0}`, `{{0}}`, `{※1-①}`, `&1` — into one placeholder. On an event row the ID's text must **equal**
+     one message line (or a run of consecutive lines — `SJC6002` spans two); on a footnote row it must
+     be **contained** in the row's text. Use equality on event rows, never containment: `XJZ9007` = `更新`
+     is a substring of `更新します。よろしいですか？`, and containment passed exactly the button-ID findings
+     below.
+   - **Calibrated 2026-10-05** on the 122 工程管理 `PHASE1`-`PHASE3` workbooks (live text): 358 event rows
+     with message text on 147 sheets, plus 38 footnote rows (one label-only). 455 event-row ID/text
+     pairs and all 37 footnote pairs (36 contained, 1 wrapped onto the next line) agree; what remains is
+     all real:
+     - **a button ID where the message ID belongs** (4, 中) — `XJZ9007` (`更新`) beside
+       `更新します。よろしいですか？`: `PSJAO205` `GSJA205B` `[83,54]`, `PSJCO801` `GSJC801B` `[149,54]`,
+       `PSJCO802` `GSJC802B` `[215,54]`; `XJC9007` (`一括更新`) beside `一括更新します。よろしいですか？`
+       `PXJCO129` `GXJC129A` `[504,54]`. Name the fix: `XJC7003` (工程管理) / `XJA7007` (基準情報) for
+       更新します。よろしいですか？, `XJC7002` for 一括更新します。よろしいですか？;
+     - **registered text differs** (中) — `XJZ7031` is `更新します。よろしいですか? ※更新後、再度ﾛｸﾞｲﾝが必要です。`
+       but Ⅳ writes plain `更新します。よろしいですか？` (`PSJCO604` `GSJC604C` `[171,54]`, `PSJCO607`
+       `GSJC607A` `[146,54]`): either the note is missing from Ⅳ or the ID is wrong. A difference only in
+       repeated punctuation is 低: `SJC7029` `処理中です・・・` vs `処理中です・・・・・` (`PSJCO309`
+       `GSJC309A` `[1177,54]`);
+     - **a message with no ID** (4, 中) — `-` in 画面項目ID: `PXJCO123` `GXJC123A` `[494]`
+       `再印刷します。よろしいですか？` (added by NCRN-7129 without an ID; `SJC7013` is the registered one, as
+       `PXJCO152` `[504]` uses), `PSJCO309` `GSJC309A` `[1224]`, `PSJCO403` `GSJC403A` `[1147]`,
+       `PSJCO406` `GSJC406B` `[107]` (処理前/処理後 pair, no IDs). Fewer IDs than message lines is the same
+       finding for the uncovered line; the corpus has none left, but the self-check sample itself does
+       (`GXJA802A` `[275]`: 処理前/処理後 texts, only `処理前：XJZ7029`), so don't read the sample as
+       permission;
+     - **an ID with no message** (要確認) — ﾒｯｾｰｼﾞ `-` but IDs given: `PSJCO406` `GSJC406A` `[96]` and
+       `GSJC406B` `[106]` (`XJC7003 XJC7004`, the 更新 pair, on ﾀﾞｳﾝﾛｰﾄﾞ/画面ｸﾘｱ — likely copied), `PXJCO904`
+       `GXJC904A` `[606]` `XJC0252` (= `実績表項目`, the button's own label). The sample's call-out
+       「Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細はﾒｯｾｰｼﾞがあるところだけ、画面項目IDが必要」 backs this;
+     - **placeholder `XXXXXXX`** (17 cells, 中, one line per sheet) — `PSJCO802` (8), `PSJCOA06` (5),
+       `PSJAO205` `GSJA205D` `[69]`, `PSJCO806` `[83]`, `PSJCO403` `GSJC403B` `[120]`, `PSJCO404`
+       `GSJC404B` `[121]`;
+     - **the ID's dictionary `日本語` is empty** (2, 要確認 — the text cannot be confirmed) — `XJC7042`
+       (`PSJCO314` `GSJC314A` `[442]` 処理後 `削除しました。`; it was replaced by `SJZ7002`, see the
+       `PXJCO125` `[410,107]` memo) and `SJZ7013` (`PSJCO404` `GSJC404A` `[784]` `一時保存しました。`); both
+       dictionary rows are live with a blank `日本語` cell;
+     - **a hyphenated `04.ﾒｯｾｰｼﾞ管理` ID on a confirm** (1, 要確認 低) — `PSJCO305` `GSJC305A` `[397]`
+       `SJC-000341`: its text matches (`実行します。よろしいですか？`, kind `W`), but every other confirm
+       uses the dictionary's `XJZ7006`.
+   - **Exemptions.** A ﾒｯｾｰｼﾞ cell holding only `※n` (`PSJCO306` `[561]` `処理前:※1`) — its message and ID
+       are in the footnote (`[563]` `SJC6005`), check them there. IDs a message line's `※3,※4,※5` point
+       to (`PSJAO601` `GSJA601A` `[1669]` `SJA8003`/`8005`/`8006`) are compared in their footnotes, not
+       against the event row. An ID with a prefix whose dictionary has no index (`XJB`/`SJB`, `XJD`/`SJD`)
+       is the cross-WG note above, not a mismatch. Order is not checked: label pairing
+       (`処理前：`/`処理後：`) is optional and most rows rely on line order. Report one line per row, with
+       the Ⅳ cell, the ID, both texts, and the fix when the corpus names one.
+
 5. **4-9/4-13 — Screen layout ↔ item-definition ↔ control-spec three-way match.**
    Collect item names from "Ⅰ．画面ﾚｲｱｳﾄ" (the visual mock), "Ⅴ．画面項目定義" (the item table), and
    "Ⅵ．画面項目制御・出力仕様" (the control matrix). All three should list the same set of

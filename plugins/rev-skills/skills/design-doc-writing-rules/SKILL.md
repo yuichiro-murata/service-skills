@@ -1,6 +1,6 @@
 ---
 name: design-doc-writing-rules
-description: Check a program's design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules — Ⅴ．画面項目定義 per-item rules (upper-case conversion note on code inputs, button IDs in the 9xxx band, 選択 = □ without ID, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea always carry 桁数 and 入力可文字種, 入力可文字種 consistent with other screens for the same item), 項番 gaps/duplicates (No. columns, ﾁｪｯｸ処理 numbers, circled 機能処理概要 sections), 取得件数 at the end of every 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, and screen names followed by their 画面ID. Rules about how a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Check a program's design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules — Ⅴ．画面項目定義 per-item rules (upper-case conversion note on code inputs, button IDs in the 9xxx band, 選択 = □ without ID, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea always carry 桁数 and 入力可文字種, 入力可文字種 consistent with other screens for the same item, zoom buttons 表示 Z + 「Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 参照」), 項番 gaps/duplicates (No. columns, ﾁｪｯｸ処理 numbers, circled 機能処理概要 sections), 取得件数 at the end of every 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, screen names followed by their 画面ID, and 画面表示仕様 search conditions (LIKE needs a match mode, = has none, 名称 searches use 部分一致) and join order (INNER before LEFT). Rules about how a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-writing-rules
@@ -158,6 +158,42 @@ dominant one (`半英数` vs `半英数記号`, `全角` vs `半英数`, a strin
 Note that the dominant value can contradict the call-out "ｺｰﾄﾞ/No/ｷｰは半角英数": 品目ｺｰﾄﾞ, 製造ﾛｯﾄNo and
 ﾃｰﾌﾟﾛｯﾄNo are overwhelmingly `半英数記号`. Follow the corpus here and do not raise that call-out against them.
 
+**W1g — ｽﾞｰﾑﾎﾞﾀﾝの表示・説明 (レビュー観点 No.38 「G1)検索条件領域（他Gも）のズームの表示列はZの記載があるか。
+説明列に「Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 参照」の記載があるか。」).** A zoom button is a Ⅴ row, in any area, whose 属性
+is `Button` (first line — `Button⏎※5` counts) or `その他` (基準情報 sheets write zooms that way:
+`PXJAO802` `GXJA802A` `[196]`), and whose `表示` is `Z` **or** whose 画面項目名 contains `ｽﾞｰﾑ`/`ズーム`
+— recognise it by either, because each finding below breaks one of the two (`PXJCO134` has `ｽﾞｰﾑ` names
+with `表示` `-`; `PSJCOA09` `GSJCA09F` `[133]`/`[138]` `管理加工GRPｿﾞｰﾝ` is a zoom only by its `Z`).
+Out of scope: `ｶﾚﾝﾀﾞｰ(…)` and other buttons; `ｽﾞｰﾑｲﾝ`/`ｽﾞｰﾑｱｳﾄ` (diagram magnification, `PSJAO704`
+`GSJA704B` `[557]`/`[558]`); the `Label` rows `F9:ｽﾞｰﾑ` (共通 key guide, 13 rows) and `ｽﾞｰﾑ名`. Columns as in
+the parse rule above: `表示` by its exact label (`表示形式` also starts with 表示), 説明 by prefix — it reads
+`説明/⏎表示時参照ﾃｰﾌﾞﾙ` or `説明／⏎表示時参照ﾃｰﾌﾞﾙ` (full-width slash, `PXJCO129` `GXJC129B` `[614,43]`), and a
+lookup on the half-width form alone found no 説明 column on 125 zoom rows. Two rules:
+- **表示 = `Z`.** Anything else — `-`, blank, a caption — is a finding.
+- **説明 refers to Ⅳ.** After removing whitespace (half/full-width), 説明 must match
+  `Ⅳ[.．]?画面項目(ｲﾍﾞﾝﾄ|イベント)詳細.*参照`. All of these are compliant: `Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 参照`,
+  `Ⅳ.画面項目ｲﾍﾞﾝﾄ詳細参照`, full-width `イベント` (the self-check sample's own `[321,43]`), a qualifier
+  (`…詳細.G1)検索条件領域(No.2)参照`, `…詳細.取引先ｽﾞｰﾑ参照`), and trailing text (`…参照⏎※1`,
+  `…参照行追加ﾎﾞﾀﾝで追加した行のみ、表示`). A bare `Ⅳ参照` would not match; it does not occur in the corpus, so
+  if you meet one, report it as 低 wording rather than as a missing reference. `-`, blank, or a prose
+  description of the zoom is a finding — the prose restates Ⅳ and drifts from it: `PXJCO163` `GXJC163B`
+  `[1005]` says `画面.資源ｺｰﾄﾞをもとに資源ｽﾞｰﾑを起動` while Ⅳ `[745]` also passes 有効期限ﾌﾗｸﾞ.
+Calibrated 2026-10-05 on the 122 工程管理 `PHASE1`-`PHASE3` workbooks (live text): **535 zoom buttons on 136
+sheets** (4 `ｽﾞｰﾑｲﾝ`/`ｱｳﾄ` excluded); 524 have `表示` `Z` and 523 carry the Ⅳ reference (485 in the two
+plain forms, 38 variants). Findings — **11 `表示` on 4 sheets, 12 `説明` on 5 sheets**:
+- `表示`: `PXJCO134` `GXJC134A` — 8 of its 9 zooms `-` (`[506]` 処置指示Noｽﾞｰﾑ … `[534]` 停止工程ｽﾞｰﾑ; only
+  `[508]` KC品名ｽﾞｰﾑ has `Z`);
+  `PXJAO233` `GXJA233B` `[584]` 不良項目ｺｰﾄﾞｽﾞｰﾑ `-`; `PXJAO701` `GXJA701B` `[1349]` 資源GRPｽﾞｰﾑ blank;
+  `PSJCO205` `GSJC205A` `[451]` ｵｰﾀﾞｰ工程属性(共通)ｽﾞｰﾑ `工順詳細` with ID `SJC9061` — a captioned
+  button that opens a zoom, so 要確認 (it may be meant as a text button).
+- `説明`: `PSJCO805` `GSJC805B` `[121]`/`[124]`/`[135]` and `GSJC805C` `[383]`/`[386]`/`[389]` blank;
+  `PSJAO704` `GSJA704E` `[172]`/`[176]` `-`; `PSJAO501` `GSJA501B` `[477]` `-`; `PXJCO163` `GXJC163B`
+  `[953]`/`[1005]`/`[1008]` prose.
+Severity 低 (the event itself is specified in Ⅳ; this is how Ⅴ points at it), except 要確認 for a caption in
+`表示`. **Group by sheet**: one line per sheet and rule, listing the rows (`PXJCO134` `GXJC134A` is one line
+of 8). When a zoom has no Ⅳ event at all, that is a cross-reference gap (`design-doc-internal-consistency`)
+— mention it, don't count it here. A misspelt name such as `ｿﾞｰﾝ` belongs to the typo check.
+
 ### W2 — 項番の飛び・重複 (No.6) (formerly design-doc-internal-consistency check 10)
 
 Every numbered list in 表紙 and the four sheet types (機能定義書, 画面設計書, ﾁｪｯｸ処理設計書, 更新条件表) — a
@@ -279,9 +315,117 @@ omission, so report it **once per sheet, 低**, listing the cells and the ID to 
 (`PSJAO704` `機能定義書` `[70,4]` `承認ｸﾞﾙｰﾌﾟ一覧画面に遷移する` → `承認ｸﾞﾙｰﾌﾟ一覧画面(GSJA704G)`). When the
 name matches more than one screen ID, give the candidates rather than guessing.
 
+### W6 — 画面表示仕様の検索条件と結合 (No.21/22, call-out)
+
+Sources: `レビュー観点` No.21 「表の検索条件の演算子（=、LIKE）があっているか」, No.22 「表の検索条件のコード系は
+前方一致、品名の名称系は部分一致となっているか」, and the call-out on `画面設計書(GXJA802A)` `@r142c54`:
+「結合条件に"INNER JOIN"と"LEFT JOIN"が混在する場合は"INNER JOIN"を上部に固めて記述し、以降に"LEFT JOIN"を記述すること」.
+Scope: 画面設計書 `Ⅲ．画面表示仕様` only, live text only (a struck row is not a condition). Calibrated
+2026-10-05 on the 93 工程管理 `PHASE1`-`PHASE3` workbooks that have a 画面設計書 (216 sheets, 1,223
+検索条件 tables / 6,782 rows, 414 blocks with 結合条件) — re-derive every verdict from the dump.
+
+**Anatomy.** A block opens with `参照ｴﾝﾃｨﾃｨ` (label col = the block's column, 4 at top level, 5/6 when
+nested); the rows under it map an alias (col +8) to an entity (col +10) — `Y`=`画面`, `Z`=`ﾛｸﾞｲﾝ情報`,
+others are tables or earlier queries (`(4)-②受入済取得`). A `検索条件` table has no header row: each
+row is No. (label col), left side (label col +2, e.g. `A.取引先ｺｰﾄﾞ`), **operator**, right side, then
+notes (`※1`, `OR`, `)`) further right. **An opening bracket sits one column left of the No.**
+(`PSJCO309` `GSJC309B` `[132,3]` `((`, `PSJCO405` `GSJC405A` `[96,3]` `(`) — it does not end the table; read the row. Ignore the revision margin
+right of the form (col 59 onwards, typically 105-116: `2024/2/9 平島 改訂履歴No.2 変更`, `2026/9/15 宮園
+順番を変更`) — it is change history, not a note. **Find the operator column per table** as the column that holds
+the comparison tokens (`=`, `LIKE`, `<>`, `>=`, `<=`, `IN`, `IS`, `IS NOT`); it is label col +20 in the
+standard layout (`[83,4]` → `[83,24]`, right side `[83,28]`), but a nested block can shift it
+(`PSJCO403` `GSJC403A` `[229,22]`), so never read a fixed column. A token may carry a leading space
+(`' LIKE'`). House vocabulary, measured: `=` 5,476, `LIKE` 512 (always upper case in the tables),
+`<>` 153, `<=`/`>=` 292 (ranges `Y.xxx(FROM)`/`(TO)`), `IN` 89, `NOT IN` 8, `IS [NOT] NULL` 23. **The
+match mode is written as text after the screen item, not as wildcards**: `Y.取引先ｺｰﾄﾞ(前方一致)` (412
+LIKE rows), `Y.取引先名(部分一致)` (70), occasionally `(完全一致)`; no 検索条件 cell writes `%` or
+`'%'||…||'%'` (those appear only in pasted SQL samples to the right, e.g. `PSJCO403` col 54, which are
+out of scope). An operator cell holding `※n` (`PXJCO128` `GXJC128B` `[315,24]` `※8`: the operator
+depends on 停止区分) is defined by that footnote — judge the footnote, not the cell.
+A `※n` on the row points to a footnote `※n.…` (or `※n …`) at the block's label column — **it can sit far below**
+(`PXJCO131` `GXJC131A` `[237]` → `[615,4]`), so resolve it to the next `※n` footnote line after the row,
+not within a fixed window. Joins are written as their own tables, one per joined alias:
+`結合条件(A LEFT JOIN B)` / `(A INNER JOIN B)` / `(A LEFT OUTER JOIN B)` / `結合条件 A INNER JOIN B` /
+`(A,B LEFT JOIN C)` at the block's label column, each followed by numbered `=` rows; `(+)` notation is
+not used.
+
+**W6a — 検索条件の演算子・一致方法 (No.21/22).** "Screen search input" below means a row whose right
+side is the `画面` alias (`Y.…`, `Y.G1).…`) **and** whose own note or resolved `※n` footnote says the
+condition applies only when the value is entered (`値が入力されていた場合のみ検索条件に含む`,
+`未入力の場合、検索条件から除外`, `…に入力がある場合のみ…`, `G1)の検索条件が指定された場合のみ…`). A `Y.` row
+without such a note is usually a key lookup (self-check sample `GXJA802A` `[233]` `A.取引先ｺｰﾄﾞ = Y.取引先ｺｰﾄﾞ`, a
+detail screen's own key, a `③品目ﾘｽﾄ取得` sub-query) where `=` is right — don't apply a/c/d to it.
+Item type comes from the left side's column name: **名称** = ends in `名`/`名称`/`略式名`/`ｶﾅ`
+(`作業者名`, `取引先名`, `選択肢名`); **品名-ID** = `KC品名`/`IS品名`; **code** = ends in `ｺｰﾄﾞ`/`No`/`GRP`/`ID`
+(`品目ｺｰﾄﾞ`, `管理No`, `加工GRP`, `ﾜｰｸﾌﾛｰID`); `図番`/`型番` are neither.
+- **a. `LIKE` with no match mode — 中.** A `LIKE` row (any right side) with no `前方一致`/`部分一致`/
+  `後方一致`/`完全一致`, no `%`, no `先頭n桁` in the right side or its notes, and no footnote that states the
+  match. Without a wildcard `LIKE` behaves as `=`, so either the operator or the missing `%` is wrong.
+  Measured: 19 rows in 4 programs — `PSJCO404` `GSJC404A` `[126,24]` `A.ｷｰ3 LIKE "300"` (the 取得項目 reads
+  `SUBSTR(A.ｷｰ3,4,2)`, so a prefix was meant: `"300%"`), `PSJCO403` `GSJC403A` `[163,26]` `A.ｷｰ3 LIKE
+  ﾒﾆｭｰﾊﾟﾗﾒｰﾀ`, `PSJCO201` `GSJC201B` `[256,24]` `A.部門GRP LIKE Z.部門GRP` (every other block uses `=` for
+  部門GRP), and `PSJCO309` `GSJC309B` `[134,24]`/`[135]`/`[138]`/`[139]` (again at `[278,25]`-`[283]`, and on
+  `GSJC309C`) — `((A.KC品名 >= Y.KC品名(開始) AND <= Y.KC品名(終了)) OR A.KC品名 LIKE Y.KC品名(開始) OR
+  … LIKE Y.KC品名(終了))`, same for 製造ﾛｯﾄNo: the LIKE branches only add anything with a `%`. Report one
+  line per table, listing the rows. Not findings:
+  a footnote that defines the match (`PXJCO131` `GXJC131A` `[237,24]` `LIKE Y.作業場ｺｰﾄﾞ ※1,※11` →
+  `※1. 画面.作業場条件設定=ﾁｪｯｸ無しの場合は前方一致、ﾁｪｯｸ有りの場合は完全一致`), and `Y.品目ｺｰﾄﾞ(先頭6桁)`
+  (`PSJAO401` `GSJA401B` `[590,24]`, a prefix of the input — 3 rows).
+- **b. `=` with a match mode — 中.** `=` whose right side or note says `部分一致`/`前方一致`/`後方一致` or
+  carries `%`: the operator contradicts the text. Measured: 5 — `PSJCO304` `GSJC304A` `[138,24]`/`[139,24]`
+  and `PXJCO128` `GXJC128A` `[135,24]`/`[136,24]` `A.製造ﾛｯﾄNo = Y.製造ﾛｯﾄNo(部分一致)`, `PSJAO501` `GSJA501A`
+  `[170,24]` `A.実績表項目ID = Y.実績表項目ID(前方一致)`. This takes precedence over d (one finding per row).
+  **Exempt** a left side that is a function cutting the column to the input's span —
+  `SUBSTR(A.製造ﾛｯﾄNo,TO_NUMBER(F.FROM),…) = Y.製造ﾛｯﾄNo(部分一致)` (`PXJCO134` `GXJC134A` `[140]`/`[141]`,
+  `PXJCO128` `GXJC128B` `[323]`/`[324]`, `GXJC128C` `[110]`/`[111]` — 6 rows) is a correct `=`.
+- **c. 名称/品名 search input not 部分一致.** Screen search inputs of 名称 type use `LIKE …(部分一致)` in 26
+  rows (13 programs) and never `=` — a `=` there is **中**; a `LIKE …(前方一致)` is **要確認** (1:
+  `PXJCO131` `GXJC131A` `[771,24]` `A.枠名 LIKE Y.枠名(前方一致)`). For **品名-ID** (`KC品名`/`IS品名`) the house
+  is 27 部分一致 (20 programs) against 7 `=` (3 programs: `PSJCO403` `GSJC403A` `[369,26]`/`[476,26]`,
+  `PSJCO404` `GSJC404A` `[270,25]`/`[345,25]`/`[618,24]`, `PXJCO128` `GXJC128A` `[313,24]`, `GXJC128B` `[206,24]`) —
+  `=` is **要確認**, citing No.22, because `KC品名` behaves like an identifier here (upper-cased, `半英数記号`;
+  see W1a/W1f) and an exact match may be deliberate.
+- **d. code search input with `LIKE …(部分一致)` — 要確認.** No.22 says 前方一致; the corpus has none
+  outside `図番`/`型番`, which always use 部分一致 (`PSJAO203` `GSJA203A` `[201]` `KC図番`, `PSJAO241`
+  `GSJA241A` `[282]`/`[285]`, `PXJAO701` `GXJA701A` `[250]` `ﾓﾃﾞﾙNo/型番` — not findings). Judge the mode
+  given for this row only — a footnote that lists several cases (`停止区分"6:品目ｺｰﾄﾞ+製造ﾛｯﾄNo(部分一致)"`)
+  is not a 部分一致 on 品目ｺｰﾄﾞ.
+- **e. Not an SQL operator — 低.** `=>` (15 rows, 10 sheets, 6 programs — all `A.停止日時 => ｼｽﾃﾑ日時` in
+  the `(A.停止日時 IS NULL OR …)` pair copied from one template: `PSJAO241` `GSJA241B-基本情報` `[330,24]`,
+  `PSJAO401` `GSJA401B` `[473,24]`, `PSJCO401`, `PSJCO402`, `PXJAO701` `GXJA701B` `[275,24]`, `PXJCO101`
+  `GXJC101C` ×6). Report once per sheet, fix `>=`. Same for `=<`, `==` or a full-width `＝`/`＜` if met.
+  A blank operator with both sides filled occurs 0 times; if you meet one it is 中.
+- **Not reported: a code search input with `=`.** The self-check says code = 前方一致, but the corpus
+  splits 251 `LIKE …(前方一致)` (36 programs) against 88 `=` (19 programs) — codes picked from a zoom or
+  a ComboBox (`層No`, `依頼元事業所ｺｰﾄﾞ`, `ｸﾞﾙｰﾌﾟID`) are compared exactly by design. Raising No.22 here
+  would be ~90 false findings; mention it only if the designer's own screens mix both for the same item.
+
+**W6b — 結合の順序 (call-out).** Within one block (from its `参照ｴﾝﾃｨﾃｨ` to the next `参照ｴﾝﾃｨﾃｨ` at the
+same or a smaller column), read the `結合条件` labels **at the block's own column** in row order —
+a nested child block's labels are its own sequence — and take the join type from each label
+(`INNER`, `LEFT`/`LEFT OUTER`). **Finding — 低: an `INNER JOIN` label after any `LEFT JOIN` label**;
+report the first offending label with the block's sequence (`I L I`). **Skip an INNER join onto a
+LEFT-joined alias** (`PSJCO309` `GSJC309A` `[623,5]` `結合条件 C3 INNER JOIN D1` where `C3` came in by LEFT
+JOIN; `[958,4]` `B INNER JOIN A2` — 13 such labels, all `PSJCO309`): it cannot move above the join it
+depends on — but keep reading the block, a later INNER on the driving alias still counts.
+Measured: 51 of 414 join blocks mix both types; 38 comply, **13 violate (9 sheets, 7 programs)** —
+`PSJAO203` `GSJA203B` `[480,4]` `(A INNER JOIN F)` after four LEFT, `PSJCO201` `GSJC201B` `[286,4]`
+(`I L I L L L L`), `PSJCO307` `GSJC307B` `[205,5]`, `PSJCO604` `GSJC604D` `[65,4]`, `PXJCO122` `GXJC122A`
+`[368,4]`, `PSJCO302` `GSJC302B` `[77,4]` whose INNER join is conditional
+(`【(2).内外作区分="1"(外注)の場合、結合】` — still a finding; say the condition can move with it), and 7 in
+`PSJCO309`: three blocks repeated on `GSJC309A`/`B`/`C` — `[661,5]`/`[204,4]`/`[203,4]` `A INNER JOIN E1`
+after the skipped chained ones, `[829,5]`/`[372,4]`/`[371,4]` `(A INNER JOIN D)` — plus `GSJC309A` `[962,4]`
+`(A1 INNER JOIN D1)`. A block repeated on several screens is one finding with the cells listed.
+Also exempt: `結合条件(CONNECT BY)` (2), and a bare `結合条件` followed
+by `なし` (3). Worth a separate line when you see it: a label joining the driving alias to itself
+(`PXJCO122` `GXJC122A` `[368,4]` `結合条件(A INNER JOIN A)` with `A.管理No = A.管理No`) — the right alias is
+wrong (中, a `design-doc-internal-consistency` matter, but report it here if nothing else will).
+Joins described only inside an entity name (`作業場ﾏｽﾀ(万一ﾏｽﾀとの紐付け切れた時の為LEFT_JOIN)`) or in pasted
+SQL samples are out of scope.
+
 ## Reporting
 
-Group by check (W1-W5), then by sheet. Every rule here is low severity on its own unless the check
+Group by check (W1-W6), then by sheet. Every rule here is low severity on its own unless the check
 says otherwise (a duplicate/misfiled circled section that another doc cites by number is 中; a
 placeholder ID such as `XXXXXXX` is 中). When one deviation repeats across a whole sheet, report it
 once per sheet with the cells listed, as each section says — these rules fire widely and a row-by-row
