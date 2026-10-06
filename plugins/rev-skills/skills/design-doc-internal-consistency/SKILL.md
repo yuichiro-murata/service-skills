@@ -1,6 +1,6 @@
 ---
 name: design-doc-internal-consistency
-description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency: every screen event reflected in the processing overview, responses registered, screen-item/message IDs registered in their masters, Ⅳ message text matching its ID (No.31), layout/item-definition/control-spec agreeing (incl. Ⅳ↔Ⅴ item order, ○/〇 in Ⅵ, yyyy/MM/dd in 表示形式), exclusive control present when the program updates, process/check order vs button order, and 区分名称 references resolving in 09.区分名称_step2.xlsx. Not the Ⅲ．入出力定義 check (`design-doc-io-table-check`) nor the self-check writing rules (`design-doc-writing-rules`). Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書, or whether a design doc is internally consistent / 漏れがないか. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency: every screen event reflected in the processing overview, responses registered, screen-item/message IDs registered in their masters, Ⅳ message text matching its ID (No.31), layout/item-definition/control-spec agreeing (incl. Ⅳ↔Ⅴ item order, ○/〇 in Ⅵ, yyyy/MM/dd in 表示形式), exclusive control present when the program updates, process/check order vs button order, 区分名称 references resolving in 09.区分名称_step2.xlsx, and 【更新条件表(ID) section】 pointers resolving. Not the Ⅲ．入出力定義 check (`design-doc-io-table-check`) nor the self-check writing rules (`design-doc-writing-rules`). Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書, or whether a design doc is internally consistent / 漏れがないか. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-internal-consistency
@@ -55,12 +55,14 @@ exact sheet/cell for every finding so it's actionable.
 
 1. **3-4 — Event ↔ processing-overview completeness.**
    The checklist asks only for 「画面設計書に定義されている初期処理およびﾎﾞﾀﾝ押下時のｲﾍﾞﾝﾄ」 (05
-   checklist `[19,4]`). Collect the 画面設計書 "Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細" rows whose ｲﾍﾞﾝﾄ内容 (col 13) is
-   `起動時` or `ﾎﾞﾀﾝ押下`, in every screen area, and every step of 機能定義書 "Ⅳ．機能処理概要". Each such
+   checklist `[19,4]`). Collect the 画面設計書 "Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細" rows whose ｲﾍﾞﾝﾄ内容 (col 13)
+   **contains** `起動時` or `ﾎﾞﾀﾝ押下` (`ﾎﾞﾀﾝ押下時` in `PXJCO161` `GXJC161B` `[1975]`-`[1980]`), in every
+   screen area, and every step of 機能定義書 "Ⅳ．機能処理概要". Each such
    event should have a traceable step (wording need not match). Flag any with none. `ﾛｽﾄﾌｫｰｶｽ`,
    `ﾀﾞﾌﾞﾙｸﾘｯｸ` and similar events are outside 3-4 — flagging them gave three false positives on
    `PXJCO125` `画面設計書(GXJC125A)` `[415]`/`[417]`/`[418]`. A zoom button (`作業場ｽﾞｰﾑ` `[416]`) is a
    ﾎﾞﾀﾝ押下 event, but process overviews routinely leave zooms out: report a missing one as 低/要確認.
+   Pagination buttons (next/prev page, `PXJCO161` `GXJC161A` `[786]`/`[787]`) get the same 低 treatment.
 
 2. **3-5 — Response definitions registered.**
    If 機能定義書 "Ⅶ．ﾚｽﾎﾟﾝｽ定義" defines anything beyond "※ｼｽﾃﾑ共通設計書.ﾚｽﾎﾟﾝｽ 参照", confirm it's
@@ -90,6 +92,10 @@ exact sheet/cell for every finding so it's actionable.
    against 画面項目名 `検索ﾎﾞﾀﾝ` / 表示 `検索(ENT)` `[439]`; likewise `XJZ9016`, `XJZ9003`, `XJC0760`, and
    `XJC0762` = `関連ﾛｯﾄ/実績削除`, which is the 表示 of the item named `削除区分` `[463]`. Flag only when
    the dictionary name matches neither.
+   **Normalise before comparing, and accept containment either way**: strip `ﾎﾞﾀﾝ`, series markers
+   `(1-N)`/`(n-m)`, unit parentheticals (`(ｼｰﾄ数)`), a trailing `名`, and `※n`. When 表示 is only `※n`,
+   compare with that footnote's text; when one item carries several IDs (a label switched by unit),
+   accept a match against any of its names. Without this, `PXJCO161` produced ~90 false mismatches.
 
    **Don't dump `82.画面項目辞書_<WG名>.xlsx` — read an index of it. See
    `_shared/reference-index.md`.** This check needs only `id → 画面項目名`, and an index of that costs
@@ -257,11 +263,27 @@ exact sheet/cell for every finding so it's actionable.
        (`処理前：`/`処理後：`) is optional and most rows rely on line order. Report one line per row, with
        the Ⅳ cell, the ID, both texts, and the fix when the corpus names one.
 
+   **4b — ﾁｪｯｸ処理設計書 ｴﾗｰﾒｯｾｰｼﾞ ↔ 04.ﾒｯｾｰｼﾞ管理.** Do the same for every ﾁｪｯｸ処理 row: compare the
+   ｴﾗｰﾒｯｾｰｼﾞ text (col 40) with the master text of the ID in col 53 (normalised as in 4a, bind variables
+   as one placeholder), and the ﾚﾍﾞﾙ (col 31: ｴﾗｰ/警告/情報…) with the master's 区分 (`I`/`W`/`B`/`S`).
+   A mismatch is 要確認 (13 on `PXJCO161`). A message cell that only delegates
+   (`XJC_ｼｽﾃﾑ共通設計書「ﾛｯﾄ停止」ｼｰﾄ参照`) is not a text — skip it. One cell holding two messages
+   (`<警告>…⏎<情報>…`) with one ID is the missing-ID finding for the uncovered message (`PXJCO161`
+   `ﾁｪｯｸ処理設計書(GXJC161A)` `[36,40]`/`[36,53]`: only `XJC-100019`; the validation run matched the 情報
+   line to `XJC7038`).
+
 5. **4-9/4-13 — Screen layout ↔ item-definition ↔ control-spec three-way match.**
    Collect item names from "Ⅰ．画面ﾚｲｱｳﾄ" (the visual mock), "Ⅴ．画面項目定義" (the item table), and
    "Ⅵ．画面項目制御・出力仕様" (the control matrix). All three should list the same set of
    non-hidden items. Flag any item present in one but missing from another (hidden items are
-   expected to be absent from Ⅵ per the checklist note — don't flag those).
+   expected to be absent from Ⅵ per the checklist note — don't flag those). Match areas across
+   sections by their `G\d+)` prefix, and merge an area's split Ⅵ tables (8-10 event columns each,
+   headers included) before comparing columns between areas.
+
+   **Ⅵ usage conditions (`※n`) against Ⅳ.** A Ⅵ cell holding `※n` instead of `○`/`×` makes the item's
+   usability conditional; read the footnote and confirm Ⅳ's event for that item agrees (`PSJCO403`
+   `GSJC403A` `[1510]` 自動ｾｯﾄ / `[1512]` 削除ﾎﾞﾀﾝ, `※1` = usable only when the search returns 0 rows —
+   reported 要確認 in a v1.20 run). Report a condition Ⅳ contradicts or never mentions as 要確認.
 
    **Also check the ○/× marker character used throughout "Ⅵ．画面項目制御・出力仕様" against the
    sheet's own legend line** (e.g. "ｲﾍﾞﾝﾄによる項目制御(使用可/不可、編集値) ※"○":使用可､"×":使用不可"
@@ -292,7 +314,9 @@ exact sheet/cell for every finding so it's actionable.
    instead (where `HH24`/`MI`/`SS` are themselves Oracle-specific tokens, case-insensitive in that
    context) — don't flag those, they're a different convention entirely and casing carries no meaning
    there. Flag every 表示形式 cell using `YYYY` and/or `DD` (or any other wrongly-cased token relative
-   to the `yyyy/MM/dd` convention) as a casing defect to correct.
+   to the `yyyy/MM/dd` convention) as a casing defect to correct. A time part follows the same rule:
+   `HH:mm` (minutes lower-case); `HH:MM` is the minute-casing defect (`PXJCO161` `GXJC161E` `[151,26]`
+   `YYYY/MM/DD HH:MM`).
    **User decision (2026-10-01): `yyyy/MM/dd` is the rule.** The self-check workbook
    (`01_Doc\08_機能定義書\11_工程管理\XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx`, sheet `レビュー観点`) 観点50 says
    「日付がある場合、表示形式は「YYYY/MM/DD」などを記載する」 and its own sample is mixed (`GXJA802B`
@@ -321,10 +345,12 @@ exact sheet/cell for every finding so it's actionable.
 
 7. **5-4 — Exclusive-control checks present when updating.**
    If the program writes to a table — any 更新条件表 sheet exists, **or** 機能定義書 Ⅲ．入出力定義 has a `○`
-   under its `C`/`U`/`D` header for any table (`PSJCO403` `[105,23]`-`[105,26]`; TXJAM100, TSJCD400-404, TXJCM008
-   at `[106]`-`[111]`, yet no 更新条件表 sheet) — confirm
+   under its `C`/`U`/`D` header for any table (`PSJCO403` `[105,23]`-`[105,26]`; TXJAM100, TSJCD400-402,
+   TSJCD404, TXJCM008 at `[106]`-`[111]` — no TSJCD403 row — yet no 更新条件表 sheet) — confirm
    ﾁｪｯｸ処理設計書 mentions a 排他ﾁｪｯｸ, and confirm "Ⅴ．画面項目定義" has a hidden 排他ﾌﾗｸﾞ item. Flag
-   if a program updates a table but has neither.
+   if a program updates a table but has neither. Judge this **per screen**: a screen whose events
+   update tables with no 排他 while another screen of the same program has it (`PXJCO161` A vs B) is
+   要確認.
 
    **Copied screen sheets.** If two 画面設計書 sheets of the program have identical live-dump text (hash the
    per-sheet dump files; `PSJCO403` `GSJC403C` ≡ `GSJC403D`), report one 要確認 line — a copy-paste that
@@ -354,8 +380,10 @@ every verdict; counts and examples are one snapshot.
      `削除`; (3) a tie of equal length is left unmatched. Never match a heading that names a link or a
      frame/row operation inside an area — `…ﾘﾝｸ押下処理`, `承認ｸﾞﾙｰﾌﾟ枠削除処理`, `通知先行削除処理` — those are
      not 共通 buttons even when a 共通 button's name (`承認`, `削除`) appears in them. Items that match no 共通 button (links, zoom, other-area
-     buttons) are ignored, not reported. Then flag any pair of matched items whose relative order
-     differs from the reference.
+     buttons) are left out of the order comparison. But a heading that names a **button** (`…ﾎﾞﾀﾝ押下時`)
+     found in **no** area's Ⅴ is a dangling event — a renamed or removed button — report it (中):
+     `PXJCO161` `ﾁｪｯｸ処理設計書(GXJC161B)` `[19,3]` `【処理取消ﾎﾞﾀﾝ押下時】`, where the button is now
+     途中入力取消. Then flag any pair of matched items whose relative order differs from the reference.
    - **Leave `閉じる` / `戻る` out of the order comparison.** Ⅴ often lists them first (top-right on a
      rich screen) while every process overview puts them last — comparing them generates most of the
      noise (`PSJAO401` `GSJA401B`/`F`).
@@ -391,7 +419,10 @@ every verdict; counts and examples are one snapshot.
       `区分名称.` follows (`PSJCO403` `GSJC403A` `[1401,25]` `09.区分名称_step2.社内加工状態 参照`) — up to `参照`/whitespace; drop an
       unbalanced trailing `)` (it closes an outer `区分名称(ｼｽﾃﾑ共通設計書.区分名称.製造ｵｰﾀﾞｰ状態)`); keep a
       `(qualifier)` as part of the name; resolve `group.value` (value must be one of the group's names) and
-      `group.qualifier` → `group(qualifier)` before calling anything missing.
+      `group.qualifier` → `group(qualifier)` before calling anything missing. **A newline or whitespace
+      after `区分名称` is a separator too**, same as `.`: `ｼｽﾃﾑ共通設計書.区分名称⏎実績途中入力区分 参照`
+      (`PXJCO161` `GXJC161A` `[842,26]`/`[872,26]`, `GXJC161B` `[2042,26]`, `[2497,26]` and six more in
+      col 26) names the group on the next line — reading it as "no group" gave 10-13 false findings.
     - Measured: 525 references, ~441 resolve once the index handles both title shapes. Report:
       - **placeholder `区分名称.XXXX`** — 中 (≈30 on 2026-10-01, `PSJCO403`/`404`/`405`, plus `検索区分(XXXX)` in
         `PSJCOB01`; `PSJCO403` has none as of 2026-10-06); the 区分 was never decided;
@@ -406,7 +437,12 @@ every verdict; counts and examples are one snapshot.
         `[726,26]`, 未作業ﾌﾗｸﾞ, where the same item elsewhere reads `…区分名称.未作業ﾌﾗｸﾞ 参照`). Flag a
         delegation (`…区分名称 参照`, `区分名称(…)`) with no `.<group>`. `区分名称` used as a plain noun is
         not a reference — e.g. the display expression `検索時:(6)①.ﾛｯﾄ構成区分+":"+区分名称` in 説明
-        (`PXJCO125` `画面設計書(GXJC125A)` `[478,43]`), whose group `区分名称.ﾛｯﾄ構成区分` is in `[478,25]`;
+        (`PXJCO125` `画面設計書(GXJC125A)` `[478,43]`), whose group `区分名称.ﾛｯﾄ構成区分` is in `[478,25]`.
+        Likewise `X状態+":"+区分名称(ｼｽﾃﾑ共通設計書.区分名称)` when `X状態` is itself a group name in the index
+        (`PXJCO161` `ﾁｪｯｸ処理設計書(GXJC161B)` `[152,59]`-`[157,59]`, `(GXJC161D)` `[13,59]`-`[20,59]`,
+        製造ｵｰﾀﾞｰ状態/移動ﾛｯﾄ状態): the operand names the group — resolved, 低 at most. A bare group name with
+        exactly one qualified match in the index (`<group>` → only `<group>(<qualifier>)`) is 要確認 naming
+        that candidate;
       - **qualifier missing or different** — 要確認 (11): a bare `検索区分` when the master has
         `検索区分(ﾛｯﾄﾄﾚｰｽ)`/`(不良ﾛｯﾄ統合)`/`(社内加工用)` — say which one is meant; `検索区分(社内加工)` vs the
         master's `(社内加工用)` is a near-miss to correct.
@@ -416,15 +452,34 @@ every verdict; counts and examples are one snapshot.
     - The same scan surfaces `ｼｽﾃﾑ共設計書`(sic — `通` missing) in many references; that is a typo for
       `design-doc-typo-check`, mention it only if that check is not in the run.
 
+12. **【更新条件表(<ID>) <section>】 cross-references resolve.** 機能定義書/画面設計書/ﾁｪｯｸ処理設計書 point
+    into 更新条件表 sheets as `【更新条件表(<ID>)】参照` or `【更新条件表(<ID>) <section>】参照`. The sheet
+    `更新条件表(<ID>)` must exist (exact ID; trailing spaces in the sheet name don't count), and a section
+    must appear in it as a `【…】` heading (col 16) or a `■` heading (col 2) — compare after stripping
+    whitespace and an unbalanced `)`. Report each dangling pointer (中), naming the nearest existing
+    sheet/section. `PXJCO161` 機能定義書: `[703,26]` `TXJCM999` (no such sheet; `更新条件表(TSJCM999)`
+    exists); `[979,26]`/`[981,26]` section `処理取消ﾎﾞﾀﾝ押下時` (TXJCD404/TXJCD407 now have
+    `【途中入力取消ﾎﾞﾀﾝ押下時】`); `[153,6]`/`[365,7]`/`[371,7]` `流動停止:ﾛｯﾄ停止ﾁｪｯｸ`/`:加工期限ﾁｪｯｸ`
+    (TXJCM006 has only `■流動停止`/`【流動停止】`). This check owns these pointers;
+    `design-doc-io-table-check` and `xlsx-db-column-check` leave them here (a pointer to a sheet that is
+    missing *because the program has no 更新条件表 for a written table* is still reported once there).
+
 **Shapes that are not defects (from the 2026-10 validation runs).**
 - An area can have **several Ⅵ control tables** (one per mode or per tab); merge them before
   deciding an item has no control row.
-- A **grouped name** covers a series: `直行1-4` in Ⅵ (or Ⅳ) stands for `直行1`…`直行4` in Ⅴ.
+- A Ⅵ area written as **one delegation line** (`G5)実績表項目領域 ※XJC_ｼｽﾃﾑ共通設計書(実績表項目設定)参照`,
+  `PXJCO161` `GXJC161B` `[3611,3]`, `[4026,3]`) has its control spec elsewhere — not "area has no Ⅵ block".
+- A **grouped name** covers a series: `直行1-4` in Ⅵ (or Ⅳ) stands for `直行1`…`直行4` in Ⅴ; so does a
+  slash-joined unit series (`不良数(ｼｰﾄ数/作業基板数/基板数/個数)`, `GXJC161B` `[1852]`-`[1855]`) and a Ⅳ name
+  written without its `(1-N)`.
 - Ⅰ．画面ﾚｲｱｳﾄ is a floating picture (usually EMF), so its empty cells in the dump are not a
   missing layout. For check 5's three-way match, get the picture via `agent-guide.md` "Seeing the
   actual screen layout" (unzip `xl/media/*.emf`, convert to PNG, Read it — no Excel); this completed
   the Ⅰ/Ⅴ/Ⅵ comparison on `PXJCO125`. Report only items clearly drawn or clearly absent, as a
-  visual comparison.
+  visual comparison. When the workbook has several screen sheets, map picture → sheet from the zip,
+  not COM: `xl/workbook.xml` (sheet name → `r:id`) → `xl/_rels/workbook.xml.rels` (→ `worksheets/sheetN.xml`)
+  → `xl/worksheets/_rels/sheetN.xml.rels` (→ `drawings/drawingN.xml`) → `xl/drawings/_rels/drawingN.xml.rels`
+  (→ `media/imageK.emf`). Worked on `PSJCO403` and `PXJCO161`.
 - A digest row that looks deleted may have been **moved** (struck at the old place, live elsewhere);
   search the live dump for its text before reporting a removal-driven asymmetry.
 

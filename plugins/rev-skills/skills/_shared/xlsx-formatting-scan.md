@@ -23,6 +23,13 @@ Skip non-anchor cells of merged ranges. An older COM dump emitted values Excel h
 merge, which produced phantom 9pt ＭＳ Ｐゴシック "deviations" at 画面設計書(GXJC125A) `[415,9]`/`[417,9]`
 on PXJCO125; the COM template now drops them, and the anchor-only rule guards against any recurrence.
 
+**Scan only the template sheets** — those named `表紙`, `機能定義書`, `画面設計書`, `ﾁｪｯｸ処理設計書`,
+`更新条件表`, `ﾌｧｲﾙ…仕様書`, `帳票設計書` (`詳細設計書` per SKILL.md). Mock-up and reference sheets are
+rarely named 画面ｲﾒｰｼﾞ: `PXJCO161` (2026-10-06) has `実績入力_B画面`…`_I画面` (all Meiryo UI),
+`(参考)…`, `【JAGUR】(参考)…` and `計算ﾎﾞﾀﾝ押下時の計算方法` (ＭＳ Ｐゴシック, no `Ⅰ．` header). Designer scratch
+sheets (`PSJCO403` `資料`, 401 raw deviations) are the same case. Exclude them all and list them once in
+one line ("書式ﾁｪｯｸ対象外: …"); never report their cells.
+
 ## Routes
 
 **openpyxl (validated end-to-end on PXJCO125; needs no Excel process — prefer it).**
@@ -33,7 +40,10 @@ bare `str` part inherits the cell font) and treat the cell as "mixed, inspect ma
 `ws.merged_cells.ranges` gives anchor (`min_row`/`min_col`) and span (`max_row-min_row+1`,
 `max_col-min_col+1`). Coordinates are sheet-absolute, so no UsedRange offset applies. Cost: the load
 alone took **124 s** for PXJCO125 (45 sheets, 41 visible), with a harmless "wmf image format is not
-supported" warning. If openpyxl cannot open the workbook (agent-guide: `PXJCO130` raises
+supported" warning, and **~540 s for the 9 MB `PXJCO161`** — over the default tool timeout. Run the
+extraction in the background (or at the maximum timeout), load once, and pickle what you need — per
+dump coordinate `(value, size, name, runs)` plus every sheet's full merge-range list — then analyse
+from the pickle. If openpyxl cannot open the workbook (agent-guide: `PXJCO130` raises
 `xl/drawings/NULL`), use COM.
 
 **COM.** First read, in `xlsx-excel-com-dump.md`, `## The dump script` (the pre-existing-PID guard
@@ -60,15 +70,24 @@ these recurring patterns:
   dated `yyyy/m/d 名前 修正`-style entries right of the print area (column ≥ 104) — not by column
   number. It is often smaller and sometimes ＭＳ Ｐゴシック.
 - The sheet-title/section-header template cells every sheet shares (row 1's `2C`/`3C` markers, the
-  sheet-name label, `Ⅰ．`–`Ⅷ．` section headings) — a fixed, larger size across all workbooks.
-- **表紙's sections at 12pt.** 表紙's mode is 10pt, but its section headings and the Ⅰ．上位文書 /
-  Ⅱ．設計書構成 / Ⅲ．改訂履歴 table headers and No./name columns are 12pt by template (plus the 24pt
-  title and 28pt marker) — 113 "deviations" on PXJCO125, none real. Exempt 12pt on 表紙; compare 表紙
-  cells only within their own section.
+  sheet-name label, `Ⅰ．`–`Ⅷ．` section headings) — a fixed, larger size across all workbooks. Also
+  row 1's `ｼｽﾃﾑID`/`計画書No` values in the left copy at 11pt (`[1,34]`/`[1,46]`, vs 10pt in the right
+  copy `[1,86]`/`[1,98]`) — identical on all four 画面設計書 sheets of `PSJCO403`, i.e. inherited from the
+  画面設計書 template copy, not a defect.
+- **表紙 has no single mode** — 10pt on PXJCO161 (530 of 662 cells), 12pt on PSJCO403 (80 of 86). Its
+  section headings, the Ⅰ．上位文書 / Ⅱ．設計書構成 / Ⅲ．改訂履歴 table headers and the 改訂履歴 No. column
+  are 12pt by template (plus the 24pt title and 28pt marker) — 113 "deviations" on PXJCO125, none real.
+  On 表紙, compare each cell only with the cells of **its own column within its own section**.
 - Column-group headers in a `Ⅵ．画面項目制御`-style matrix (e.g. `処理区分="..."の場合` labels) —
   deliberately smaller, consistently so across every instance of that matrix.
 - **Two-line matrix cells shrunk to fit** — e.g. 画面設計書(GXJC125A) `[544,13]`/`[544,23]`/`[544,28]`
-  are 6pt holding `○⏎※1` in a one-row control-matrix cell.
+  are 6pt holding `○⏎※1` in a one-row control-matrix cell. Exempt only when the siblings with the same
+  shape are shrunk the same way; a shrunk cell among unshrunk siblings (or the reverse) is a candidate.
+
+**Compare rich-text runs, not just the cell font.** Within one list, the same token (`※n`) is usually
+set in its own run size; compare that run's size across siblings. `PXJCO161` 画面設計書(GXJC161B)
+`[2194,22]`/`[2196,22]`/`[2197,22]` hold `n⏎※10` with `※10` at 8pt, but `[2195,22]` is uniformly 10pt
+— invisible to a cell-level font scan, caught only at run level.
 - Any 画面イメージ/mockup-screenshot sheet — a UI mockup naturally mixes sizes; never flag it.
 
 Only report a deviation that's **genuinely isolated** — a single cell or a small handful that fit none
@@ -86,22 +105,32 @@ every 更新条件表. Instead:
 
 1. **Compare column spans only.** Height differences between records of a list are expected (a
    record grows with its text).
-2. **Compare only cells of the same role inside ONE table** — sibling records of one list or block
-   (same column, between its header row, e.g. `取得項目`/`検索条件`/`結合条件(…)`, and its end: the next
-   block header, `取得件数`, or a footer such as `特記事項`). Never pair a label cell with a value cell,
+2. **Compare only cells of the same role inside ONE table** — sibling records of one list or block.
+   Operationally: a block starts at a row containing `No.`, `取得項目`, `検索条件`, `結合条件(…)` or `ｿｰﾄ順`
+   and ends at the next such row (or `取得件数` / a footer such as `特記事項`). Its **data rows** are those
+   whose No. cell holds a number; take the per-column span mode over the data rows only and flag the data
+   rows that differ (a 2026-10-06 validation run without this rule produced 1,002 raw candidates).
+   Never pair a label cell with a value cell,
    and never pair cells across tables because their labels match: Ⅲ's query blocks and Ⅳ/Ⅴ/Ⅵ reuse
    the same names (`画面`, `ﾛｸﾞｲﾝ情報`, `A.ﾎﾞﾃﾞｨ1`) at different spans by design. Skip placeholder cells
    (`-`, blank). The sheet-wide "same normalised label in the same column" rule gave **~230 candidates
    on PSJCO403 画面設計書 A-D, none real**, and the 3-sheet signature exclusion below did not thin them.
 3. **Subtract template signatures** — `(column, span A, span B, normalised labels)` tuples that recur
-   on 3 or more sheets of the workbook, or across sibling workbooks in the same PHASE folder, are the
-   template, not a defect.
+   on 3 or more sheets of the workbook are the template, not a defect. (Do not try to build the
+   signature across sibling workbooks on the fly — each 9 MB load is ~9 min; use it only if a prebuilt
+   list is handed to you.)
+4. **Use every merge range, including ranges over blank cells** — a missing merge usually sits on empty
+   cells (`PXJCO161` ﾁｪｯｸ処理設計書(GXJC161B) `[158-160]`: no col-3 1×8 merge where every sibling row has
+   one; the label moved to col 7 as 1×4). Filter to dump coordinates only when *reporting*, so a struck
+   row is not cited.
 
 What survives is a lead for the content cross-check (SKILL.md step 3): a duplicated header block whose
 right-side copy kept stale content, or a few rows inside one block merged differently from the rest
-of that block — the useful shape, usually a paste remnant. PSJCO403 GSJC403A (6)-①/③: the `結合条件`
-row `[559,26]`/`[615,26]` breaks its block's 1×4 span, and the content check found the block's
-検索条件 (`A.JOBｺｰﾄﾞ`/`A.ｷｰ1-3`) pasted from a 共通ｺｰﾄﾞﾏｽﾀ query into a TSJCD401 one.
+of that block — the useful shape, usually a paste remnant. The procedure that found one: per sheet,
+tally the anchor column and span of every operator cell (`=`, `IN`, `LIKE`, `DESC`…). On PSJCO403
+画面設計書(GSJC403A) ~300 sit at col 26 as 1×4, but (3-2)'s 検索条件 `[229-233]` put `=` at col 22 as 1×1 (and
+the value at col 26 as 1×22) — the one block laid out differently, worth the content check. (A `結合条件` label such as
+`[559,26]` is 1×1 everywhere and is not an outlier.)
 
 **Out of scope for the font and merge checks**: undated designer memos and pasted SQL right of the
 print area (body rows, cols 53-104 — e.g. GSJC403A `[19,55]`, `[281,54]`). They follow no template, so

@@ -15,7 +15,8 @@ is `-`, blank or a `※n` footnote are skipped — W1e covers the missing ones.
 Output TSV: program, sheet, row, col (of the 文字種 cell), name, norm_name, kind, id. Freshness: `# source-count` and
 `# source-newest-mtime-utc` header lines (compare as values).
 
-usage: python build_kind_table.py <WG folder, e.g. ...\\01_Doc\\08_機能定義書\\11_工程管理> <out.tsv>
+usage: python build_kind_table.py <WG folder, e.g. ...\\01_Doc\\08_機能定義書\\11_工程管理> <out.tsv> [--check]
+       --check: print FRESH/STALE for an existing <out.tsv> and exit 0/1 without rebuilding.
 """
 import datetime, glob, os, re, sys, warnings, multiprocessing as mp
 import openpyxl
@@ -27,6 +28,22 @@ STALE_DIR = re.compile(r"\\(bk|draw\.io|高S\d+対応|90_Branches|開発DDL作�
 STALE_FILE = re.compile(r"^(~\$|完了_)|XXXXX000")
 SHEET = re.compile(r"^画面設計書\([^)]+\)\s*$")
 PROG = re.compile(r"[PS][XS]J[A-Z][OB][0-9A-Z]{3}")
+
+FORMAT_VERSION = "2"
+
+def check_fresh(out, files):
+    """--check: FRESH only when format-version, source-count and newest mtime (as a value) all match."""
+    try:
+        head = {}
+        for line in open(out, encoding="utf-8-sig"):
+            if not line.startswith("#"): break
+            if ":" in line: k, v = line[1:].split(":", 1); head[k.strip()] = v.strip()
+        newest = max(os.path.getmtime(p) for p in files)
+        ok = (head.get("format-version") == FORMAT_VERSION and head.get("source-count") == str(len(files))
+              and abs(datetime.datetime.fromisoformat(head["source-newest-mtime-utc"]).timestamp() - newest) < 1)
+    except Exception:
+        ok = False
+    print("FRESH" if ok else "STALE"); sys.exit(0 if ok else 1)
 NK = lambda s: re.sub(r"\s+", "", str(s or ""))
 
 def norm_name(s):
@@ -70,8 +87,9 @@ def scan(p):
     return out
 
 def main():
-    if len(sys.argv) != 3: sys.exit(__doc__)
-    root, out = sys.argv[1], sys.argv[2]
+    args = [a for a in sys.argv[1:] if a != "--check"]
+    if len(args) != 2: sys.exit(__doc__)
+    root, out = args
     phases = [d for d in glob.glob(os.path.join(root, "PHASE*")) if os.path.isdir(d)]
     files = []
     if phases:   # only the workbooks directly in PHASE*: sub-folders (draw.io\チェックシート…, JAGUR版) hold old copies
@@ -84,6 +102,7 @@ def main():
                 if f.lower().endswith((".xlsx", ".xlsm")) and not STALE_FILE.search(f) and not STALE_DIR.search(p):
                     files.append(p)
     if not files: sys.exit(f"no workbooks found under {root}")
+    if "--check" in sys.argv: check_fresh(out, files)
     with mp.Pool(min(8, os.cpu_count() or 4)) as pool:
         res = [x for r in pool.map(scan, sorted(files)) for x in r]
     errs = [x for x in res if x[0] == "ERR"]; rows = [x for x in res if x[0] != "ERR"]
@@ -91,6 +110,7 @@ def main():
     with open(out, "w", encoding="utf-8") as f:
         f.write("# lookup: 入力可文字種 per TextBox/TextArea row of 画面設計書 Ⅴ\n")
         f.write(f"# scope: {root} ({'PHASE* only' if phases else 'recursive'})\n")
+        f.write(f"# format-version: {FORMAT_VERSION}\n")
         f.write(f"# source-count: {len(files)}\n")
         f.write(f"# source-newest-mtime-utc: {datetime.datetime.fromtimestamp(newest, datetime.timezone.utc).isoformat()}\n")
         f.write("# columns: program<TAB>sheet<TAB>row<TAB>col<TAB>name<TAB>norm_name<TAB>kind<TAB>id\n")

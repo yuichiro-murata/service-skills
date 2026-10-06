@@ -56,7 +56,11 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
 ## Procedure
 
 1. Given a target file, WG folder, or the whole project, enumerate design-doc workbooks in scope
-   (`表紙`/`機能定義書`/`画面設計書`/`更新条件表` sheets carry the IDs). Use the dump
+   (`表紙`/`機能定義書`/`画面設計書`/`更新条件表` sheets carry the IDs). Mock-up and reference sheets
+   (`実績入力_B画面`…, `(参考)…`, `【JAGUR】…` in PXJCO161) are out of scope for the ID rules: they hold
+   sample data and pasted legacy screens, not IDs this program defines. **Strip trailing spaces from a
+   sheet name before parsing its `(<ID>)`** (`PXJCO161` `更新条件表(TSJCD330) `, `更新条件表(TXJCM057) `);
+   a sheet name that changes when stripped is one 低 line per workbook. Use the dump
    `rev-program-review` handed you; standalone, run `_shared/scripts/live_dump.py` on each workbook.
    The program registry is three sheets in two files (verified for 工程管理): in
    `06-01_機能一覧_工程管理.xlsx`, the WG sheet `工程管理` and `ｻﾌﾞﾌﾟﾛ一覧` (`--sheets "^(工程管理|ｻﾌﾞﾌﾟﾛ一覧)$"`);
@@ -72,16 +76,20 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    - プログラムID/画面ID/ファイルID from the 表紙 and the header rows of each sheet, matched by label
      (`ﾌﾟﾛｸﾞﾗﾑID`/`画面ID`/`ﾌｧｲﾙID`), not by row — see step 4 for which labels each template has.
    - テーブルID, in a program workbook (which has no ﾃｰﾌﾞﾙﾚｲｱｳﾄ sheet): 機能定義書 Ⅲ．入出力定義 column 5
-     under the `ID` header (PXJCO125: `[35,5]`=`ID`, IDs in `[36..81,5]`), each `更新条件表(<ID>)` sheet
+     under the `ID` header (find the row by that label — PXJCO125 has it at `[35,5]`, one example), each `更新条件表(<ID>)` sheet
      name and its 更新ﾃｰﾌﾞﾙ cell `[8,16]` (`TXJCD203:個別不良項目明細` — the ID is the part before `:`),
      and 参照ｴﾝﾃｨﾃｨ cells. Read a ﾃｰﾌﾞﾙﾚｲｱｳﾄ workbook's own header only when that is the review target.
    - ファイルID/帳票ID/ズームID from wherever the doc set defines them (ﾌｧｲﾙ出力仕様書/帳票設計書/
      ズーム設計書 headers, or references to them inside 画面設計書 event descriptions).
 3. Parse each extracted ID against its rule's regex shape above. Flag:
    - IDs that don't parse at all (wrong length, unexpected letter in a fixed-value slot).
-   - IDs where the JOBコード segment doesn't match the JOBコード actually used elsewhere in the same
-     doc (e.g. プログラムID says `SJC` but 画面ID says `SJA` for the supposedly-paired screen —
-     these two IDs are defined by the rule to share the same JOBコード and sequence).
+   - A JOBコード/sequence mismatch **between the プログラムID and its own 画面ID** (プログラムID says `SJC`
+     but 画面ID says `SJA` for the paired screen — the rule defines them to share JOBコード and sequence),
+     and an `X`/`S` slot mismatch inside that pair (`PXJCO…` with `GSJC…`). Do not compare against the
+     JOBコードs of other IDs in the doc: tables of other WGs (`TXJAM…`, `VSJAM…`, `TSJC…`, `TXJZM…`) are
+     legitimately referenced and gave ~25 false hits on PXJCO161.
+   - An ID of a foreign system (`DXACM001`-`003`, prefix `DXA…`, registered on `06-06_DB一覧_工程管理`)
+     does not follow `[T|V]…` by design — 要確認 at most, not a violation.
    - Object-type-letter mismatches for テーブルID (e.g. ID starts with `V` but the workbook's own
      ﾃｰﾌﾞﾙ名/構造 looks like a physical table, not a view, or vice versa).
 
@@ -102,7 +110,8 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    equal the `(<ID>)` in its own sheet name, and the name beside it (col 15) must be that screen's/file's
    name — so in a multi-screen or multi-file program they *should* differ between sheets. The real defect
    is the opposite: on PSJCO403, 画面設計書(GSJC403B/C/D) and ﾌｧｲﾙ(入)出力仕様書(FSJC018/019/020) all carry
-   `GSJC403A`/`社内加工ﾃﾞｰﾀ作成` in `[4,10]`/`[4,62]` — copies of sheet A never updated (高; the validation
+   `GSJC403A` in `[4,10]`/`[4,62]` and `社内加工ﾃﾞｰﾀ作成` in `[4,15]`/`[4,67]` — copies of sheet A never
+   updated; check the names as well as the IDs (高; the validation
    run found only one other of PHASE3's 104 画面設計書 sheets with this, in PSJCO309). Report them as one
    finding grouped by pattern. A row-4 **label** that differs between the left and right copies belongs
    in the same finding (FSJC018: `[4,5]`=`画面ID`, `[4,57]`=`ﾌｧｲﾙID`). Flag any sheet whose workbook-level header
@@ -120,6 +129,14 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    header-only sheet, so checking its header costs a full-sheet dump for essentially no chance of
    catching a real mismatch. This is a deliberate, documented coverage trade for token savings, not
    a silent gap — if the user specifically asks about 詳細設計書 header consistency, check it then.
+   `live_dump.py` skips these sheets by default, so read rows 1-4 with
+   `live_dump.py <workbook> <out_dir> --sheets "^詳細設計" --include-detail` (only the header rows are needed)
+   or with openpyxl read-only.
+
+   **機能ID against the registry**: the header 機能ID must equal the registry's 機能ID (col 7, header
+   `機能ID` on row 6) on the program's row. A wrong value repeated on every copy is invisible to the
+   left/right and cross-sheet diffs: `PSJCO403` reads `SJC030` on every sheet while 付属機能 row 14 has
+   `SJC040` (中 — name the registry value).
 
    **Also check WITHIN each individual sheet, not just across sheets**: every header block in this
    project's template is physically duplicated side-by-side on one row (e.g. row 1's `2C` label
@@ -144,7 +161,11 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    **one 低 line per workbook** (PSJCO403: FSJC019/020 right-copy 作成日/作成者 `-`). List the
    contradicting sheets of one workbook in a single finding grouped by pattern, not one per sheet.
    This check owns both the contradictions and the drift line; `design-doc-formatting-consistency`
-   reports them only when this check is not in the run.
+   reports them only when this check is not in the run. A contradiction in **更新日** (or 更新者) is 低
+   bookkeeping; say which copy is authoritative by comparing both dates with 表紙 Ⅲ．改訂履歴 and the
+   sheet's own dated notes — it is not always the right copy that lags (`PXJCO161` `更新条件表(TXJCD104)`:
+   left `[3,46]` 46227, right `[3,98]` 46239 — the left is stale). Contradictions in 機能ID, ﾌﾟﾛｸﾞﾗﾑID or
+   画面ID keep the severity given above.
 
 5. **表紙's "Ⅱ．設計書構成" list vs the sheets actually present** (checklist item near 2-1) — run
    this as a **standard, always-on check**, not an optional one: compare every row's Customer/
@@ -186,8 +207,8 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    openpyxl pass over the folder, and the same reasoning applies to any other "this cell is blank"
    observation on a shared template.
 
-6. 表紙 checks that remain lighter-weight/manual-leaning (do these only if asked for a full pass,
-   they require reading prose or a slower cross-file lookup): 表紙's 画面ID/画面名 matches the
+6. 表紙 checks that remain lighter-weight/manual-leaning (do these only if asked for a full pass —
+   a REV that runs all checks counts as one — they require reading prose or a slower cross-file lookup): 表紙's 画面ID/画面名 matches the
    program's WG-specific 機能一覧 workbook under
    `01_Doc/06_システム設計書（一覧、管理台帳）/06-01_機能一覧_<WG名>.xlsx` (e.g.
    `06-01_機能一覧_工程管理.xlsx` for a 工程管理 program, `06-01_機能一覧_品質管理.xlsx` for
@@ -208,8 +229,9 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    line is the screen name — that's the pair to diff against the workbook's own 画面ID/画面名, since
    this sheet has no separate dedicated 画面ID column of its own. 受注出荷 has them at cols 32/47/51 —
    locate all three by the row-6 headers. A program's second and later screens/files sit on
-   continuation rows with `PGMID` blank (付属機能: PSJCO403 on row 14, GSJC403B/C and FSJC018-020 on
-   rows 15-19). Strip the area prefix (`^[A-Z]\.`,
+   continuation rows with `PGMID` blank — read the program row and all its continuation rows, down to
+   the next row with a PGMID (付属機能: PSJCO403 on row 14, GSJC403B/C and FSJC018-020 on rows 15-19, and
+   FSJC091 on row 20; row numbers are one snapshot). Strip the area prefix (`^[A-Z]\.`,
    e.g. `A.ﾛｯﾄ取消`; 受注出荷 uses `【…】`) before comparing; a trailing `画面` on the design-doc side (`ﾛｯﾄ取消画面`, 15 of 159
    XJC/SJC screens) is 要確認 at most. Also (still in this lighter
    category): new files have a 改訂履歴 entry marked 新規作成 (and 流用新規 files cite their 流用元

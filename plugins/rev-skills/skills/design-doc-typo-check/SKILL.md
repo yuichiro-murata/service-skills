@@ -47,10 +47,12 @@ sentences and phrases are in scope. In a typical program workbook, that means:
 - **機能定義書**: Ⅰ．機能概要 (prose bullets), Ⅲ．入出力定義 の 用途 column (short prose),
   Ⅳ．機能処理概要 (the main narrative — numbered steps, ※ footnotes, sub-program 設定値/戻り値 notes,
   pattern captions, and any prose woven into 検索条件/取得内容 descriptions), Ⅴ．ﾌﾟﾛｸﾞﾗﾑ構成 (ｴﾗｰ時処理),
-  Ⅵ．前提条件, Ⅷ．その他特記事項. (Ⅱ is `Ⅱ．I/O関連図`, a picture — nothing to read.)
+  Ⅵ．前提条件, Ⅷ．その他特記事項 (if present). (Ⅱ is `Ⅱ．I/O関連図`, a picture — nothing to read.)
 - **画面設計書**: all prose in Ⅱ．画面補足説明・表示ﾊﾟﾀｰﾝ概要 through Ⅵ — Ⅲ．画面表示仕様's numbered
   steps as well as its ※ footnotes, Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 (event-behavior descriptions — often long
-  paragraphs), Ⅴ．画面項目定義 の 説明 column (col 43 — there is no 備考 column), and the ※-notes under
+  paragraphs), every prose column of Ⅴ．画面項目定義 — 説明 (col 43; there is no 備考 column), 初期値
+  (col 35/36, often multi-line case text: `PXJCO161` `GXJC161D` `[291,35]`) and 画面項目名 (col 5, obvious
+  misspellings only), located by header label since they shift by one — and the ※-notes under
   each Ⅵ．画面項目制御・出力仕様 table (cols 3/5, e.g. `PXJCO125` `GXJC125A` `[582,5]`; Ⅵ's own columns
   are only No./画面項目/one per event).
 - **ﾁｪｯｸ処理設計書**: the `ﾁｪｯｸ内容・経緯` column (col 14, header `[8,14]` — most of the sheet's
@@ -58,22 +60,37 @@ sentences and phrases are in scope. In a typical program workbook, that means:
   columns, error-message body text.
 - **ﾌｧｲﾙ出力仕様書 / ﾌｧｲﾙ入出力仕様書 (titled ﾌｧｲﾙ入力仕様書)** (if present): the Ⅰ．ﾌｧｲﾙ出力/入力条件
   narrative (FSJC018 `[8,3]`), 出力条件 / 編集内容 / 備考 prose, and ※-notes.
-- **更新条件表**: the 更新概要 cell `[9,16]` (a ①②③ source list, where wrong screen IDs hide —
-  `PXJCO125` `TSJCD014` `①画面(GSJC201B)`), the **更新条件** narrative `[12,16]` (label `[12,2]`), ※-notes
-  in col 18 (the value half of the `INSERT`/`UPDATE` column — `TSJCA057` `[28,18]`), and ※-numbered footnotes (these are
-  written in full sentences, unlike the 項目名/取得内容 columns which are mostly structured tokens).
+- **更新条件表**: find the cells by role, not coordinate — a sheet repeats its block once per update
+  pattern (`PXJCO161` `TSJCA006`: 8 blocks, labels `[9,2]`, `[109,2]`, `[209,2]` …). In **every** block: the
+  更新概要 cell (value right of the `更新概要` label — a ①②③ source list, where wrong screen IDs hide —
+  `PXJCO125` `TSJCD014` `①画面(GSJC201B)`), the **更新条件** narrative (right of the `更新条件` label), ※-notes
+  in the value half of the `INSERT`/`UPDATE` column (col 18 — `TSJCA057` `[28,18]`), ※-numbered footnotes
+  (written in full sentences, unlike the 項目名/取得内容 columns which are mostly structured tokens), and
+  the right-hand 参照ｴﾝﾃｨﾃｨ/notes panel (col 54 onwards up to the revision margin — `TSJCA057` `[18,54]`
+  `ﾛｯﾄ情報の更新後に取得する。`, `[74,59]`, entity captions in col 68).
 - **帳票設計書** (if present): 処理の流れ (numbered narrative steps), 備考 column.
 
-**Out of scope**: designer scratch sheets that are not a doc type in 表紙 Ⅱ．設計書構成 (PSJCO403's
-`数字を調整の流れ`, `自動ｾｯﾄの動き`, `検索SQL検証`, `資料`, the `…old` copies — the dump includes them; that
-they are left visible is `design-doc-formatting-consistency`'s call, not a typo), and SQL text pasted to
-the right of the print area (画面設計書 cols 54/55, e.g. GSJC403A `[281,54]`, `[219,55]`), including its
-`--` comments.
+- **Supporting sheets the spec relies on**: a sheet that is not a doc type in 表紙 Ⅱ but is cited from
+  the spec (`【<sheet>】参照`, `「<sheet>」ｼｰﾄ参照`) or listed under 表紙 Ⅱ's その他設計書 — `PXJCO161`
+  `計算ﾎﾞﾀﾝ押下時の計算方法` (cited by 機能定義書 `[999,5]` and `GXJC161B` `[1856,24]`; it held a real typo),
+  `PSJCO403` `自動ｾｯﾄの動き` (cited by `GSJC403A` `[1240,30]`). Grep the spec sheets for each extra sheet name.
+- **Designer memos right of the form** (画面設計書 cols ≥ 55, e.g. `GSJC403A` `[47,55]`): proofread them
+  and use them as evidence of intent.
+
+**Out of scope**: designer scratch sheets that are neither a doc type in 表紙 Ⅱ nor cited from the spec
+(PSJCO403's `数字を調整の流れ`, `検索SQL検証`, `資料`, the `…old` copies — the dump includes them; that
+they are left visible is `design-doc-formatting-consistency`'s call, not a typo); SQL text wherever it
+sits, including its `--` comments (GSJC403A `[281,54]` in Ⅲ, `[219,55]` — col 54 is otherwise the
+画面項目ID column of Ⅳ/Ⅴ, not an SQL column); the revision margin (cols 105-112, `2026/02/12 平島 追加…`),
+which is change history.
 
 ## Procedure
 
 1. Use the dump `rev-program-review` handed you; standalone, run
-   `python _shared/scripts/live_dump.py <workbook> <out_dir>` (it skips 詳細設計書).
+   `python _shared/scripts/live_dump.py <workbook> <out_dir>` (it skips 詳細設計書). A large dump
+   (`PXJCO161` `GXJC161B` is 640 KB) cannot be read whole: load it with `_shared/scripts/dump_cells.py`,
+   keep the in-scope cells that contain Japanese text, de-duplicate identical values (keep every
+   coordinate for the report), and read that list.
 2. For each section listed above, read every cell's full text — sentence by sentence, not a keyword
    scan. Look for:
    - **誤字**: a wrong kanji/character that doesn't fit the intended word (a likely IME conversion
@@ -83,7 +100,9 @@ the right of the print area (画面設計書 cols 54/55, e.g. GSJC403A `[281,54]
    - **衍字**: an accidentally duplicated character or word (e.g. "確認するする").
    - **助詞の誤り**: a wrong particle that changes or breaks the meaning (e.g. "を" where "が" was
      needed, an action that reads backwards from what's clearly intended).
-   - **Unmatched brackets/parentheses/quotes** within one cell.
+   - **Unmatched brackets/parentheses/quotes** within one cell — except notation tokens (`G1)`,
+     `1)`, `(1)①`, `②.2`) and a bracketed expression that deliberately spans cells or rows (a `(` in one
+     検索条件 row closed by `)` in a later one, `GXJC161A` `[369,5]`/`[370,48]`).
    - **Garbled leftover fragments**: a word or clause that doesn't belong to the sentence it's sitting
      in — often the tell-tale sign of a copy-paste edit where the old text wasn't fully replaced.
 3. Deprecated rows were already dropped at dump time — do not scan for them, and do not treat a
@@ -97,6 +116,13 @@ the right of the print area (画面設計書 cols 54/55, e.g. GSJC403A `[281,54]
    - Could ambiguous phrasing be intentional shorthand common in this project's docs, rather than a
      mistake? If genuinely unsure, report it as a lower-confidence note rather than a confirmed error
      (see Reporting).
+5. Hand off what is not a language error (one line each, not reported here):
+   - a stale but real ID (`GXJC163B` in `ﾁｪｯｸ処理設計書(GXJC161B)`, `機能定義書(PSJCO203)`, `VDMBM04_31`) →
+     `naming-standard-compliance` / `design-doc-internal-consistency`;
+   - a leftover name after a rename (`処理取消` for a renamed button/event) → `design-doc-internal-consistency`;
+   - a swapped pair of terms (`依頼先`/`依頼元`) → `design-doc-internal-consistency`, unless it is purely a
+     misspelling of the word itself;
+   - the revision margin (cols 105-112) → out of scope.
 
 ## Reporting
 

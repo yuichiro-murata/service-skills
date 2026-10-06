@@ -121,7 +121,9 @@ partially-struck name is a rename in place, not a dead row.
 
 1. the sheet name's `(<ID>)`;
 2. the 3C header `ﾌｧｲﾙID` (`[4,10]`) and the 3D copy (`[4,62]`) — the 3D copy is often `-`, which is
-   `naming-standard-compliance`'s concern, not a mismatch here; only a *different* ID is;
+   `naming-standard-compliance`'s concern, not a mismatch here; only a *different* ID is. Find the cell
+   by position, not by the label: the label itself can be wrong (`PSJCO403` `FSJC018` `[4,5]=画面ID`
+   with `[4,10]=GSJC403A`, while the 3D copy reads `[4,57]=ﾌｧｲﾙID`) — that wrong label is part of the finding;
 3. Ⅰ．ﾌｧｲﾙ出力条件's `出力ｺｰﾄﾞ` argument literal (`'FSJC051'` / `"FSJA008"` — strip the quotes);
 4. the 機能定義書 Ⅲ．入出力定義 row that declares the file (a row whose ID column holds an `F…` ID);
 5. every `【ﾌｧｲﾙ出力仕様書(<ID>)】` pointer in 機能定義書 prose.
@@ -287,7 +289,10 @@ What survives is real, and it is exactly the kind of defect this check exists fo
   Ⅰ used to read `(1)…画面設計書(GXJC128A).Ⅲ.画面表示仕様(1) 参照`, the block was restructured on
   2026/6/9 into `(1)ﾌｧｲﾙ出力先情報取得` + `(2)ﾀﾞｳﾝﾛｰﾄﾞﾃﾞｰﾀ取得` (old line struck — see
   `_DELETED_DIGEST.txt`), and every 明細 `(1)` was left behind. Check the digest to say so; the fix is
-  `(2)`. `PXJCO193` `FXJC018` has the same shape. Suggest a replacement block only when Ⅰ has exactly
+  `(2)`. `PXJCO193` `FXJC018` has the same shape. **A block titled `…ﾌｧｲﾙ名取得` or `ﾌｧｲﾙ出力先情報取得`
+  is never a data block, even with 取得項目**: `PSJCO403` `FSJC020` `(2)ﾀﾞｳﾝﾛｰﾄﾞﾌｧｲﾙ名取得` fetches
+  `[22,18]=A.対象名称` (the file name), the data is `(3)ﾀﾞｳﾝﾛｰﾄﾞﾃﾞｰﾀ取得`, and every non-literal 明細 row says `(2)` — the
+  fix is `(3)`. Suggest a replacement block only when Ⅰ has exactly
   one data block (one with 取得項目 or a delegation to one) and the 明細 values are in it; with several
   candidates, list them and leave the choice to the designer — "has 取得項目" alone does not identify
   the right block.
@@ -344,6 +349,12 @@ Format/編集方法 contradictions that did occur: `PSJAO501` `FSJA012` rows 774
 `FXJC013` rows 181/182 annotate a time but say `日付`; `PSJCO208` `FSJC090` gives `作業時刻` the
 編集方法 `日付` (a name that says time, with no annotation either way — report as 要確認, since the
 common design defines no time-only 編集方法).
+
+**The common 編集仕様 on a file that is not a 共通ﾀﾞｳﾝﾛｰﾄﾞ** → 要確認. `ﾌｧｲﾙ出力制御` 4.編集仕様 wraps every
+string as `"=""値"""` for display in Excel. A `※…05.ｼｽﾃﾑ共通設計書.ﾌｧｲﾙ出力制御.編集仕様 参照` note on a
+fixed-format interface file applies that wrapping (and the header row) to a file another system reads:
+`PSJCO403` `FSJC020` `[100,5]`, a TSV (`FVDAD12.TSV`) for the 基幹ｼｽﾃﾑ. Ask whether the receiver expects
+that encoding; F4 only covers 共通ﾀﾞｳﾝﾛｰﾄﾞ files, so nothing else catches this.
 
 `No` as an output item occurred in 10 places (`PSJAO241` `FSJA004`, `PSJCO204` `FSJC068`,
 `PXJCO121` `FSJC001` in both ﾍｯﾀﾞｰ and 明細). Before reporting, look at the 明細 row's 参照先: a `No`

@@ -46,28 +46,33 @@ specifically asks about 詳細設計書 formatting, include it then.
 
 ### 1. Font-size and font-name scan
 
-For every worksheet in the target workbook **except `詳細設計書`** (see above), iterate the **live
+For every **template sheet** of the target workbook (表紙/機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/
+ﾌｧｲﾙ…仕様書/帳票設計書 — **not `詳細設計書`**, see above; mock-up, `(参考)`, `【JAGUR】` and scratch sheets
+such as `資料` are excluded and listed once, per the shared doc), iterate the **live
 dump's coordinates** (so struck/gray cells stay out — don't run your own strike scan) and skip
-non-anchor cells of merged ranges. Record each cell's font size and font name. Per sheet, take the
-mode of each and list every cell that differs — this raw list will be large and mostly noise.
+non-anchor cells of merged ranges. Record each cell's font size and font name, and each rich-text
+run's size. Per sheet, take the mode of each and list every cell that differs — this raw list will be
+large and mostly noise. On a big workbook, run the openpyxl load in the background and pickle the
+extract (the shared doc's "Routes").
 
 **Before reporting anything, filter out the deliberate systematic patterns** documented in the
-shared doc (revision-memo columns, section-title/header template cells, 表紙's 12pt sections,
-control-matrix group headers and shrunk two-line matrix cells, UI-mockup sheets), and leave undated
+shared doc (revision-memo columns, section-title/header template cells, 表紙 compared per column within
+its section, control-matrix group headers and consistently shrunk two-line matrix cells), and leave undated
 memos/pasted SQL right of the print area (body cols 53-104) out of both scans. What's left —
 genuinely isolated cells, especially ones inside an otherwise-uniform repeating list — is what's
 worth reporting.
 
 ### 2. Cell-merge scan
 
-Record each merge anchor's row/column span, then compare **column spans only, among sibling records
-of ONE table** (one header block — never the same label across tables), skipping `-`/blank
-placeholders, and subtract template signatures (span pairs that recur on several sheets of the
-workbook or across sibling workbooks). Row-height differences between multi-row records are expected.
-The shared doc has the exact rule and why the proximity-only (891 candidates on PXJCO125) and
-same-label (~230 on PSJCO403) versions failed. What survives is a lead: a duplicated header block whose
-right-side copy kept stale content, or a few rows inside one block merged differently from the rest —
-on PSJCO403 that pointed at a pasted 共通ｺｰﾄﾞﾏｽﾀ condition block.
+Record every merge range's row/column span (blank cells included — a missing merge sits on empty
+cells), then compare **column spans only, among the data rows of ONE block** (the shared doc defines
+a block: from a `No.`/`取得項目`/`検索条件` row to the next one), skipping `-`/blank placeholders, and
+subtract template signatures (span pairs that recur on 3+ sheets of the workbook). Row-height
+differences between multi-row records are expected. The shared doc has the exact rule and why the
+proximity-only (891 candidates on PXJCO125) and same-label (~230 on PSJCO403) versions failed. What
+survives is a lead: a duplicated header block whose right-side copy kept stale content, or a few rows
+inside one block merged differently from the rest — on PSJCO403 GSJC403A, (3-2)'s 検索条件 `[229-233]`
+(operator at col 22, 1×1, where ~300 others sit at col 26 as 1×4).
 
 ### 3. Cross-check anything suspicious against content, not just shape
 
@@ -89,7 +94,8 @@ finding. Group by sheet only when several findings share one.
 
 Omit entirely: the raw per-sheet size/merge dump, a tally of how many cells were checked, and any
 finding that turned out to be one of the documented systematic patterns (revision-memo columns,
-template headers, 表紙 12pt sections, mockup sheets, control-matrix cells) — those are not worth even a one-line
+template headers, 表紙 12pt sections, control-matrix cells) — those are not worth even a one-line
 mention once identified as such, since they're expected and consistent by design. If a whole class of
 irregularity couldn't be checked (e.g. a sheet's used range was too large to scan in full), say so
-briefly — that's a coverage gap worth flagging, not a process detail.
+briefly — that's a coverage gap worth flagging, not a process detail. Name the non-template sheets
+you excluded in one line, so the reader knows they were not scanned.

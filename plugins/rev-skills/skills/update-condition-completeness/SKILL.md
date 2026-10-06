@@ -108,11 +108,14 @@ check's — there is nothing here to review.
 ### 2. Resolve each 更新ﾃｰﾌﾞﾙ to its layout file
 
 The `更新ﾃｰﾌﾞﾙ` cell gives `<TableID>:<name>`. Resolve the ID to exactly one `ﾃｰﾌﾞﾙﾚｲｱｳﾄ` file using
-**`xlsx-db-column-check`'s step 3 "Quick reference"** — read that section and follow it rather than
-re-deriving it. The rules that bite hardest here: the search root is the top-level
-`<WG番号>_<WG名>WG\07_データベース・ファイル設計書(仮)` (not nested under `01_Doc`), the ID must match
-**exactly** (a `WF` suffix is a different table, and `更新条件表` sheets are full of `*WF` tables), the
-`ﾃｰﾌﾞﾙﾚｲｱｳﾄ` sheet's `A6` cell must confirm the ID, and precedence is PH3 > PH2 > top-level.
+**`xlsx-db-column-check`'s step 3 "Quick reference"** (edge cases live there). The three rules that
+decide almost every case:
+1. Search the top-level `<WG番号>_<WG名>WG\07_データベース・ファイル設計書(仮)` recursively (not under
+   `01_Doc`); precedence PH3 > PH2 > top-level. The flat `01_Doc\07_データベース・ファイル設計書` is not used
+   for a table 11_工程管理WG owns.
+2. Split the filename on `_` and require the leading part(s) to equal the ID **exactly** — `*WF`,
+   `_B_`/`_IN_` variants (`TXJCM007_B_…`, `TXJAM008_IN_…`) are other tables; skip them.
+3. Confirm the ID in `A6` of the sheet named exactly `ﾃｰﾌﾞﾙﾚｲｱｳﾄ`; reject a file that disagrees.
 
 Dump each one live, one out_dir per file — the same call as `xlsx-db-column-check` step 3, so a REV
 running both reuses one set of dumps (the default prefix collides for `TXJCM007` vs `TXJCM007_B`):
@@ -137,7 +140,10 @@ The layout sheet's header is at row 7 and the columns this check needs are:
   columns they produced empty-named C1 "missing column" findings on 8 blocks.
 - **`I01` is the primary key only when the `＜ｲﾝﾃﾞｯｸｽ情報＞` label says so** — `PRIMARY KEY I01`
   (`TXJCD404` `[57,1]`) or `ﾕﾆｰｸｷｰ　I01` (`TXJCM057` `[60,1]`). `ﾕﾆｰｸｷｰ　無し` / `ﾕﾆｰｸｲﾝﾃﾞｯｸｽ I01`
-  (`TSJCA057` `[54,1]`/`[55,1]`, `TXJCA205` PH3 `[43,1]`/`[44,1]`) means **no key**: skip C3 for that table.
+  (`TSJCA057` `[54,1]`/`[55,1]`, `TXJCA205` PH3 `[43,1]`/`[44,1]`, `TXJCD104` `[40,1]` since 2026/1/21) means
+  **no key**: skip C3 for that table. Match the label after NFKC with `I[0O]1` — `TSJCM999` writes
+  `ﾕﾆｰｸｷｰ IO1` with a letter O (`[27,1]`/`[28,1]`, 2026-10-06); missing it skips C3 for the table. Report
+  the layout typo once (低, owner: the layout file).
 - **Phase.** PH3 > PH2 still picks the file, but when the layout is from a later phase than the
   workbook's own `PHASE` folder, a column that exists only in the later layout is 要確認
   ("PH3ﾚｲｱｳﾄで追加/変更 — 設計書の反映要否を確認"), not 中 (`xlsx-db-column-check` step 3 rule 3).
@@ -186,7 +192,9 @@ not advance the counter defeats optimistic locking.
 for that column); a row whose 項目名 exists in **no** layout column; and a row order that diverges
 from the layout (low confidence on its own — report only when it coincides with added/removed
 columns, since it is then evidence the sheet was patched by hand rather than regenerated). A missing
-non-key column in a **DELETE-only** block is 低 (the statement never writes it). Skip notes-only
+non-key column in a **DELETE-only** block is 低 (the statement never writes it). **A column row is a row
+whose col 2 holds a number (the No.)** — note and sub-table rows that put text in col 4 (`条件`, `表1:`,
+`G12).数量単位`) are not "extra" rows; reading them as such gave ~50 false C1 lines on `PXJCO161`. Skip notes-only
 sheets such as `更新条件表(その他)` (no `No.`/`項目名` header row). **This check owns the "項目名 not in
 the layout" finding for a 更新条件表's own rows** — `xlsx-db-column-check` skips those rows when this
 check is in the run, so report it here even though it looks like a column-existence finding.
@@ -219,9 +227,12 @@ than staying silent — "notnull だが default 設定あり" is useful to the r
 the `＜ｲﾝﾃﾞｯｸｽ情報＞` label makes `I01` a key (step 2); a table with `ﾕﾆｰｸｷｰ 無し` has no C3.
 - INSERT: every PK column must be set. A missing one means the row can't be identified afterwards.
 - Normalise `【KEY】` / `［KEY］` to `[KEY]` before matching (report the notation once at 低) —
-  `PXJCO161` `TXJCD104` block 4 writes `【KEY】`, and a literal match calls all 7 PK columns unkeyed.
-- An `I01` member whose `notnull` is blank cannot be in an Oracle PK (a ※ may say `PKから削除`,
-  `TXJCD104` `[26,105]`); don't require it on INSERT or in `[KEY]`.
+  `PXJCO161` `TXJCD104` block 4 writes `【KEY】`, and a literal match called all 7 PK columns unkeyed
+  (2026-10-01; that layout has since become `ﾕﾆｰｸｷｰ 無し`, so C3 no longer applies to it).
+- An `I01` member whose `notnull` is blank cannot be in an Oracle PK (a ※ may say `PKから削除`); don't
+  require it on INSERT or in `[KEY]`. Read the newest change note — `TXJCD104` `[26,105]` says PKから削除
+  but `[26,106]` re-adds it to I01.
+- A `[KEY]※n` whose ※ footnote defines the key value counts as a documented key.
 - UPDATE / DELETE: every PK column should carry `[KEY]`; a partial key updates or deletes a *range*.
   **A cascade delete is the normal case, not a finding.** Measured on `PXJCO161`/`163`/`125`
   (2026-10-01): ~45 standalone DELETEs keyed only on the parent key (会社/部門/管理No/枝番[/工程ｺｰﾄﾞ])
@@ -230,10 +241,11 @@ the `＜ｲﾝﾃﾞｯｸｽ情報＞` label makes `I01` a key (step 2); a tabl
   whose 更新条件 names exactly its `[KEY]` columns (会社ｺｰﾄﾞ/部門GRP may go unnamed) is a documented
   range delete — not a finding, whichever PK columns it omits.** On `PXJCO125` (2026-10-01) a looser
   reading flagged 39 PK columns over 20 such DELETEs, all false. Without that text, still exempt it when
-  the omitted columns are trailing/child PK columns and the trigger is a 取消/削除 button. **Report**
-  (中) when the `[KEY]` set contradicts the columns the 更新条件 names (`TXJCM008` block@147: text says
-  `管理No、枝番`, keys add `[172,18]=[KEY]G5).工程ｺｰﾄﾞ`), or when a leading/parent PK column is missing
-  and nothing documents the range.
+  the omitted columns are trailing/child PK columns — **whatever the trigger**: `PXJCO161` `TXJCM007` block
+  @287 (`実行ﾎﾞﾀﾝ押下時 且つ 処理ﾓｰﾄﾞ＝"2"(修正)`) keys 親管理No/親枝番 and omits 子管理No/子枝番 — still a
+  parent cascade. **Report** (中) only when the `[KEY]` set contradicts the columns the 更新条件 names
+  (`TXJCM008` block@147: text says `管理No、枝番`, keys add `[172,18]=[KEY]G5).工程ｺｰﾄﾞ`), or when a
+  leading/parent PK column is missing and nothing documents the range.
   For a partial-key **UPDATE**, report at 要確認 unless the 更新条件 states the range is intended
   (`次工程ｺｰﾄﾞで作業着手をUPDATE` explains it), quoting that text.
   **Exception — suppress it for the DELETE half of a DELETE⇒INSERT block.** Where a block pairs a
@@ -247,8 +259,15 @@ the `＜ｲﾝﾃﾞｯｸｽ情報＞` label makes `I01` a key (step 2); a tabl
   `[KEY]` also wipes the rows of every *other* discriminator value, which the INSERT never rewrites
   (`PSJCO501` `TSJCD215` `[35,18]`). Report that one at 中, quoting the literal. **Also compare the
   DELETE's `[KEY]` values with the paired INSERT's values for the same columns**: `PXJCO161`
-  `TXJCD407` deletes by `[114,18]=[KEY]G1).工程ｺｰﾄﾞ` but inserts `[114,30]=G5).ﾌｪｰｽﾞ工程ｺｰﾄﾞ` — if they
-  differ, rows are re-inserted that were never deleted (PK violation). Report a mismatch at 中.
+  `TXJCD407` deletes by `[114,18]=[KEY]G1).工程ｺｰﾄﾞ` but inserts `[114,30]=G5).ﾌｪｰｽﾞ工程ｺｰﾄﾞ` (block header
+  row 99, 2026-10-06) — if they differ, rows are re-inserted that were never deleted (PK violation).
+  Report a mismatch at 中.
+- **Across blocks of one table, each PK column should be keyed from one consistent source.** Tabulate
+  the value of every PK column over all blocks of the table (and its sibling 実績 tables): `PXJCO161`
+  `TXJCD407` keys 工程ｺｰﾄﾞ from `G1).工程ｺｰﾄﾞ` in its DELETE blocks (`[284,36]`, `[368,18]`, `[452,18]`) but
+  writes `G5).ﾌｪｰｽﾞ工程ｺｰﾄﾞ` in its INSERTs (`[199,18]`); `TXJCD404` does the same across its UPDATEs
+  (`[196,18]`/`[253,18]` vs `[310,36]`/`[367,18]`/`[424,18]`). Report once per table at 中 unless a note
+  says the two are always equal.
 - **A column naming two operations** (`DELETE　INSERT`): apply the `[KEY]` rule to it only if some
   value in it carries `[KEY]`. Usually none does — the column holds the INSERT values and the
   DELETE's WHERE is in 更新条件; read it there, and report once (中) only if it is not stated. (The

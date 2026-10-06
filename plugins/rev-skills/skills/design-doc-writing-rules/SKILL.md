@@ -38,7 +38,11 @@ titles sit in col 3; each area has its own header row. Locate columns by normali
 `表示`, `属性`, `TAB`, `桁数`, `表示形式`, `入力可文字種` (some sheets: `入力可`), `必須`, `初期値`, `説明`,
 `画面項目ID` (commonly cols 5/11/17/21/23/25/30/33/35/43/54 — resolve by label, never by these).
 Item rows are those whose No. (col 3) is a number. Strip a leading full-width space before
-comparing an ID (the self-check sample itself has `　XJA0130`).
+comparing an ID (the self-check sample itself has `　XJA0130`). Re-resolve the columns at every header
+row — they shift by one within a sheet (`PXJCO161` `GXJC161B` `[2492]`: 属性 col 18, 説明 col 43).
+**Ⅴ ends at the `Ⅵ．` heading** in col 2 (`Ⅵ.` with a half-width dot occurs too, as does `Ⅴ.`):
+Ⅵ．画面項目制御・出力仕様 repeats Ⅴ's area titles and numbered rows (No. col 3, 画面項目 col 5), so a
+parser that keeps the last Ⅴ header past `Ⅵ．` reads its ○/× grid as Ⅴ items and gives false W1b/W1e hits.
 
 **W1a — 小文字→大文字変換の記載 (レビュー観点 No.43).** For an **input** item (`TextBox`, `TextArea`,
 `ComboBox` — never `Label`/`ReadOnly`/`Hidden`/`LinkLabel`) whose 画面項目名 is one of
@@ -85,6 +89,13 @@ standard IDs you can already suggest (検索 `XJZ9002`, 画面ｸﾘｱ `XJZ9003
 Outside `共通`, zoom buttons (`表示` = `Z`, or a `…ｽﾞｰﾑ` name — 460 rows, all `-`), calendar buttons
 (`ｶﾚﾝﾀﾞｰ(…)`) and tab controls legitimately carry `-`: report only a placeholder or a non-`9xxx` ID
 there, never a `-` or a blank (blank is as common as `-` on zoom/calendar buttons).
+Outside `共通`, a non-`9xxx` ID on a program-specific button is 要確認, not a defect — name the `9xxx`
+IDs the sheet's other buttons use. Area-toggle buttons (the button that carries its area's name and
+opens/closes it) are mixed in practice: `PXJCO161` `GXJC161B` 実績表項目 `XJC0252` / 不良項目 `XJC0333` /
+QA判定 `XJC0334` against 分割 `XJC9087` / 保留分割 `SJC9053` / 資源/依頼ｺｰﾄﾞ `SJC9052` on the same sheet —
+report them once per sheet as 要確認. A button whose ID is also a non-button item's ID on the same
+sheet is a **duplicate-ID finding** (中), not a band question: `GXJC161B` 不良項目ﾎﾞﾀﾝ `[2493,54]` and the
+Label 不良項目(1-N) `[2494,54]` are both `XJC0333` — the button needs its own number.
 "Most-used ID" comparisons: use a prebuilt button-ID table if your prompt names one; otherwise compare
 within the workbook and against the standard IDs listed here (検索 `XJZ9002`, 画面ｸﾘｱ `XJZ9003`, ﾀﾞｳﾝﾛｰﾄﾞ
 `XJZ9004`, 更新 `XJZ9007`, 削除 `XJZ9008`, 戻る `XJZ9009`, 実行 `XJZ9016`, 新規登録 `XJZ9028`, 処理状況
@@ -120,6 +131,13 @@ has 213 rows with 桁数 `8` and exactly 1 with `-`, so a `-` beside `年月日(
 separately; a row missing both is one finding. `ﾊﾟｽﾜｰﾄﾞ` is a 入力可文字種 value and still needs 桁数.
 A placeholder in 桁数 (`?`, `XX` — `PSJCO805` has six `?`) is the same as `-`: a length nobody has
 decided yet.
+**A row whose 属性 is `右記参照` is not skipped**: its attribute is given per case in 初期値/説明
+(`PXJCO161` `GXJC161D` `[291]` 管理No: `属性:Label` for the first row in `[291,35]`, an input otherwise —
+it has 桁数 15, TAB 2 and the upper-case note). If any case is `TextBox`/`TextArea`, apply W1e/W1f to
+the row; if no case states an attribute, report 要確認. The converse — a `Label` row with TAB, 必須 or
+入力可文字種 filled (`PSJCO403` `GSJC403A` `[1405]` 単価: TAB 24, 必須 ○, `数値(小数)`, 桁数 `-`, and the
+check sheet has a 【単価変更時】 event) — is a finding (要確認): either the 属性 is wrong (an input) or the
+input columns are leftovers; name which the rest of the doc implies.
 This is stricter than, and complementary to, `xlsx-db-column-check` step 5 (which reports a `-` only
 when another screen gives the same item a number): report here regardless, and don't repeat that
 skill's DB-length comparison.
@@ -130,6 +148,10 @@ skill's DB-length comparison.
 footnote cannot be compared). Match items by **normalised 画面項目名** (strip whitespace, `(FROM)`/`(TO)`,
 `(1-N)`, a trailing digit), never by 画面項目ID alone — `PSJCO403` `GSJC403A` Ⅴ's 作業工程GRP row carries 製造ﾛｯﾄNo's
 `XJC0028`, which is a wrong ID (`design-doc-internal-consistency` check 3), not a 文字種 deviation.
+Include `右記参照` rows as W1e resolves them. **Vocabulary**: a value outside the house forms
+(`文字列(半英数)`, `文字列(半英数記号)`, `文字列(全角)`, `数値(整数)正数`, `年月日(8桁)` …) — `半角英数` with no
+`文字列(…)` (`PXJCO161` `GXJC161D` `[291,30]`), `文字列(半数)`, `数値(少数)` — is one 低 line per workbook
+listing the cells, and still compared below by its evident meaning.
 Two comparisons:
 - **Against other programs** — report a row whose 文字種 differs from the value other programs use
   for the same item **when that value is dominant**: ≥ 5 rows from ≥ 3 distinct other programs, and
@@ -154,8 +176,10 @@ not current state (`PSJCO204` was edited 2026-10-05 and no longer reproduces) �
 every other program has `数値(整数)正数`. Items that are mixed across the corpus have no dominant value
 and are **not** reported — `KC品名` (`文字列` 16 / `半英数記号` 11 / `半英数` 4), `処置指示No` 7:5,
 `KC図番`, `資源GRP`. Severity: 中 when the screen's type is narrower than or incompatible with the
-dominant one (`半英数` vs `半英数記号`, `全角` vs `半英数`, a string type where others use `数値`);
-要確認 otherwise (a broader type, `数値(整数)` vs `数値(整数)正数` — a negative entry may be intended).
+dominant one (`半英数` vs `半英数記号`, `全角` vs `半英数`, a string type where others use `数値`, and
+`数値` where others use `文字列` — leading zeros and letters are lost); 要確認 otherwise (a broader or
+merely different type — `文字列(半角)` vs `文字列(半英数記号)`, `数値(整数)` vs `数値(整数)正数`, where a
+negative entry may be intended).
 Note that the dominant value can contradict the call-out "ｺｰﾄﾞ/No/ｷｰは半角英数": 品目ｺｰﾄﾞ, 製造ﾛｯﾄNo and
 ﾃｰﾌﾟﾛｯﾄNo are overwhelmingly `半英数記号`. Follow the corpus here and do not raise that call-out against them.
 
@@ -204,6 +228,10 @@ includes 表紙 Ⅲ．改訂履歴 (`No.` at col 4), where a reused revision num
 section numbers of 機能定義書 Ⅳ (`A-①`, `A-②` … per letter), and **a run of circled step numbers inside
 one cell** — split the cell on newlines and read the line-initial ①②③…; they must not repeat or skip
 (`PXJCO125` `画面設計書(GXJC125A)` `[416,24]` ①②**②**). A `※1` or a mid-line circled reference is not a step.
+Apply this in-cell rule to Ⅳ prose only (機能定義書 Ⅳ, 画面設計書 Ⅳ). Elsewhere a line-initial `①.` followed
+by an item reference is a source reference, one per condition branch — `PXJCO161` `更新条件表(TXJCM008)`
+`[140,18]` `①.G4).連結完了工程＝空白の場合、NULL⏎①.G4).連結完了工程≠空白の場合、…` cites 更新概要's source ①
+twice and is not a ①① duplicate (~9 such false hits on that workbook).
 The same applies to **parenthesised step numbers** `1)`, `2)`, `3-1)`, `3-2a)` at line start — inside one cell
 or one per row down a `※n` event block of 画面設計書 Ⅳ (the block ends at the next `※n` heading). Each level
 (`n)`, `n-m)`, `n-ma)`) is its own series under its parent: `PSJCO403` `GSJC403A` ※2 `[1176,4]`/`[1177,4]`
@@ -214,13 +242,20 @@ list-break rule**: its number column is col 1 under the header `No` (`[8,1]`; `[
 matching header labels normalise half-width `･`/`・` — `[8,14]` reads `ﾁｪｯｸ内容･経緯`), and **each `【…】`
 heading in col ≤ 3 ends the current list and starts a new one** (`[9,3]` `【検索ﾎﾞﾀﾝ押下時】`, `[40,3]`
 `【実行ﾎﾞﾀﾝ押下時】` on `PXJCO125`) even though it sits right of col 1 — the general rule below would never
-fire there. A heading repeated verbatim further down is still a new
+fire there. **Except** a heading that repeats the event already open with trailing text starting
+`上記` — `PXJCO161` `ﾁｪｯｸ処理設計書(GXJC161B)` `[267,3]` `【実行ﾎﾞﾀﾝ押下時】上記ﾁｪｯｸ処理で1件もｴﾗｰにならなかった場合、実行する`
+inside the 【実行ﾎﾞﾀﾝ押下時】 of `[22,3]`, numbering 236 → 237 — is a sub-heading: the list continues.
+A bare heading repeated verbatim further down is still a new
 list — scan it explicitly or its defects are missed (`PXJCO129`
 `ﾁｪｯｸ処理設計書(GXJC129A)` `[16,1]`-`[18,1]` = 5, 6, 7 after 1-6; `GXJC129B` `[96,1]`/`[98,1]` both 84).
 Elsewhere, **end a list only on a heading at or left of the number column** (an area title, `Ⅳ．…`, `【…】`;
 col ≤ 3 for the usual col-2 number column) — the Ⅴ 説明 column (col 43)
 routinely holds `Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細 参照`, and treating that as a section break hides duplicates
-(`GSJA704J` `[255,3]`). **Judge the sequence on live numbers only**; a struck row that still shows its
+(`GSJA704J` `[255,3]`). A `【…の場合】` condition line inside a table is a branch caption, not a heading —
+the list continues (`PXJCO161` `GXJC161F` `[58,5]` `【(3)で取得した内外作区分="1"(社外)の場合】` between 検索条件
+8 and 9). Zero-padded values are data, not numbering (`GXJC161B` `[2146,6]`/`[2147,6]` `003`/`004` under a
+`層No` header in a worked example).
+**Judge the sequence on live numbers only**; a struck row that still shows its
 old number (`ﾁｪｯｸ処理設計書(GSJA704B)`: live 1, struck 2 and 3, live 2) is not part of the sequence and
 must not produce a "backwards" finding — consult the struck numbers only to explain a gap.
 **Also include the numbered sub-tables of 画面設計書 Ⅲ．画面表示仕様** (取得項目 / 検索条件 / 結合条件 / ｿｰﾄ順 /
@@ -240,6 +275,10 @@ most of it is structure:
   live numbers — the COM dump's digest omits a bare struck number as filler, so don't wait for the
   number itself to appear. A row whose content is struck but whose number is **not** (`GSJA704B`
   【引戻ﾎﾞﾀﾝ押下時】 `[26,1]`-`[28,1]` live 2/3/4 over struck checks) is an empty live item — 要確認.
+- **Numbers that were never written up** — pre-numbered rows with every other column empty
+  (`PSJCO403` `ﾁｪｯｸ処理設計書(GSJC403A)` `[12,1]`-`[39,1]`: all 13 events from 【検索ﾎﾞﾀﾝ押下時】 to
+  【単価変更時】) — are not a numbering defect. They are a finding of their own: one line per sheet, 中,
+  "ﾁｪｯｸ内容未記載" listing the events; an event with no check says so (`[10,14]` `ﾁｪｯｸ無し` under 【初期処理】).
 - **A constant step of 2 over three or more items** (`PXJCO906` `GXJC906A` 1, 3, 5, 7 in col 6) is a
   two-row item layout, not missing numbers.
 - A sub-number (`A-②-1`, `A-②(1)`) belongs to its own series; don't fold it into the circled list.
@@ -265,7 +304,10 @@ call-outs on its sample sheets). Calibrated on 2026-10-01 over 120
 Every block of 画面設計書 Ⅲ．画面表示仕様 that starts with `参照ｴﾝﾃｨﾃｨ` **and has a `取得項目`
 table** must close with a `取得件数` row (`[27,4]=取得件数 [27,9]=1件 [27,15]=取得できない場合 [27,24]=-`).
 Don't fix the column: a nested child block starts further right and so does its 取得件数
-(`PSJCO503` `GSJC503A` `[156,6]` … `[172,6]`). Scope is 画面設計書 only — a ﾁｪｯｸ処理設計書 Ⅱ block with
+(`PSJCO503` `GSJC503A` `[156,6]` … `[172,6]`). A block ends only at a label or block title at its
+column or left of it — **not at an opening bracket**, which sits one column left of the No. (W6
+anatomy): `PXJCO161` `GXJC161A` `[369,5]` `(` belongs to 検索条件 7 of the col-6 block whose 取得件数 is
+`[373,6]`. Scope is 画面設計書 only — a ﾁｪｯｸ処理設計書 Ⅱ block with
 参照ｴﾝﾃｨﾃｨ is not covered by this call-out.
 - Exempt a block with no 取得項目 — a sort-only sub-block under a 集計単位 variant (`PXJCO164`
   `GXJC164A` `①集計単位="管理No"` … 参照ｴﾝﾃｨﾃｨ/集計条件/ｿｰﾄ順 only) or a `UNION ALL` of two earlier
@@ -280,7 +322,9 @@ Don't fix the column: a nested child block starts further right and so does its 
   409 `複数件`) — 低: the reader can't tell whether the fetch is single- or multi-row (レビュー観点 No.25).
 - **An unfilled template Ⅲ** — aliases with no entity names, numbered 取得項目/検索条件 rows with nothing in
   them, the template `取得件数 … 取得できない場合 -` (`PSJCO403` `GSJC403B` `[76,4]`-`[107,4]`, `GSJC403C`/`D` `[36,4]`-`[67,4]`) — is not
-  a 件数 finding: report "Ⅲ 未記載" once per sheet instead of a line per block.
+  a 件数 finding: report "Ⅲ 未記載" once per sheet instead of a line per block. A single stray template
+  block inside an otherwise filled Ⅲ (`PSJCO403` `GSJC403A` `[1103]`-`[1136]`: title `()**取得`, empty
+  取得項目 and 結合条件 rows, `取得件数` with no 件数) is likewise one 「未記載ﾌﾞﾛｯｸ」 line, not a 件数 finding.
 
 **W4 — ﾚｽﾎﾟﾝｽ定義の表記.** Call-out on 機能定義書: "「ｼｽﾃﾑ共通設計書.ﾚｽﾎﾟﾝｽ 参照」に統一". Read the body
 of 機能定義書 `Ⅶ．ﾚｽﾎﾟﾝｽ定義`. Measured over 109 sheets: 97 read exactly `※ｼｽﾃﾑ共通設計書.ﾚｽﾎﾟﾝｽ 参照`.
@@ -306,7 +350,10 @@ columns are `name`, `screen_id` (header), `sheet`, `workbook`, `sheet_id` (the I
 **Key a screen by `sheet_id` when present**, not the header ID: copied sheets keep a stale header
 (`PSJCO403` `GSJC403B`/`C`/`D` all carry `GSJC403A` in `[4,10]`), so keying by header hides the program's own
 screens and W5 ends up proposing another program's ID (`GSJC404B`). A header ID ≠ sheet-name ID is
-`naming-standard-compliance`'s finding, not W5's. Normalise the header name first: some end in `画面` (`受入入力画面`),
+`naming-standard-compliance`'s finding, not W5's — but the header **name** beside a stale ID is stale
+too (`GSJC403B`/`C`/`D` all read `社内加工ﾃﾞｰﾀ作成`), so for those sheets take the screen name from the
+機能定義書 Ⅳ block heading of that letter (`PSJCO403` `[158,3]` `B.予定金額設定`, `[192,3]` `C.実績ﾌｧｲﾙ取込`,
+`[206,3]` `D.予定金額設定取込`). Normalise the header name first: some end in `画面` (`受入入力画面`),
 most don't, so match `name` + optional `画面`. The program's **own** screens count too
 (`PSJCO602` `[52,4]` `棚卸用仕掛在庫ﾃﾞｰﾀ作成画面を表示する` → `(GSJC602A)`).
 **The screen must be the object of the verb** — `…画面に遷移する` / `…画面に戻る` / `…画面を起動する` /
@@ -322,7 +369,11 @@ are titles, not sentences — exempt them.
 is cited by program ID in the house wording (`【共通】ﾀﾞｳﾝﾛｰﾄﾞ(PSJAO702)を起動する`), and the bare
 `ﾀﾞｳﾝﾛｰﾄﾞ画面の戻り値…` phrases are fixed template sentences. When a name matches both the program's own screen and another program's, prefer the own one.
 `名称(ID)画面` (`取引先詳細(GXJA802B)画面に遷移`) carries the ID and passes; mention the house order
-`名称画面(ID)` once at 低 at most. Several names map to more than one ID
+`名称画面(ID)` once at 低 at most. So does the prefix form `<画面ID>_名称画面` (`PXJCO161` `GXJC161B`
+`[1825,24]` `GXJC161D_実績入力(積層入力)画面を起動する`, `GXJC161A` `[752,24]`
+`PXJCO130_ﾛｯﾄﾄﾚｰｽ.GXJC130B_ﾛｯﾄﾄﾚｰｽ(作業実績)画面へ遷移する`). A **program** ID in the parentheses
+(`機能定義書` `[213,4]` `流動停止解除画面(PXJCO134_流動停止解除)に遷移する`) is 要確認: give the candidate
+screen IDs of that program from the screen list. Several names map to more than one ID
 (`社内加工単価登録` GSJC401A/GSJC402A, `工順比較` GSJA401G/GXJC124B, `工程詳細` GSJA401C/GXJA243B) — give
 the candidates, don't guess.
 Measured in that scope: 405 mentions carry the ID, **310 don't, across 110 sheets** — a widespread

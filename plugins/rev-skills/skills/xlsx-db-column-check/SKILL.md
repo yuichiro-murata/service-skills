@@ -52,6 +52,12 @@ Read the dumped sheets with the Read tool (not Bash cat) and look for these stan
   `PXJAO701_資源ﾏｽﾀﾒﾝﾃﾅﾝｽ.xlsx`'s `FXJA014` alone has 15. Harvest those exactly like a 画面設計書
   block; skipping the sheet silently leaves their columns unchecked, and no other check reads them
   (`file-output-spec-check` resolves 参照先 aliases but does not open table layouts).
+- **ﾁｪｯｸ処理設計書(<画面ID>) sheet(s), "Ⅱ．ﾁｪｯｸ処理詳細"**: `(n)` sections whose `①…取得` sub-blocks have the
+  same 参照ｴﾝﾃｨﾃｨ/取得項目/検索条件/ｿｰﾄ順 shape, two columns further left (label col 4, alias col 12, table
+  col 14, 取得内容 col 17, condition cols 6/24/28 — resolve by label). `PXJCO161` (2026-10-06):
+  `GXJC161A` has 42 such blocks and `GXJC161B` 29, and both of that REV's real alias defects were there
+  (`GXJC161B` `[755,17]=A.項目名`, A=`TXJCV404` ﾌｪｰｽﾞ実績ﾄﾗﾝ; `GXJC161A` `[153,28]=B.枝番` /
+  `[154,28]=C.計測工程ｺｰﾄﾞ5桁`, B and C swapped). Harvest them like a 画面設計書 block.
 
 Build a per-table list: `{ table_id: [column names referenced] }`.
 
@@ -80,23 +86,53 @@ stripping all whitespace (half/full-width spaces and newlines: `[14,16]=　INSER
   col 58 reads `<日本語ﾃｰﾌﾞﾙ名>.<列>` — no alias letter (`更新条件表(TSJCD302)` `[8,68]=ﾛｯﾄ作成履歴(TXJCA004)`,
   `[11,58]=ﾛｯﾄ作成履歴.会社ｺｰﾄﾞ`). The table cell comes in three spellings — `TXJCA004:ﾛｯﾄ作成履歴`,
   `ﾛｯﾄ作成履歴(TXJCA004)`, `移動ﾛｯﾄ(TXJCM006)　※削除前のﾃﾞｰﾀ` — take the ID from either form and map the
-  Japanese prefix of each `条件項目名` to it. A table cell naming `共通項目取得….<項目>` is a delegation, not
-  a table (`TSJCD101` `[34,68]`): skip it here.
+  Japanese prefix of each `条件項目名` to it. Two more forms (`PXJCO161` `更新条件表(TXJCM006)`): several
+  tables in one cell split on `、` (`[15,68]=TXJCM008:作業実績、VXJCM004_31:ｵｰﾀﾞｰ工程読込ﾋﾞｭｰ`), and a bare
+  Japanese name with no ID (`[1409,68]=作業実績`) — resolve it to the layout whose `F6` name matches
+  (NFKC, whitespace stripped); unresolved → say so, never guess. A table cell naming `共通項目取得….<項目>`
+  (or `共通項目取得：…`) is a delegation, not a table (`TSJCD101` `[34,68]`): skip it here.
+  **Match a `<日本語ﾃｰﾌﾞﾙ名>.<列>` prefix against the block's table names (longest first)** before calling
+  a column missing; a prefix that matches no table is reported as an unresolved reference, not a miss.
 - **`参照ｴﾝﾃｨﾃｨ` block** (`TXJCM006` `[10,55]`/`[46,56]`): alias letters, `取得ﾃｰﾌﾞﾙ`/`検索条件` headers —
   collect `<alias>.<column>` as for a 画面設計書 block.
 
 A subquery inside a 検索条件 introduces its own alias (`(SELECT … FROM TXJCM006 Z …)`): resolve `Z.` to
 the subquery's table for that cell only.
 
+**Resolve every alias against its own block's 参照ｴﾝﾃｨﾃｨ list — letters drift between sibling blocks.**
+- **Block-reference alias** (`B | ②めっき工程の工程ｺｰﾄﾞ取得`, `C | 共通項目取得:移動ﾛｯﾄ(最新)`,
+  `I | (8)-②依頼先事業所ｺｰﾄﾞ件数取得`): `<alias>.<x>` and `<alias>:<x>` alike name that block's 取得項目, not
+  a table column — check `<x>` against that list (or the 共通項目取得 section's outputs). A column the
+  referenced block does not return is a finding: `GXJC161A` `[153,28]=B.枝番` (B returns only 工程ｺｰﾄﾞ; 枝番
+  comes from C).
+- **Alias used but not defined, or defined with a blank table cell** → 中, "alias未定義": `PSJCO403`
+  `(6)-①` `[560,30]=C.会社ｺｰﾄﾞ` (block defines only A/B/Y/Z; its header says `A LEFT JOIN D`), and `(5-1)`
+  `[308,14]=B` with no table, yet `B.` is used in `[334,19]` and `[378-391,30]`.
+- **Same row copied between sibling blocks with a different letter map** → check that the letter still
+  means the same thing. `PSJCO403` `(8)-①` defines F/G=TSJAM006 (依頼先/依頼元), H=(8)-②, I=(8)-③, but
+  `[732,19]=G:依頼先事業所ｺｰﾄﾞ`, `[733,19]=I:依頼先事業所ｺｰﾄﾞ件数`, `[734,19]=E:(文字)入力値` were copied from
+  `(8)-④`, whose map is one letter later (G=依頼先, I=(8)-②) — there `[867,19]`/`[868,19]` are right and
+  `(8)-①`'s three rows are the alias-shift defect (中).
+
 **Three more reference shapes** (`PSJCO403` `画面設計書(GSJC403A)`, 2026-10-06):
-- **Colon instead of dot** — `[732,19]=G:依頼先事業所ｺｰﾄﾞ`, `[733,19]=I:依頼先事業所ｺｰﾄﾞ件数`. Treat `<alias>:<x>`
-  as `<alias>.<x>` and note the notation once at 低. When the alias is a block reference (`I` = `(8)-②…取得`),
-  `<x>` is that block's 取得項目, not a table column.
+- **Colon instead of dot** — `[867,19]=G:依頼先事業所ｺｰﾄﾞ`. Treat `<alias>:<x>` as `<alias>.<x>` and note the
+  notation once at 低. When `<x>` is not a column of a table alias, check the block's col-54 SQL first: there
+  `G:依頼先事業所ｺｰﾄﾞ` is `A6S.JIGYOSHO_CD IRAISAKI_JIGYOSHO_CD` (column AS label) — 低 notation, not a miss.
 - **Physical name** — `[118,19]=A.KEY3` (A=TXJAM008, whose layout has `[21,3]=ｷｰ3` / `[21,12]=KEY3`).
   Match against the layout's 項目ID (`[r,12]`) as well as 項目名 before calling a column missing.
 - **Concatenation** — `[360,8]=A.依頼先事業所ｺｰﾄﾞ||A.依頼先加工部門ｺｰﾄﾞ`. Split on `||` and check each part;
   for step 5 treat it as a composite. A part you cannot resolve (an expression, a literal, a block
   output) is skipped with a one-line note, never reported as missing.
+- **Expression written as a column** — `A.工程ｺｰﾄﾞの先頭5桁` (`GXJC161A` `[154,6]`), `A.層Noが数値のみの場合(001など)`.
+  When a real column is a prefix of the token and the rest is natural language, it is an expression on that
+  column: 低 notation at most, never "no such column".
+
+**Check both sides of 検索条件/結合条件 rows.** The right-hand side (col 30; col 28 on ﾁｪｯｸ処理設計書) names a column of the joined or
+outer alias and is checked the same way. When it exists but is the wrong column, compare it with the
+block's own 取得項目 and col-54 SQL: `PSJCO403` `[797,30]=D.数量入力ｺｰﾄﾞ` joins `F.加工部門ｺｰﾄﾞ` to D (TXJCD407)'s
+quantity-code column, while 取得項目 uses `(文字)入力値` and the SQL `KAKOBUMON_CD = D7S.CHR_INPUT` — the same
+slip repeats at `[802,30]`, `[823,30]`, `[841,30]`, `[937,30]`, `[942,30]`. Report it as a suspicious
+cross-reference (中).
 
 **ﾌｧｲﾙ入出力仕様書 / ﾌｧｲﾙ入力仕様書 sheets** name a table in `入出力先` (`ﾌｧｲﾙ入出力仕様書(FSJC018)`
 `[15,18]=TSJCD401:社内加工予定金額`), but their Ⅲ rows are file columns (`A列: 1=依頼先…`), not DB column
@@ -236,6 +272,9 @@ C1 when that check is in the run** — skip them here, or the same "not in the l
 twice. Still check that sheet's value-source cells and side blocks (they name *other* tables), and
 check the 項目名 rows yourself when running without it.
 
+**A table-ID cross-reference that points at no sheet** (`【更新条件表(TXJCM999)】参照`) is not a column
+finding — it belongs to `design-doc-internal-consistency`'s cross-reference check. Leave it.
+
 - **Exact miss** (referenced name has no match at all in the real table, including no
   similarly-named field holding the same kind of data): report as a clear finding — cite the
   design-doc sheet/cell where it's referenced and state that the table has no such column.
@@ -260,6 +299,11 @@ This section exists because a reviewer found by hand what a full REV had missed.
 `工程名`/`KOTEI_MEI` is `NVARCHAR2(60)` — a 60-character 工程名 is silently truncated on both entry
 and display. Existence-only checking cannot see this, and no other check in the single-program set
 looks at lengths either.
+
+**Budget it on a big workbook.** Step 5 is the step that runs out of time (`PXJCO161` `GXJC161B` alone is
+4,205 dump rows). Work one screen at a time and write each screen's table to a scratch file before the
+next; the orchestrator may run step 5 as a separate agent over the same dumps. A run that cannot finish
+it says **"step 5 (桁数) not run"** (or names the screens not covered) in the report — never silence.
 
 **Where the two numbers live.** Both sheets are already dumped by the time you get here.
 

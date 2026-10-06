@@ -40,17 +40,25 @@ def classify(c):
     cf = c.font
     struck = bool(cf and cf.strike); gray = bool(cf and is_gray(cf.color))
     if isinstance(v, CellRichText):
-        live = ""; raw = ""
+        # Strikethrough is judged per run; gray only for the cell as a whole. Measured 2026-10-07 on the
+        # 122 工程管理 PHASE workbooks: partly-gray text inside a cell is never a deletion marker — all 205
+        # cases are pasted SQL with editor syntax colouring (gray operators, PSJCO308 GSJC308A [451-456,61]),
+        # and dropping those runs corrupted the SQL. A cell whose every unstruck run is gray is GRAY.
+        live = ""; raw = ""; all_gray = True
         for part in v:
             if isinstance(part, TextBlock):          # its own rPr fully overrides the cell font
                 f = part.font; t = part.text
-                dead = bool(f and (f.strike or is_gray(f.color)))
+                dead = bool(f and f.strike); g = bool(f and is_gray(f.color))
             else:                                    # bare str inherits the cell font
-                t = part; dead = struck or gray
+                t = part; dead = struck; g = gray
             raw += t
-            if not dead: live += t
+            if not dead:
+                live += t
+                if t.strip() and not g: all_gray = False
         if not live.strip():
             return None, "DEL", raw
+        if all_gray:
+            return None, "GRAY", raw
         if live != raw:
             return live, "PART", f"raw='{raw}' live='{live}'"
         return live, None, None

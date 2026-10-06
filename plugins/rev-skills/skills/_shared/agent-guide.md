@@ -33,8 +33,8 @@ checks, or when the user asked for that check by name.
 
 **Called from `rev-program-review`?** The workbook is already dumped and the scope already chosen:
 read the dump paths you were given, don't re-dump, don't launch other checks. **Standalone?** Then
-you are your own orchestrator: dump the target per `xlsx-excel-com-dump.md`, and build any index you
-need per `reference-index.md`.
+you are your own orchestrator: dump the target with `scripts/live_dump.py <workbook> <out_dir>` (no Excel
+needed), and build any index or lookup you need with the shipped builders / `reference-index.md`.
 
 **Environment (this machine).**
 - The Bash tool may be broken (`add_item ("\??\C:\Program Files\Git", "/", ...) failed`) — prefer PowerShell.
@@ -109,7 +109,9 @@ script skips (hidden sheets: `--hidden`). The rules, for that case:
   → dead. Theme-colour grays are not detected by this test; that is an accepted gap.
 - **Rich text** (`CellRichText`): a `TextBlock` with its own font **overrides** the cell font
   (`strike is None` there means *not* struck); a bare `str` part has no run properties and
-  **inherits** the cell font. Keep the live parts only.
+  **inherits** the cell font. Drop struck runs; judge gray for the **whole cell only** (dead when every
+  unstruck run is gray) — partly-gray text is pasted SQL syntax colouring in this corpus, never a deletion
+  (205 cells, e.g. `PSJCO308` `GSJC308A` `[451-456,61]`), and dropping those runs corrupts the SQL.
 - **A partially-struck cell is a rename in place, not a dead row** — keep its live remainder; drop a
   registry row only when its **key** cell (the ID) has no live text left.
 - Dates come back as `datetime`; compare as values, not as the Excel serial.
@@ -264,8 +266,9 @@ That reasoning has been tried and explicitly overruled.
 **A digest with no entries means nothing on those sheets was struck or gray** (the COM digest is then
 0 bytes; `live_dump.py`'s still has its two `#` header lines). **Its line format depends on who
 produced it**: the COM dump's grouped blocks (next paragraph, bare numbers omitted as filler) or
-`live_dump.py`'s one line per cell (`<sheet> [r,c] DEL|GRAY|PART:
-value`, numbers kept). A row that *looks* deleted in the digest may have been moved — confirm against
+`live_dump.py`'s one record per cell (`<sheet> [r,c] DEL|GRAY|PART:
+value`, numbers kept — a value may contain newlines, so a record can span lines: parse by the
+`<sheet> [r,c]` prefix, not line by line). With `--prefix` the digest is `_DELETED_DIGEST_<prefix>.txt`. A row that *looks* deleted in the digest may have been moved — confirm against
 the live dump before calling something removed. Never rely on a struck *number* being
 listed: to decide whether a gap in a numbered list is explained by a deletion, look for **any deleted
 content on the rows between** the two live numbers.
@@ -367,8 +370,8 @@ sheet alone, including cells that are a single space used as a spacer), which ma
 `\[(\d+),(\d+)\]=([^|]*)` plus a trim silently corrupt them. Verified: parsing verbatim reproduces
 all 980 cells of that sheet exactly; the trimming version reported 149 false differences.
 
-**Before concluding a section or ID is missing, check the dump's cap.** The COM dump caps at 3000
-rows / 220 columns (`live_dump.py` has no cap unless `--max-col` was given); compare the `rows x cols`
+**Before concluding a section or ID is missing, check the dump's cap.** The COM dump caps at 20000
+rows / 260 columns and prints `TRUNCATED` when it cuts (`live_dump.py` has no cap unless `--max-col` was given); compare the `rows x cols`
 the dump printed for the sheet against that. A sheet larger than the cap needs a targeted re-dump,
 not a "not found" finding.
 

@@ -352,6 +352,9 @@ The scripts below already use this form. If you paste a script from anywhere els
 "Remove-Item on system path" error, look for this literal first rather than assuming the guard is
 objecting to `Workbooks.Open`, `$wb.Close($false)` or `$excel.Quit()`.
 
+**The dump template** — the long block that follows, starting with `Add-Type` (the one-line `$safe` block
+above is only an excerpt; an extractor that takes the first ```` ```powershell ```` block gets the wrong one):
+
 ```powershell
 Add-Type @'
 using System;
@@ -501,8 +504,13 @@ foreach ($ws in $wb.Worksheets) {
     }
 
     $used = $ws.UsedRange
-    $rows = [Math]::Min($used.Rows.Count, 3000)
-    $cols = [Math]::Min($used.Columns.Count, 220)
+    # Caps guard against a runaway UsedRange (旧ﾃｰﾌﾞﾙﾚｲｱｳﾄ(XAE) reports 1,048,569 rows). A real sheet can pass
+    # 3000 rows (PXJCO161 画面設計書(GXJC161B) has 4205; the old 3000 cap silently dropped 49% of its cells),
+    # so the cap is 20000 and any cut is printed as TRUNCATED in the summary, never silent.
+    $rows = [Math]::Min($used.Rows.Count, 20000)
+    $cols = [Math]::Min($used.Columns.Count, 260)
+    $trunc = ''
+    if (($used.Rows.Count -gt $rows) -or ($used.Columns.Count -gt $cols)) { $trunc = "`tTRUNCATED to ${rows}x${cols}" }
     $vals = $used.Value2
     # $vals is indexed from 1 WITHIN the UsedRange; $ws.Cells.Item is absolute on the sheet. Every
     # absolute access below adds this offset, and so does every coordinate written out. See
@@ -543,9 +551,9 @@ foreach ($ws in $wb.Worksheets) {
                 $isGray = (-not ($col -is [System.DBNull])) -and (Test-Gray $col)
                 $key = (([int64]$r) -shl 20) -bor ([int64]$c)   # key stays array-relative
                 $aC  = $c + $c0                                # digest records absolute coords
-                # Mixed = strikethrough OR colour is DBNull (a partly-gray cell has strike False but mixed
-                # colour; openpyxl's classify drops its gray runs, so COM must too).
-                $mixed = ($s -is [System.DBNull]) -or ($col -is [System.DBNull])
+                # Mixed = strikethrough is DBNull. Gray is judged for the whole cell only: partly-gray text
+                # is SQL syntax colouring in this corpus, never a deletion (same rule as live_dump.classify).
+                $mixed = ($s -is [System.DBNull])
                 if ($mixed -and ($cell.Value2 -isnot [string])) {
                     # mixed font on a number/date cell: Characters() has nothing to walk — keep it live
                 } elseif ($mixed) {
@@ -553,7 +561,7 @@ foreach ($ws in $wb.Worksheets) {
                     for ($i = 1; $i -le $raw.Length; $i++) {
                         $ch = $cell.Characters($i, 1)
                         if ($null -eq $ch) { $lv = $raw; break }   # see "Characters() returns $null" below
-                        if (-not $ch.Font.Strikethrough -and -not (Test-Gray $ch.Font.Color)) { $lv += $ch.Text }
+                        if (-not $ch.Font.Strikethrough) { $lv += $ch.Text }
                     }
                     if ($lv -eq $raw) { continue }   # mixed colour but nothing struck or gray: plain live cell
                     if ($lv.Trim().Length -eq 0) {
@@ -575,7 +583,7 @@ foreach ($ws in $wb.Worksheets) {
     $safe = [string]::Join('_', $n.Split([System.IO.Path]::GetInvalidFileNameChars()))
     $text = [XlsxDumpHelper]::FormatSheetLive($vals, $rows, $cols, $dead, $liveMap, $r0, $c0)
     [System.IO.File]::WriteAllText((Join-Path $out ($prefix + "_" + $safe + ".txt")), $text, [System.Text.Encoding]::UTF8)
-    $summary += "$n`t$($used.Rows.Count)x$($used.Columns.Count)`tdead=$nDead`tpartial=$nPart"
+    $summary += "$n`t$($used.Rows.Count)x$($used.Columns.Count)`tdead=$nDead`tpartial=$nPart$trunc"
 }
 } finally {
     if ($wb) { try { $wb.Close($false) } catch {} }
@@ -980,7 +988,7 @@ public static class XlsxDumpHelperCache {
         $safeName = [string]::Join('_', $ws.Name.Split([System.IO.Path]::GetInvalidFileNameChars()))
         $file = Join-Path $cacheDir ("$safeName.txt")
         $used = $ws.UsedRange
-        $rows = [Math]::Min($used.Rows.Count, 3000)
+        $rows = [Math]::Min($used.Rows.Count, 20000)
         $cols = [Math]::Min($used.Columns.Count, 220)
         $vals = $used.Value2
         $text = [XlsxDumpHelperCache]::FormatSheet($vals, $rows, $cols,
@@ -1169,7 +1177,7 @@ public static class XlsxDumpHelperBatch {
             $safeName = [string]::Join('_', $ws.Name.Split([System.IO.Path]::GetInvalidFileNameChars()))
             $file = Join-Path $info.CacheDir ("$safeName.txt")
             $used = $ws.UsedRange
-            $rows = [Math]::Min($used.Rows.Count, 3000)
+            $rows = [Math]::Min($used.Rows.Count, 20000)
             $cols = [Math]::Min($used.Columns.Count, 220)
             $vals = $used.Value2
             $text = [XlsxDumpHelperBatch]::FormatSheet($vals, $rows, $cols,
@@ -1267,14 +1275,14 @@ they never use. Only `design-doc-formatting-consistency` needs to read that file
   **once** (it succeeded on the immediate retry there). If it fails again on the same workbook, stop
   retrying and use `scripts/live_dump.py` (see the RPC-crash note at the top of this file).
 - **Always check the dump's own row/col cap against the sheet's real size before trusting a "not
-  found" result.** The template script's default cap is 3000 rows / 220 cols (raised from an
+  found" result.** The template script's default cap is 20000 rows / 260 cols (it prints TRUNCATED when it cuts) (raised from an
   earlier 500/100 default specifically because that was too low for this project's real sheets and
   caused a recurring wasted round-trip: dump at 500 → a section silently missing past row 500 →
   redump the same sheet at a higher cap → re-read. Confirmed sheet sizes that would have tripped the
   old cap: `PSJCO308`'s 画面設計書 (2092 rows), `XJC_ｼｽﾃﾑ共通設計書.xlsx`'s `実績表項目設定` (2652
   rows) and `ﾛｯﾄ停止ﾁｪｯｸ` (999 rows, 126 cols), `09.区分名称_step2.xlsx`'s `区分名称_STEP2～` (2371
   rows, 156 cols), and a 帳票's `ｽﾎﾟｰｼﾝｷﾞﾁﾜｰﾄ(*)` sheet runs ~211 columns wide — the new
-  default covers all of these in one pass. Still, don't treat 3000/220 as
+  default covers all of these in one pass. Still, don't treat 20000/260 as
   a guarantee: re-check `$used.Rows.Count`/`$used.Columns.Count` from the sheet (printed when you
   dump it) against the cap, and if a sheet is bigger than even this default, redump just that sheet
   with an explicitly higher cap before concluding a section or ID is actually missing.

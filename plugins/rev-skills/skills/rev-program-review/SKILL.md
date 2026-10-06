@@ -101,6 +101,10 @@ to the next one unless the user says "同じ観点で" or similar.
 ## Step 3 — 選択されたチェックの実行
 
 1. **Dump the workbook once, up front** — before launching anything — and hand every check the
+   resulting text files. Excel COM is the default; use `_shared/scripts/live_dump.py` instead (validated
+   cell-for-cell equivalent) when COM is unavailable or busy, or for a large workbook — on `PXJCO161`
+   (9 MB, 8,079 struck cells) COM managed 5 of 58 sheets in 35 min, live_dump all 58 in 580 s. Either
+   way, hand every check the
    resulting scratchpad text files instead of letting each one re-dump the same workbook. See
    `_shared/xlsx-excel-com-dump.md`, section "dump once, share the text" — that file ships **inside
    this plugin** (`<plugin root>/skills/_shared/`), not under `~/.claude/skills/`; glob
@@ -145,18 +149,22 @@ to the next one unless the user says "同じ観点で" or similar.
      (4–9 min cold; finds the header row by its `画面ID` label, since row 4 is ﾌﾟﾛｸﾞﾗﾑID in 04_品質管理 /
      05_受注出荷; skips stale copies; writes the sheet-name ID as a 5th column for W5; prints `NON-SCREEN-ID`
      (a 画面ID cell holding a program ID) and `HEADER-MISMATCH` (header 画面ID ≠ the sheet's own ID) lines — doc defects
-     worth passing to `naming-standard-compliance`). Fresh while its `# source-count` and
-     `# source-newest-mtime-utc` lines match the folder.
+     worth passing to `naming-standard-compliance` — pass those lines in naming's prompt). Check freshness
+     with `build_screen_list.py <root> <tsv> --check` (FRESH/STALE; it counts with its own scope rules and
+     checks `# format-version`) — never by recounting the folder yourself.
    - **入力可文字種 table** — when `design-doc-writing-rules` is selected (W1f):
      `python _shared/scripts/build_kind_table.py <...\01_Doc\08_機能定義書\<WG>> lookup_kind_<WG>.tsv` (~45 s;
-     fresh by the same `# source-count` / `# source-newest-mtime-utc` lines). Pass its path; the agent runs
+     freshness by the same `--check` flag). Pass its path; the agent runs
      `kind_consistency.py` on it for the program.
-   A check run standalone builds what it needs itself.
+   A check run standalone builds what it needs itself. **Launch order:** the screen-name list can take
+   5–9 minutes cold — launch every other check first and launch `design-doc-writing-rules` (and give
+   naming the HEADER-MISMATCH / NON-SCREEN-ID lines) when the build finishes, instead of letting an agent
+   start against a missing file.
 3. Run the selected checks as one combined pass — in parallel background agents when there are
    several. Follow each selected skill's own SKILL.md as the authority for how that check is done;
    this skill only decides *which* checks run. **Each agent's prompt must say**: read
    `_shared/agent-guide.md` (not the whole of `xlsx-excel-com-dump.md`), the dump directory and
-   `_DELETED_DIGEST.txt` path, the per-sheet `dead=`/`partial=` counts the dump printed, and the
+   digest path (`_DELETED_DIGEST.txt`, or `_DELETED_DIGEST_<prefix>.txt` from a `--prefix` live dump), the per-sheet `dead=`/`partial=` counts the dump printed, and the
    index/lookup paths that check uses — and that the workbook must never be saved. Do not tell the
    formatting agent to load read-only: its scan needs `merged_cells`, which `read_only=True` lacks. The orchestrator itself
    reads both `agent-guide.md` and `xlsx-excel-com-dump.md`, since it produces the dump.

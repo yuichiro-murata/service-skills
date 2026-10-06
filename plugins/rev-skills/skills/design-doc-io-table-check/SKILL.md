@@ -20,7 +20,8 @@ ID's JOBコード (characters 2-4): `XJC`/`SJC` → `06-06_DB一覧_工程管理
 `XJB`/`SJB` → `_受注出荷`, `XJD`/`SJD` → `_品質管理`, `XJZ`/`SJZ` → `_共通` (all in
 `01_Doc\06_システム設計書（一覧、管理台帳）`; prefixes confirmed against each file's live ID column,
 2026-10-01). A JA table may also sit on 工程管理's `作成状況一覧` (98 `XJA` + 72 `SJA` IDs there) — either
-registration counts. **Resolve layouts by `xlsx-db-column-check` step 3 alone** — its rule 4 is the
+registration counts. A JOBコード outside this table (`XAC`: `DXACM001`-`003` are on `06-06_DB一覧_工程管理`
+`DB一覧` rows 248-250) → search all five DB一覧 before calling it unregistered. **Resolve layouts by `xlsx-db-column-check` step 3 alone** — its rule 4 is the
 single layout-scope rule: `VIEW\`, `STEP1暫定テーブル\`, `90_JAGURﾃｰﾌﾞﾙﾚｲｱｳﾄ(<date>時点)\` and `10_共通WG`
 mirrors are never a fallback, and a table found only there is "layout not present" (name the old copy).
 The JAGUR folder alone holds ~30 of `PXJCO125`'s tables, some under old names
@@ -31,6 +32,9 @@ left. Sources: 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更�
 `ﾌｧｲﾙ入出力仕様書(<ID>)` / `ﾌｧｲﾙ入力仕様書(<ID>)` — their Ⅱ `入出力先` names the table a file is loaded into
 (`PSJCO403` `ﾌｧｲﾙ入出力仕様書(FSJC018)` `[15,18]=TSJCD401:社内加工予定金額`, a 洗替 target per Ⅳ B-⑤): that
 is usage (C/D for 洗替, C/U for 登録/更新 — read Ⅳ's verb), and the file ID itself is an `F…` row.
+Also 画面設計書 Ⅲ 検索条件一覧's `ﾒｲﾝﾃｰﾌﾞﾙ` column (an R; `PSJCO403` `GSJC403A` `[95,31]`-`[107,31]`; `[100,31]`
+writes `SJCD401:社内加工予定金額` — TSJCD401 without its leading `T`, itself worth a 低 note).
+`【更新条件表(<ID>) <section>】` pointers are resolved by `design-doc-internal-consistency` check 12, not here.
 
 ## Procedure
 
@@ -111,7 +115,9 @@ also search every 更新条件表/画面設計書/帳票設計書 sheet for that
 Ⅲ．入出力定義's own 名称 column), since that's frequently the only place it's actually written.
 This happened for real: `TSJAM722`(ﾜｰｸﾌﾛｰ承認ﾃﾞｰﾀ) was missed this way — an ID-only search across
 the whole workbook came back empty, but the table was genuinely referenced (and should carry an R
-flag) once searched by name.
+flag) once searched by name. **Keep the name search tractable**: search only the 名称 of
+declared-but-not-yet-found tables, and only in cells of the 取得ﾃｰﾌﾞﾙ名 / 参照ｴﾝﾃｨﾃｨ / 取得内容 columns — a
+full-workbook regex over ~600 names timed out at 600 s on the 9 MB `PXJCO161`.
 
 **Also follow every "※<共通設計書名>.<項目> 参照" delegation line to its actual target sheet** —
 画面設計書/機能定義書 routinely delegate a whole get-item block to a shared common-design workbook
@@ -137,7 +143,9 @@ it as a judgment call for the designer rather than asserting it either way.
 `※ｼｽﾃﾑ共通設計(書).工程管理共通ﾙｰﾙ.<rule> 参照` (both spellings occur) → sheet `工程管理共通ﾙｰﾙ` of
 `01_Doc\04_共通設計\05.ｼｽﾃﾑ共通設計書.xlsx` (dump just that sheet: `--sheets "^工程管理共通ﾙｰﾙ$"`). On
 `PXJCO125` the latter appears in ﾁｪｯｸ処理設計書 `[35,59]`/`[37,59]`, `更新条件表(TXJCM003)` `[136,2]` and
-`(TSJCD302)` `[9,16]`.
+`(TSJCD302)` `[9,16]`. A third: `ｼｽﾃﾑ共通設計書(<sheet>)` / `XJC_ｼｽﾃﾑ共通設計書「<sheet>」` naming a sheet 05 does
+not have (`着手完了判断`, `実績表項目設定`, `QA判定`, `ﾛｯﾄ停止ﾁｪｯｸ`, `加工期限ﾁｪｯｸ`) →
+`01_Doc\08_機能定義書\11_工程管理\XJC_ｼｽﾃﾑ共通設計書.xlsx`, same level-1 rule below.
 - **Level 1** is the named section itself **plus its in-section sub-blocks** (`(17-1)`, `(17-2)` under
   `(17)移動ﾛｯﾄ(最新)`) — those are the section's own usage. A further `共通項目取得.X 参照` / `工程管理共通ﾙｰﾙ.X
   参照` written inside the section is level 2: note it, don't chase it.
@@ -146,6 +154,10 @@ it as a judgment call for the designer rather than asserting it either way.
   `(17-1)実績管理部門GRP取得`, `TXJCA003`'s R via `製造ｵｰﾀﾞｰ今回減算数取得`). Whether such tables belong in
   Ⅲ．入出力定義 at all is an **open decision for the user** — do not decide it either way, and do not
   report a delegated-only table as "declared but unused" either.
+- **Declared ID ≠ the table the delegated block reads** — Ⅲ declares `VXJAM005` 加工GRPﾏｽﾀ (`PXJCO161`
+  `[85,5]`) but the `共通項目取得.加工GRP` block it stands for reads `VSJAM003` (`(21)加工GRP`, changed by 改訂履歴No.61;
+read the target live — the old VXJAM005 block sits just above it): 中/要確認, "declared ID differs
+  from the delegated table", not a pair of unused/undeclared findings.
 - The `TSJAM726` miss above is why the delegation is still followed: the finding exists, only its
   grade waits on that decision.
 
@@ -203,7 +215,11 @@ Diff the two sets:
   had a C flag (from their 更新条件表 sheets) — the review confirmed "used, not unused" and moved
   on without checking that the R itself was missing from the flags. Flag any letter present in
   actual usage but absent from the row, and vice versa (a flagged letter with no matching
-  operation anywhere).
+  operation anywhere). Read a 更新条件表 block's verb with `^[【\s]*(INSERT|UPDATE|DELETE|MERGE)` — labels
+  are decorated (`【DELETE】※1` `更新条件表(TXJCM007)` `[16,16]`, `INSERT(新規入力の場合)` `(TXJCD102)` `[91,16]`,
+  `DELETE1`/`DELETE2`). Prose that tests existence before writing (`…存在しない場合(未登録の場合)、…`
+  `TXJCD318`, `存在する場合UPDATE、存在しない場合INSERT` `TSJCD330`) is an implicit read: R expected, but
+  grade a missing R 低/要確認, not 高.
 - **No 更新条件表 for a written table.** When Ⅲ marks C/U/D (`○`/`●`) for a table that has no
   `更新条件表(<ID>)` sheet, don't skip the letter check and don't call the letters unbacked: judge them
   from Ⅳ．機能処理概要's wording (登録 → C, 更新 → U, 削除 → D, 洗替 → D+C) and mark each verdict 要確認.
