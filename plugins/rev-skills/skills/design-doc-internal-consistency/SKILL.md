@@ -377,7 +377,28 @@ every verdict; counts and examples are one snapshot.
      → `<<`, `I-⑦.承認ｸﾞﾙｰﾌﾟ(ﾕｰｻﾞｰ)行削除処理` → `行削除`). Resolve a contained name in this order: (1) the
      name written immediately before `ﾎﾞﾀﾝ押下` (`(<< ﾎﾞﾀﾝ押下時)` → `<<`, even though `検索` also appears in
      the sentence); (2) otherwise the **longest** button name contained, so `行削除` never also counts as
-     `削除`; (3) a tie of equal length is left unmatched. Never match a heading that names a link or a
+     `削除`; (3) a tie of equal length is left unmatched. A heading whose **first `【…】`** lists several
+     events separated by `、` — one check shared by all of them, live `【新規登録ﾎﾞﾀﾝ、詳細ﾘﾝｸ、流動停止解除ﾎﾞﾀﾝ押下時】`
+     — is a merged heading, and the rules above do not apply to it as a whole: split that bracket on
+     `、`, match each part on its own, drop only the parts that name a link (the link rule below then
+     applies per part, not to the whole heading), and place the heading at the position of the
+     **earliest** of its buttons in the reference order (the designer's answer: a merged heading only
+     has to sit where its first button is). Its other buttons are not compared. Rule (1) applied to
+     the whole heading picks the *last* button and invents an order finding: `PXJCO128`
+     `ﾁｪｯｸ処理設計書(GXJC128A)` `[37,3]` sits after ﾀﾞｳﾝﾛｰﾄﾞ and before ｺﾋﾟｰ登録, which is right
+     for 新規登録 but was reported as 流動停止解除 out of place (2 false pairs, gone with this rule;
+     `PSJCO307` `GSJC307A` `[9,3]` `【検索ﾎﾞﾀﾝ押下時、着手/完了入力ﾎﾞﾀﾝ押下時】` is the other case met, no
+     verdict change). Only `、` inside that first bracket counts: a `、` in a sentence after it (`…上記ﾁｪｯｸ
+     処理で…場合、実行する`, 13 headings) or in a second bracket naming modes (`PXJAO253` `GXJA253B`
+     `【更新ﾎﾞﾀﾝ押下時】【新規登録、ｺﾋﾟｰ登録】`) does not make a merged heading. Do **not** split on `/` —
+     button names contain it (`着手/完了入力`); `【実行/集計ﾎﾞﾀﾝ押下時】` (`PXJCO152`) and
+     `【実行ﾎﾞﾀﾝ/途中保存ﾎﾞﾀﾝ押下時】` (`PSJCO307` `GSJC307B`) stay under rules (1)-(3). A bracket that
+     opens with a check's name and a colon — `【排他ﾁｪｯｸ:更新ﾎﾞﾀﾝ押下時、削除ﾎﾞﾀﾝ押下時】` (`PXJCO163`
+     `GXJC163B` `[175,3]`) — is not an event heading but the detail of a check those events share,
+     written once after them; leave it out of the order comparison (taken as 更新 it would invent
+     更新-after-削除). Judge all of this on the live text: struck parts often undo a merge
+     (`PXJCO131` `GXJC131A` `[9,3]`, `PXJCO134` `GXJC134A` `[22,3]`, `PXJCO101` `GXJC101A` `[69,3]`/`[76,3]`
+     are single events once the struck `、…` is gone). Never match a heading that names a link or a
      frame/row operation inside an area — `…ﾘﾝｸ押下処理`, `承認ｸﾞﾙｰﾌﾟ枠削除処理`, `通知先行削除処理` — those are
      not 共通 buttons even when a 共通 button's name (`承認`, `削除`) appears in them. Items that match no 共通 button (links, zoom, other-area
      buttons) are left out of the order comparison. But a heading that names a **button** (`…ﾎﾞﾀﾝ押下時`)

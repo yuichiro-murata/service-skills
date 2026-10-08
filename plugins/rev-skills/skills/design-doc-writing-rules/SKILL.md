@@ -441,12 +441,22 @@ Item type comes from the left side's column name: **名称** = ends in `名`/`�
   `※1. 画面.作業場条件設定=ﾁｪｯｸ無しの場合は前方一致、ﾁｪｯｸ有りの場合は完全一致`), and `Y.品目ｺｰﾄﾞ(先頭6桁)`
   (`PSJAO401` `GSJA401B` `[590,24]`, a prefix of the input — 3 rows).
 - **b. `=` with a match mode — 中.** `=` whose right side or note says `部分一致`/`前方一致`/`後方一致` or
-  carries `%`: the operator contradicts the text. Measured: 5 — `PSJCO304` `GSJC304A` `[138,24]`/`[139,24]`
-  and `PXJCO128` `GXJC128A` `[135,24]`/`[136,24]` `A.製造ﾛｯﾄNo = Y.製造ﾛｯﾄNo(部分一致)`, `PSJAO501` `GSJA501A`
-  `[170,24]` `A.実績表項目ID = Y.実績表項目ID(前方一致)`. This takes precedence over d (one finding per row).
+  carries `%`: the operator contradicts the text. Measured: `PSJAO501` `GSJA501A` `[170,24]`
+  `A.実績表項目ID = Y.実績表項目ID(前方一致)`. This takes precedence over d (one finding per row).
   **Exempt** a left side that is a function cutting the column to the input's span —
   `SUBSTR(A.製造ﾛｯﾄNo,TO_NUMBER(F.FROM),…) = Y.製造ﾛｯﾄNo(部分一致)` (`PXJCO134` `GXJC134A` `[140]`/`[141]`,
   `PXJCO128` `GXJC128B` `[323]`/`[324]`, `GXJC128C` `[110]`/`[111]` — 6 rows) is a correct `=`.
+  **Exempt** too a right side whose name — `Y.` stripped, trailing spaces and `※n` dropped — is a live
+  **画面項目名 in the same sheet's Ⅴ．画面項目定義**: the parenthesis is then part of the item's name (an
+  input labelled after the 停止区分 `6:品目ｺｰﾄﾞ+製造ﾛｯﾄNo(部分一致)`), not the match mode of this row. The
+  designer's answer (2026-10-06): `PXJCO128` `GXJC128A` `[135,24]`/`[136,24]` `A.製造ﾛｯﾄNo =
+  Y.製造ﾛｯﾄNo(部分一致)` / `(部分一致)2` against Ⅴ `[477,5]`/`[478,5]` `製造ﾛｯﾄNo(部分一致)` / `…2` is not to be
+  reported. Apply
+  this exemption to b only: rows a and d still read the parenthesis as the match mode
+  (`PSJCO304` `GSJC304A` `[138,24]`, since corrected to live `LIKE Y.製造ﾛｯﾄNo(部分一致)` — `=` and the `1`
+  struck — where Ⅴ `[495,5]` is `製造ﾛｯﾄNo(部分一致)`, must not turn into an a finding; it stays the d
+  要確認 it was before). `PSJAO501`'s `実績表項目ID(前方一致)` is not a
+  Ⅴ name (Ⅴ has `実績表項目ID`), so it stays a finding.
 - **c. 名称/品名 search input not 部分一致.** Screen search inputs of 名称 type use `LIKE …(部分一致)` in 26
   rows (13 programs) and never `=` — a `=` there is **中**; a `LIKE …(前方一致)` is **要確認** (1:
   `PXJCO131` `GXJC131A` `[771,24]` `A.枠名 LIKE Y.枠名(前方一致)`). For **品名-ID** (`KC品名`/`IS品名`) the house
