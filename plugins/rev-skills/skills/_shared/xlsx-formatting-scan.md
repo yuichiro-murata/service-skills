@@ -81,8 +81,19 @@ these recurring patterns:
 - Column-group headers in a `Ⅵ．画面項目制御`-style matrix (e.g. `処理区分="..."の場合` labels) —
   deliberately smaller, consistently so across every instance of that matrix.
 - **Two-line matrix cells shrunk to fit** — e.g. 画面設計書(GXJC125A) `[544,13]`/`[544,23]`/`[544,28]`
-  are 6pt holding `○⏎※1` in a one-row control-matrix cell. Exempt only when the siblings with the same
-  shape are shrunk the same way; a shrunk cell among unshrunk siblings (or the reverse) is a candidate.
+  are 6pt holding `○⏎※1` in a one-row control-matrix cell. Exempt when the siblings with the same
+  shape are shrunk the same way.
+- **A cell shrunk to fit its own longer text** — a smaller font on a cell whose text is longer than its
+  siblings' (more characters or more lines), or would overflow its merged width at the sibling size
+  (characters × size > merged width), is the designer fitting it, not drift. Siblings = the other
+  cells of the same column in the same list/table; "longer" = longer than their median. Width check:
+  sum the merged columns' widths (Excel character units at 11pt) and count a full-width character as 2,
+  a half-width one as 1, scaled by sibling size ÷ 11. Excel's shrink-to-fit flag
+  (`alignment.shrinkToFit`) keeps `font.sz` unchanged and is never a deviation (PSJCO304 GSJC304A
+  `[449-451,17]` `※1` is now 10pt with the flag). Designers rejected these
+  every time (PSJCO204 Ⅵ G5's four 9pt rows「項目が見えなくなるため」/「ｾﾙを結合していないため」, PSJCO304
+  `※1` at 6pt「1ｾﾙに収めるため」). Report a smaller cell only when its text is **no longer** than its
+  siblings' and would fit at their size, or a larger one; when unsure, at most 要確認.
 
 **Compare rich-text runs, not just the cell font.** Within one list, the same token (`※n`) is usually
 set in its own run size; compare that run's size across siblings. `PXJCO161` 画面設計書(GXJC161B)

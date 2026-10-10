@@ -150,7 +150,9 @@ footnote cannot be compared). Match items by **normalised 画面項目名** (str
 `XJC0028`, which is a wrong ID (`design-doc-internal-consistency` check 3), not a 文字種 deviation.
 Include `右記参照` rows as W1e resolves them. **Vocabulary**: a value outside the house forms
 (`文字列(半英数)`, `文字列(半英数記号)`, `文字列(全角)`, `数値(整数)正数`, `年月日(8桁)` …) — `半角英数` with no
-`文字列(…)` (`PXJCO161` `GXJC161D` `[291,30]`), `文字列(半数)`, `数値(少数)` — is one 低 line per workbook
+`文字列(…)` (`PXJCO161` `GXJC161D` `[291,30]`), `数値(少数)` — is one 低 line per workbook. `文字列(半数)` is a
+house form (18 uses in 10 PHASE workbooks, no alternative spelling; designers cite the self-check sheet),
+not a vocabulary outlier — compare it only in the cross-screen check below
 listing the cells, and still compared below by its evident meaning.
 Two comparisons:
 - **Against other programs** — report a row whose 文字種 differs from the value other programs use

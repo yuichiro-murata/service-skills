@@ -57,7 +57,7 @@ extract (the shared doc's "Routes").
 
 **Before reporting anything, filter out the deliberate systematic patterns** documented in the
 shared doc (revision-memo columns, section-title/header template cells, 表紙 compared per column within
-its section, control-matrix group headers and consistently shrunk two-line matrix cells), and leave undated
+its section, control-matrix group headers, consistently shrunk two-line matrix cells and cells shrunk to fit their own longer text), and leave undated
 memos/pasted SQL right of the print area (body cols 53-104) out of both scans. What's left —
 genuinely isolated cells, especially ones inside an otherwise-uniform repeating list — is what's
 worth reporting.

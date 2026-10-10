@@ -57,7 +57,7 @@ sentences and phrases are in scope. In a typical program workbook, that means:
   are only No./画面項目/one per event).
 - **ﾁｪｯｸ処理設計書**: the `ﾁｪｯｸ内容・経緯` column (col 14, header `[8,14]` — most of the sheet's
   prose; `PXJCO125` `[35,14]`/`[37,14]` findings), the `ﾁｪｯｸ詳細` (col 59) and `ﾁｪｯｸ補足` (col 86)
-  columns, error-message body text.
+  columns, error-message body text — **checked against the registered text** (step 2, last bullet).
 - **ﾌｧｲﾙ出力仕様書 / ﾌｧｲﾙ入出力仕様書 (titled ﾌｧｲﾙ入力仕様書)** (if present): the Ⅰ．ﾌｧｲﾙ出力/入力条件
   narrative (FSJC018 `[8,3]`), 出力条件 / 編集内容 / 備考 prose, and ※-notes.
 - **更新条件表**: find the cells by role, not coordinate — a sheet repeats its block once per update
@@ -105,11 +105,40 @@ which is change history.
      検索条件 row closed by `)` in a later one, `GXJC161A` `[369,5]`/`[370,48]`).
    - **Garbled leftover fragments**: a word or clause that doesn't belong to the sentence it's sitting
      in — often the tell-tale sign of a copy-paste edit where the old text wasn't fully replaced.
+   - **Error/confirm message text vs the message ledger.** Before reporting punctuation, wording or a
+     typo in a message quoted in ﾁｪｯｸ処理設計書 / Ⅳ, look up its ID in `01_Doc\04_共通設計\04.ﾒｯｾｰｼﾞ管理_<WG>.xlsx`
+     (`XJZ`/`SJZ` → `_共通`; read live with `live_dump.py --sheets "^XJZ\("` etc.; the text is in col 13).
+     If the design doc's text equals the registered text, report nothing about its punctuation or
+     style — the screen shows the ledger's text (`XJZ-000034` `対象ﾃﾞｰﾀを選択してください` has no `。` in
+     the ledger either; PSJCO204 9/30 6-4/6-5 and PSJCO304 9/14 6-11 were rejected for this). Report only
+     a difference from the ledger (as a mismatch, the ledger being the reference), or an obvious
+     misspelling present in both (once, noting it is the ledger's text). A message with no ID, or whose
+     ID is in no ledger sheet (confirm-message IDs such as `XJZ7006` live in 82.画面項目辞書, not the
+     ledger), is proofread normally; whether the ID is registered is `design-doc-internal-consistency`'s.
 3. Deprecated rows were already dropped at dump time — do not scan for them, and do not treat a
    sentence that reads oddly as evidence of a leftover you need to go verify in Excel.
 4. Cross-check every candidate against context before reporting it as a real error:
-   - Is this actually a deliberate project term or abbreviation, not a typo? (Check whether the same
-     spelling appears consistently elsewhere in the project — if so, it's house style, not an error.)
+   - **Is it house usage? Measure before reporting.** For any wording/notation candidate (not a plain
+     wrong kanji), grep the self-check workbook `01_Doc\08_機能定義書\11_工程管理\XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx`
+     and the PHASE corpus for both the written form and your proposed correction (live text — e.g. a
+     python loop over `live_dump.classify` with openpyxl `read_only=True, rich_text=True`). "The corpus"
+     = the workbooks directly in `PHASE1`-`PHASE3`, excluding the target. If the corpus uses the written
+     form at least as often as the correction, it is house usage: do not report it — also when the same
+     workbook mixes both forms (PSJCO304 has `閉開` and `開閉`). The self-check sample decides only when it
+     uses the written form alone (it has both `閉開` GXJA802A `[296,24]` and `開閉` GXJA802B `[102,24]`). For
+     a candidate with no greppable correction (punctuation, a quoting style such as
+     `"1"：実績出力するを設定する`), count the pattern itself: if it recurs across several workbooks
+     (`出力するを設定する` 20 in 7, `をﾁｪｯｸ時` 53 in 32, `引き渡しされる` 187 in 80), it is house style. Designers rejected these repeatedly (PSJCO204
+     received `閉開→開閉` four times, PSJCO304 twice, all answered 対応不要). Confirmed house forms
+     (2026-10-10, 122 PHASE1-3 workbooks): **`閉開`** (ｱｺｰﾃﾞｨｵﾝ閉開; 92 occurrences in 59 workbooks vs `開閉`
+     12 in 11; the self-check sample uses `閉開`) and **`文字列(半数)`** (18 in 10 workbooks; `文字列(半数字)` /
+     `文字列(半角数字)` 0 — designers cite the self-check sheet for it).
+   - **Terse noun phrases are not 脱字.** `明細ﾍｯﾀﾞｰをﾁｪｯｸ時`, `検索・実行時`, `〜を<名詞>時` are the
+     project's compressed style for event/condition labels (PSJCO204 9/30 6-2, 6-6, both rejected).
+     Report a 脱字 only when the sentence becomes unreadable or loses its object/verb.
+   - **表紙 Ⅲ．改訂履歴 is a historical record.** Proofread its 改訂内容 for obvious misspellings only;
+     never compare it with today's 項番, names or IDs (a revision note naming a since-renamed item is
+     correct as history — PSJCO304 9/28 6-3, rejected).
    - Does a near-identical sentence exist elsewhere in the same doc (a sibling row in a repeating
      list, a parallel branch for a different condition)? Diffing against that twin is often the
      fastest way to confirm a real error versus a deliberate variation.
