@@ -456,9 +456,14 @@ which group frame an item sits in, whether a control is drawn at all), get the p
   `[System.IO.Compression.ZipFile]::OpenRead($xlsx)`, then extract entries under `xl/media/`.
   The layouts are usually `.emf` (vector); convert each with
   `System.Drawing.Imaging.Metafile` → `Bitmap` → `Save(...,ImageFormat::Png)` at ~1.6x scale, then
-  Read the PNG. `.png` entries in the same folder are typically pasted screenshots of the *old*
-  (JAGUR-era) screen from the `画面ｲﾒｰｼﾞ*` sheet, often carrying review annotations — useful history,
-  but not the current design; the `.emf` files are the current layout.
+  Read the PNG. `_shared/scripts/extract_images.py <workbook> <out_dir>` does all of this (sheet
+  mapping, EMF rendering, icons and duplicates marked) and writes `index.tsv`. **Which pictures are
+  current is decided by where they sit, not by their format:** a `.png` on a `画面ｲﾒｰｼﾞ*` sheet is a
+  screenshot of the *old* (JAGUR-era) screen, often with review annotations — history; but a `.png`
+  pasted on a 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/ﾌｧｲﾙ出力仕様書 sheet is usually live design
+  content (`PXJCO152` `ﾁｪｯｸ処理設計書(GXJC152A)` `[471,4]` ランクチェック表) and is compared with the text
+  by `design-doc-internal-consistency` check 13. Only a picture of the old system's spec pasted beside
+  the form as reference (JAGUR IDs such as `FMPAP10`, `GXAB013`) is history there too.
 - Map picture → sheet by listing `$ws.Shapes` per sheet (`Type=13` is a picture) and comparing
   `Top`/`Width`/`Height` against the media entries' sizes; a 画面設計書 sheet typically holds one
   picture for the main screen plus one per 明細の続き strip.

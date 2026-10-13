@@ -1,6 +1,6 @@
 ---
 name: design-doc-internal-consistency
-description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency: every screen event reflected in the processing overview, responses registered, screen-item/message IDs registered in their masters, Ⅳ message text matching its ID (No.31), layout/item-definition/control-spec agreeing (incl. Ⅳ↔Ⅴ item order, ○/〇 in Ⅵ, yyyy/MM/dd in 表示形式), exclusive control present when the program updates, process/check order vs button order, 区分名称 references resolving in 09.区分名称_step2.xlsx, and 【更新条件表(ID) section】 pointers resolving. Not the Ⅲ．入出力定義 check (`design-doc-io-table-check`) nor the self-check writing rules (`design-doc-writing-rules`). Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書, or whether a design doc is internally consistent / 漏れがないか. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency: every screen event reflected in the processing overview, responses registered, screen-item/message IDs registered in their masters, Ⅳ message text matching its ID (No.31), layout/item-definition/control-spec agreeing (incl. Ⅳ↔Ⅴ item order, ○/〇 in Ⅵ, yyyy/MM/dd in 表示形式), exclusive control present when the program updates, process/check order vs button order, 区分名称 references resolving in 09.区分名称_step2.xlsx, 【更新条件表(ID) section】 pointers resolving, and pasted pictures (tables/figures other than the screen layout) agreeing with the text, with no live text hidden under them. Not the Ⅲ．入出力定義 check (`design-doc-io-table-check`) nor the self-check writing rules (`design-doc-writing-rules`). Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書, or whether a design doc is internally consistent / 漏れがないか. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-internal-consistency
@@ -484,6 +484,46 @@ every verdict; counts and examples are one snapshot.
     (TXJCM006 has only `■流動停止`/`【流動停止】`). This check owns these pointers;
     `design-doc-io-table-check` and `xlsx-db-column-check` leave them here (a pointer to a sheet that is
     missing *because the program has no 更新条件表 for a written table* is still reported once there).
+
+13. **Pasted pictures ↔ text (images other than Ⅰ．画面ﾚｲｱｳﾄ).** Designers paste tables and figures as
+    pictures — ランクチェック表, branch tables, sample files — and those are design content the dump never
+    shows: 139 of the 工程管理 PHASE1-3 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/ﾌｧｲﾙ出力仕様書
+    sheets carry PNG/JPEG pictures. Run once per workbook, after the live dump:
+    `python _shared/scripts/extract_images.py <workbook.xlsx> <scratch>/img --dump <live dump dir>` →
+    `index.tsv` (sheet, kind, anchor range, px, est_tokens, note), one PNG per picture, and `covered.txt`.
+    It reads the zip only, so it takes seconds (an openpyxl load of a merge-heavy book such as
+    `PSJAO401` takes 10+ minutes — never load the workbook just for pictures).
+    - **a. Text hidden under a picture — 中, no image needed; every picture, 画面ﾚｲｱｳﾄ included.** Each
+      `covered.txt` line is a live cell lying under a picture (the revision margin, DA列 onward, is
+      already left out): on paper it cannot be seen, so it is either a stale sentence the picture
+      replaced (remove it) or text the picture hides by mistake (move the picture). Report one line per
+      picture, quoting the cells. Met in the 2026-10 corpus run (114 books): `PSJCO315` `GSJC315A`
+      picture `[264,4]` covers its own explanation `[264,4]`-`[268,4]` (「工程ｺｰﾄﾞ、ﾌｪｰｽﾞ名…横並びに表示する」
+      「例)共通ｺｰﾄﾞﾏｽﾀに添付画像の通り…」); `PSJCO401` `GSJC401A` layout pictures at `[8,3]`/`[34,3]` sit on
+      the screen titles 「■A.社内加工単価登録 ※…」; `PSJAO205` `GSJA205C` `[128,37]` and `PSJCO802`
+      `GSJC802C` `[117,54]` are stray copies of a screen layout lying over Ⅴ (説明, 画面項目ID cells).
+    For b, skip rows whose note is `icon` or `same as …`, and kind `画面ﾚｲｱｳﾄ` (check 5 reads those).
+    - **b. Picture content vs the text around it — 要確認.** Read each picture (Read the PNG) together
+      with the text rows above/below its anchor and the ※n notes it uses. Report when the picture
+      disagrees with live text: a ※n in the picture whose note was renumbered or deleted (`PXJCO152`
+      `ﾁｪｯｸ処理設計書(GXJC152A)` picture at `[471,4]` still says `※8` in its S×S cell, while the notes it
+      refers to were renumbered `※8`→`※7` at `[463,14]`/`[468,4]` — the digest shows the struck `8`);
+      an item name, 区分 value or ○/× verdict that contradicts the text's description or the 取得 logic;
+      another program's ID or name left from the copy source. Always 要確認, never 確定 — the picture
+      may be the stale side, so name both and let the designer decide. When the text contradicts
+      itself and the picture sides with one half, report it anyway, quoting both halves (`GXJC152A`:
+      the picture and ⑧ `[590,28]` give 出荷合格「値なし」 its own ○ cells, while `[461,14]`/`[466,14]`
+      say 値なし = 不合格 = ｴﾗｰ). If the workbook also carries the same table as live text (a sheet such
+      as `表ｲﾒｰｼﾞﾗﾝｸﾁｪｯｸ`, `[6,4]` `※8`), report its stale cells in the same finding.
+    - **Not this check's business:** a picture of the old system's spec pasted beside the new text as
+      reference — JAGUR IDs (`FMPAP10`, `FDCJM06`, `FXABD001`, `GXAB013`), usually anchored right of the
+      form (`GXJC152A` `[769,52]`, `[876,50]`, `[979,54]`). Do not compare it with the text; it is
+      history, like the 画面ｲﾒｰｼﾞ sheets.
+    - **Budget.** If the summed `est_tokens` of the pictures to read — including the ones you open
+      only to see whether they are old-system reference — exceeds ~20% of the workbook's live dump
+      (characters / 2, without `_DELETED_DIGEST.txt`), say so before reading them and let the user
+      choose: read all, or skip b. (`PXJCO152`: 4 pictures, 2,640 against a 26,970 threshold.) Text you cannot read in a picture is 未確認, not a finding. Cite a picture by sheet and
+      anchor cell (`ﾁｪｯｸ処理設計書(GXJC152A) 画像 [471,4]`).
 
 **Shapes that are not defects (from the 2026-10 validation runs).**
 - An area can have **several Ⅵ control tables** (one per mode or per tab); merge them before
