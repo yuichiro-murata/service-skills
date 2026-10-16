@@ -14,7 +14,7 @@ wanted two wastes a lot of time and tokens. Ask first, then run only what was se
 
 | # | skill | what it checks |
 |---|-------|----------------|
-| 1 | `design-doc-internal-consistency` | 内部相互参照（ｲﾍﾞﾝﾄ⇔処理概要、ﾚｽﾎﾟﾝｽ/画面項目ID/ﾁｪｯｸID登録、画面3点一致、排他制御）＋処理/ﾁｪｯｸ順⇔ﾎﾞﾀﾝ順、区分名称の09.区分名称突合 |
+| 1 | `design-doc-internal-consistency` | 内部相互参照（ｲﾍﾞﾝﾄ⇔処理概要、ﾚｽﾎﾟﾝｽ/画面項目ID/ﾁｪｯｸID登録、他ｻﾌﾞｼｽﾃﾑのﾒｯｾｰｼﾞID、画面3点一致（Hidden項目のⅥ記載を含む）、排他制御）＋処理/ﾁｪｯｸ順⇔ﾎﾞﾀﾝ順、区分名称の09.区分名称突合、画面ｲﾒｰｼﾞ・《参考》画面項目遷移ｼｰﾄ⇔画面設計書 |
 | 2 | `design-doc-io-table-check` | Ⅲ．入出力定義（CRUD一覧）の双方向網羅性 — 最重量・最高収穫のチェック |
 | 3 | `xlsx-db-column-check` | 参照ｶﾗﾑがﾃｰﾌﾞﾙﾚｲｱｳﾄに実在するか＋**画面の桁数とﾃｰﾌﾞﾙﾚｲｱｳﾄの桁数の整合**＋ｺｰﾄﾞ/名称の二重保持ｱﾝﾁﾊﾟﾀｰﾝ(名称がLabelの場合のみ指摘)＋検索条件のTXJAM100保存漏れ |
 | 4 | `naming-standard-compliance` | 各ID採番規則・ﾍｯﾀﾞｰ情報・表紙 |
@@ -101,7 +101,10 @@ to the next one unless the user says "同じ観点で" or similar.
 ## Step 3 — 選択されたチェックの実行
 
 1. **Dump the workbook once, up front** — before launching anything — and hand every check the
-   resulting text files. Excel COM is the default; use `_shared/scripts/live_dump.py` instead (validated
+   resulting text files. **Hidden sheets are included** (COM `$IncludeHiddenSheets = $true`, the script's
+   default; `live_dump.py … --hidden`), and both write `_HIDDEN.txt` (hidden sheets, hidden rows/columns
+   holding text) — pass its path in every agent's prompt with the digest's. `*画面ｲﾒｰｼﾞ*` sheets are
+   dumped too; only `詳細設計*` is skipped. Excel COM is the default; use `_shared/scripts/live_dump.py` instead (validated
    cell-for-cell equivalent) when COM is unavailable or busy, or for a large workbook — on `PXJCO161`
    (9 MB, 8,079 struck cells) COM managed 5 of 58 sheets in 35 min, live_dump all 58 in 580 s. Either
    way, hand every check the
@@ -164,7 +167,8 @@ to the next one unless the user says "同じ観点で" or similar.
    several. Follow each selected skill's own SKILL.md as the authority for how that check is done;
    this skill only decides *which* checks run. **Each agent's prompt must say**: read
    `_shared/agent-guide.md` (not the whole of `xlsx-excel-com-dump.md`), the dump directory and
-   digest path (`_DELETED_DIGEST.txt`, or `_DELETED_DIGEST_<prefix>.txt` from a `--prefix` live dump), the per-sheet `dead=`/`partial=` counts the dump printed, and the
+   digest path (`_DELETED_DIGEST.txt`, or `_DELETED_DIGEST_<prefix>.txt` from a `--prefix` live dump), the
+   `_HIDDEN.txt` path, the per-sheet `dead=`/`partial=` counts the dump printed (and which sheets are hidden), and the
    index/lookup paths that check uses — and that the workbook must never be saved. Do not tell the
    formatting agent to load read-only: its scan needs `merged_cells`, which `read_only=True` lacks. The orchestrator itself
    reads both `agent-guide.md` and `xlsx-excel-com-dump.md`, since it produces the dump.
@@ -196,6 +200,11 @@ user's very next message after the report was 「取り消し線加味して誤�
    settles it and takes under a minute. **Apply the same to header-row observations** — a right-hand
    (`3D`) header copy reading `-` was raised 15+ times on the PSJCO501 REV, yet ~115 of 323 PHASE2
    sheets do it; only a copy that *contradicts* the left one is a finding.
+
+3. **Hidden content.** Look every cited cell up in `_HIDDEN.txt`: a finding on a hidden sheet or in a
+   hidden row/column must start with `【非表示】` and be at least 要確認, and a finding whose only
+   evidence of "this exists" is hidden content is wrong the other way round (`agent-guide.md`, "Hidden
+   sheets, rows and columns"). Fix the label or the verdict here rather than sending it back.
 
 State the outcome of this pass in the report. "取り消し線を加味した結果、誤指摘は0件" is itself
 information the reviewer wants, and it is what lets them trust the rest of the list.

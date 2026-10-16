@@ -1,14 +1,17 @@
 """Live dump of a design-doc workbook with openpyxl (the validated fallback / standalone route).
 
-Writes, into OUT_DIR, one <prefix>_<sheet>.txt per visible sheet in the shared-dump format
+Writes, into OUT_DIR, one <prefix>_<sheet>.txt per dumped sheet in the shared-dump format
 ([row,col]=value tokens, " | " separated, one line per row, empty cells skipped), with struck and
 gray content removed and partially-struck cells reduced to their live text, plus
-_DELETED_DIGEST.txt (one line per removed/partial cell: "<sheet> [r,c] DEL|GRAY|PART: text").
-With --prefix the digest is _DELETED_DIGEST_<prefix>.txt, so several masters can share one folder;
-still prefer one out_dir per master. Non-anchor cells of merged ranges are always empty (openpyxl),
-which is the live view. Skips 詳細設計* / *画面ｲﾒｰｼﾞ* sheets (records their size), and hidden sheets
-unless --hidden. --max-col N drops columns beyond N (wide registries such as 04.ﾒｯｾｰｼﾞ管理 run to
-~800 KB per sheet otherwise).
+_DELETED_DIGEST.txt (one line per removed/partial cell: "<sheet> [r,c] DEL|GRAY|PART: text") and
+_HIDDEN.txt (hidden sheets, and the hidden rows/columns of every dumped sheet that hold live text).
+With --prefix the two files are _DELETED_DIGEST_<prefix>.txt / _HIDDEN_<prefix>.txt, so several
+masters can share one folder; still prefer one out_dir per master. Non-anchor cells of merged ranges
+are always empty (openpyxl), which is the live view. Skips 詳細設計* sheets (records their size;
+--include-detail dumps them). Hidden sheets are skipped unless --hidden: pass --hidden for the
+workbook under review (hidden sheets are in scope there, reported as 【非表示】), never for a master.
+--max-col N drops columns beyond N (wide registries such as 04.ﾒｯｾｰｼﾞ管理 run to ~800 KB per sheet
+otherwise).
 
 usage: python live_dump.py <workbook.xlsx> <out_dir> [--prefix P] [--sheets REGEX] [--hidden] [--max-col N]
 """
@@ -68,31 +71,49 @@ def classify(c):
     if gray: return None, "GRAY", s
     return s, None, None
 
+def _ranges(nums):
+    out = []; s = sorted(nums); lo = prev = s[0]
+    for x in s[1:] + [None]:
+        if x is not None and x == prev + 1: prev = x; continue
+        out.append(str(lo) if lo == prev else f"{lo}-{prev}")
+        if x is not None: lo = prev = x
+    return ",".join(out)
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("workbook"); ap.add_argument("out_dir")
     ap.add_argument("--prefix"); ap.add_argument("--sheets"); ap.add_argument("--hidden", action="store_true")
     ap.add_argument("--max-col", type=int)
-    ap.add_argument("--include-detail", action="store_true", help="also dump 詳細設計*/画面ｲﾒｰｼﾞ sheets")
+    ap.add_argument("--include-detail", action="store_true", help="also dump 詳細設計* sheets")
     a = ap.parse_args()
     os.makedirs(a.out_dir, exist_ok=True)
     base = os.path.splitext(os.path.basename(a.workbook))[0]
     m = re.search(r"[PS][XS]J[A-Z][OB][0-9A-Z]{3}", base)   # 完了_阿部_PXJDO101_… -> PXJDO101
     prefix = a.prefix or (m.group(0) if m else base.split("_")[0])   # pass --prefix when two inputs share a first token
     wb = openpyxl.load_workbook(a.workbook, data_only=True, rich_text=True)
-    digest = []; summary = []
+    digest = []; summary = []; hidden = []
     for ws in wb.worksheets:
         n = ws.title
         if ws.sheet_state != "visible" and not a.hidden: continue
         if a.sheets and not re.search(a.sheets, n): continue
-        if (n.startswith("詳細設計") or "画面ｲﾒｰｼﾞ" in n) and not a.include_detail:
+        if n.startswith("詳細設計") and not a.include_detail:
             summary.append(f"{n}\t{ws.max_row}x{ws.max_column}\tskipped"); continue
+        hstate = "" if ws.sheet_state == "visible" else f"\t{ws.sheet_state}"
+        if hstate: hidden.append(f"{n}\tSHEET {ws.sheet_state}")
+        hrows = {r for r, d in ws.row_dimensions.items() if d.hidden}
+        hcols = set()
+        for d in ws.column_dimensions.values():
+            if d.hidden and d.min and d.max and d.max - d.min < 2000: hcols.update(range(d.min, d.max + 1))
+        hr_used = set(); hc_used = set()
         lines = []; nd = npart = 0
         for row in ws.iter_rows(max_col=a.max_col or None):
             parts = []
             for c in row:
                 live, kind, removed = classify(c)
-                if live is not None: parts.append(f"[{c.row},{c.column}]={live}")
+                if live is not None:
+                    parts.append(f"[{c.row},{c.column}]={live}")
+                    if c.row in hrows: hr_used.add(c.row)
+                    if c.column in hcols: hc_used.add(c.column)
                 if kind:
                     digest.append(f"{n} [{c.row},{c.column}] {kind}: {removed}")
                     if kind == "PART": npart += 1
@@ -100,11 +121,17 @@ def main():
             if parts: lines.append(" | ".join(parts))
         safe = "".join("_" if ch in '\\/:*?"<>|' else ch for ch in n)
         open(os.path.join(a.out_dir, f"{prefix}_{safe}.txt"), "w", encoding="utf-8").write("\n".join(lines))
-        summary.append(f"{n}\t{ws.max_row}x{ws.max_column}\tdead={nd}\tpartial={npart}")
+        if hr_used: hidden.append(f"{n}\tROWS {_ranges(hr_used)}")
+        if hc_used: hidden.append(f"{n}\tCOLS {_ranges(hc_used)}")
+        summary.append(f"{n}\t{ws.max_row}x{ws.max_column}\tdead={nd}\tpartial={npart}{hstate}")
     header = ("# _DELETED_DIGEST (openpyxl live dump): one line per removed or partially-struck cell.\n"
               "# An empty list below means nothing on the dumped sheets was struck or gray.\n")
     dname = f"_DELETED_DIGEST_{a.prefix}.txt" if a.prefix else "_DELETED_DIGEST.txt"
     open(os.path.join(a.out_dir, dname), "w", encoding="utf-8").write(header + "\n".join(digest))
+    hname = f"_HIDDEN_{a.prefix}.txt" if a.prefix else "_HIDDEN.txt"
+    hhead = ("# _HIDDEN: hidden sheets (SHEET hidden|veryHidden) and, per dumped sheet, the hidden rows/columns\n"
+             "# that hold live text (ROWS / COLS, ranges). A finding on any of them is prefixed 【非表示】.\n")
+    open(os.path.join(a.out_dir, hname), "w", encoding="utf-8").write(hhead + "\n".join(hidden))
     if not summary: print(f"WARNING: no sheet matched (--sheets {a.sheets!r}); only the digest was written", file=sys.stderr)
     print("\n".join(summary))
 

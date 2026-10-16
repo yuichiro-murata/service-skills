@@ -77,7 +77,9 @@ sentences and phrases are in scope. In a typical program workbook, that means:
 - **Designer memos right of the form** (画面設計書 cols ≥ 55, e.g. `GSJC403A` `[47,55]`): proofread them
   and use them as evidence of intent.
 
-**Out of scope**: designer scratch sheets that are neither a doc type in 表紙 Ⅱ nor cited from the spec
+**Out of scope**: `*画面ｲﾒｰｼﾞ*` sheets — the screen drawn in cells; only its agreement with the 画面設計書
+matters (`design-doc-internal-consistency` check 14), never its wording. (`《参考》画面項目遷移*` sheets *are*
+proofread.) Designer scratch sheets that are neither a doc type in 表紙 Ⅱ nor cited from the spec
 (PSJCO403's `数字を調整の流れ`, `検索SQL検証`, `資料`, the `…old` copies — the dump includes them; that
 they are left visible is `design-doc-formatting-consistency`'s call, not a typo); SQL text wherever it
 sits, including its `--` comments (GSJC403A `[281,54]` in Ⅲ, `[219,55]` — col 54 is otherwise the
@@ -87,7 +89,8 @@ which is change history.
 ## Procedure
 
 1. Use the dump `rev-program-review` handed you; standalone, run
-   `python _shared/scripts/live_dump.py <workbook> <out_dir>` (it skips 詳細設計書). A large dump
+   `python _shared/scripts/live_dump.py <workbook> <out_dir> --hidden` (it skips 詳細設計書). A typo on a
+   hidden sheet or row (`_HIDDEN.txt`) is reported with 【非表示】 (`agent-guide.md`). A large dump
    (`PXJCO161` `GXJC161B` is 640 KB) cannot be read whole: load it with `_shared/scripts/dump_cells.py`,
    keep the in-scope cells that contain Japanese text, de-duplicate identical values (keep every
    coordinate for the report), and read that list.

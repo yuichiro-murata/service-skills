@@ -1,6 +1,6 @@
 ---
 name: design-doc-internal-consistency
-description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency: every screen event reflected in the processing overview, responses registered, screen-item/message IDs registered in their masters, Ⅳ message text matching its ID (No.31), layout/item-definition/control-spec agreeing (incl. Ⅳ↔Ⅴ item order, ○/〇 in Ⅵ, yyyy/MM/dd in 表示形式), exclusive control present when the program updates, process/check order vs button order, 区分名称 references resolving in 09.区分名称_step2.xlsx, 【更新条件表(ID) section】 pointers resolving, and pasted pictures (tables/figures other than the screen layout) agreeing with the text, with no live text hidden under them. Not the Ⅲ．入出力定義 check (`design-doc-io-table-check`) nor the self-check writing rules (`design-doc-writing-rules`). Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書, or whether a design doc is internally consistent / 漏れがないか. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency: every screen event reflected in the processing overview, responses registered, screen-item/message IDs registered in their masters, no other subsystem's message IDs in a 工程管理 program, Ⅳ message text matching its ID (No.31), layout/item-definition/control-spec agreeing (incl. Hidden items listed in Ⅵ, Ⅳ↔Ⅴ item order, ○/〇 in Ⅵ, yyyy/MM/dd in 表示形式), exclusive control present when the program updates, process/check order vs button order, 区分名称 references resolving in 09.区分名称_step2.xlsx, 【更新条件表(ID) section】 pointers resolving, pasted pictures (tables/figures other than the screen layout) agreeing with the text, with no live text hidden under them, and the 画面ｲﾒｰｼﾞ / 《参考》画面項目遷移 sheets agreeing with the 画面設計書 (X counts vs 桁数, example values, field colours and * vs 必須). Not the Ⅲ．入出力定義 check (`design-doc-io-table-check`) nor the self-check writing rules (`design-doc-writing-rules`). Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書, or whether a design doc is internally consistent / 漏れがないか. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # design-doc-internal-consistency
@@ -160,10 +160,34 @@ exact sheet/cell for every finding so it's actionable.
      being caught. If a WG-local `XJZ(共通)`/`SJZ(共通)` sheet disagrees with the real common
      file, that staleness in the WG-local copy is not itself worth reporting (it isn't the design
      doc under review) — just silently use the common file as ground truth.
-   - **A prefix belonging to a WG other than the one you're reviewing and other than 共通** (e.g. an
-     `SJA-xxxxx` id inside a 工程管理 program): don't assume it's simply missing — note it
-     separately as "cross-WG reference, couldn't verify without checking that other WG's own
-     message file" rather than a confirmed gap.
+   - **Another subsystem's hyphenated ID in a 工程管理 program is NG — 中** (designers' answer
+     2026-10-05, 課題193-979; adopted 2026-10-16). When the program ID's subsystem — characters 2-4 of
+     the program ID (`PXJCO152` → `XJC`, `PSJAO401` → `SJA`) — is `XJC`/`SJC`
+     (`PXJCO128`, `PSJCO208`, `SXJCB141` …), its message IDs may only be `XJC`/`SJC` (either) and the
+     共通 `XJZ`/`SJZ`. An `XJA`/`SJA` (基準情報) or any other WG's `<JOBｺｰﾄﾞ>-<6 digits>` is a finding
+     **even when its text is right** — `PXJCO128`'s `XJA-000010`「ｺﾋﾟｰ登録対象が選択されていません。」/
+     `XJA-000011` were to be replaced by `SJC-000188`/`SJC-000189`. Scan every design sheet, cols < 100
+     (the revision memo area, col ≥ 100, quotes old IDs as history). Read the foreign ID's text in its
+     owner's `04.ﾒｯｾｰｼﾞ管理_<WG>.xlsx` (live, that prefix's sheets only: `--sheets "^(XJA|SJA)\("` for
+     基準情報; locate the columns by header — ﾒｯｾｰｼﾞID col 4, 区分 col 10, ﾒｯｾｰｼﾞ(日本語) col 13 in the
+     2026-10 files), then search `04.ﾒｯｾｰｼﾞ管理_工程管理.xlsx`'s `XJC(`/`SJC(` sheets and
+     `04.ﾒｯｾｰｼﾞ管理_共通.xlsx` for the same text (normalised as in 4a). Name as the fix every ID with the same
+     text **and** the same 区分; one whose text matches but 区分 differs is listed as 要確認. None →
+     「工程管理での採番が必要」. When another 工程管理 program already made the same swap (a digest line
+     `raw='SJA-000099⏎SJC-000368' live='SJC-000368'`, `PXJCO124` `GXJC124A` `[163,53]`), cite it as support.
+     One line per sheet, cells listed. Validated 2026-10-16 on `PXJCO152`: `SJA-000099`
+     「ｼｰﾄ「設定」のﾍﾟｰｼﾞ設定の値が不正です。」(B) → `SJC-000368` (same text, B).
+     Measured 2026-10-16 on the 122 工程管理 PHASE1-3 books (live ﾁｪｯｸ処理設計書/画面設計書/機能定義書
+     text, cols < 100): 9 cells, all in ﾁｪｯｸ処理設計書's error-code column 53 — `PXJCO906` `(GXJC906A)`
+     `[57,53]`/`(GXJC906B)` `[105,53]` and `PSJCO404` `(GSJC404B)` `[17,53]` `XJA-100001`, `PSJCOB09`
+     `(GSJCB09A)` `[23,53]` `XJA-000011`, `PXJCO152` `(GXJC152A)` `[55,53]`/`[57,53]`/`[231,53]`/`[233,53]`
+     `SJA-000099`, `PXJCO193` `(GXJC193A)` `[52,53]` `SJA-000066`. A second validation: `PSJCO404`
+     `XJA-100001`「明細件数が{0}件を超えるため、追加できません。」(B, found in the 基準情報 file's
+     `XJA(基準_JAGUR)` sheet — a valid source) → `XJZ-100010` (same text once `、` is normalised away, B). The unhyphenated dialog IDs (`SJA8001` …) are not covered by this rule.
+   - **Any other cross-WG prefix** — a program whose own subsystem is not `XJC`/`SJC` (a 基準情報
+     `PSJAO…` program in the 工程管理 folder: `PSJAO401` `GSJA401B` `[211,53]` cites `XJC-000167`): don't
+     assume it's missing — note it separately as "cross-WG reference, couldn't verify without checking
+     that other WG's own message file" rather than a confirmed gap.
    - **A short, unhyphenated `<3-char JOBｺｰﾄﾞ><4-digit>` reference (e.g. `XJZ7006`, `XJC7006`,
      `SJC7013`) — the confirm/complete-dialog IDs in 画面設計書 Ⅳ, written in the ﾒｯｾｰｼﾞ column as
      "処理前:"/"完了後:" pairs or in the 画面項目ID column beside `実行前`/`実行後` texts — is a DIFFERENT ID namespace from the hyphenated
@@ -274,11 +298,26 @@ exact sheet/cell for every finding so it's actionable.
 
 5. **4-9/4-13 — Screen layout ↔ item-definition ↔ control-spec three-way match.**
    Collect item names from "Ⅰ．画面ﾚｲｱｳﾄ" (the visual mock), "Ⅴ．画面項目定義" (the item table), and
-   "Ⅵ．画面項目制御・出力仕様" (the control matrix). All three should list the same set of
-   non-hidden items. Flag any item present in one but missing from another (hidden items are
-   expected to be absent from Ⅵ per the checklist note — don't flag those). Match areas across
+   "Ⅵ．画面項目制御・出力仕様" (the control matrix). Ⅰ and Ⅴ should list the same set of non-hidden
+   items (a Hidden item is not drawn), and Ⅵ should list **every** Ⅴ item, Hidden ones included. Flag any
+   item present in one but missing from another. Match areas across
    sections by their `G\d+)` prefix, and merge an area's split Ⅵ tables (8-10 event columns each,
    headers included) before comparing columns between areas.
+
+   **Hidden items belong in Ⅵ** (self-check レビュー観点 No.55「隠し項目（排他ﾌﾗｸﾞなど）が書かれているか」;
+   adopted 2026-10-16 — earlier versions skipped them on the 05 checklist's note, which the user
+   overruled). A Ⅴ item whose 属性 is `Hidden` — trim spaces/newlines and match the start, since `PXJCO128`
+   `GXJC128A` `[591,18]` reads ` Hidden` and some read `Hidden⏎※n`; trim item names the same way when
+   matching Ⅴ to Ⅵ (` 詳細ﾘﾝｸ(1-N)`) — (排他ﾌﾗｸﾞ, keys carried to an update) must have a row in its
+   area's Ⅵ table, marked 非表示. Report a Hidden item absent from Ⅵ at 低, one line per area naming the
+   items; a Hidden item whose Ⅵ row shows it as displayed/usable (○, 表示) is 低 too. Not a finding: a
+   Hidden row written `-` in a table where other items change (designers' answer 2026-10-06 No.47 — only
+   a table in which *every* item stays unchanged uses `-` for all). The reverse is 要確認: an item Ⅴ
+   defines as a displayed Label whose Ⅵ row is 非表示 in every column with no event showing it
+   (`PSJCO404` `GSJC404A` `[1846]`-`[1848]` 加工区分/加工分類ｺｰﾄﾞ/状態 — drawn on the 画面ｲﾒｰｼﾞ sheet) — should
+   it be Hidden, or is a display event missing? Measured 2026-10-16: of 1,462 Hidden
+   items in the 122 工程管理 books, 231 never appear in their sheet's Ⅵ text (e.g. `PXJCO130` `GXJC130C`
+   `[310]`-`[327]` ﾌｪｰｽﾞID…ﾌｪｰｽﾞ工程ｺｰﾄﾞ, `PXJCO122` `GXJC122A` `[955]` 処置指示No※1) — expect findings.
 
    **Ⅵ usage conditions (`※n`) against Ⅳ.** A Ⅵ cell holding `※n` instead of `○`/`×` makes the item's
    usability conditional; read the footnote and confirm Ⅳ's event for that item agrees (`PSJCO403`
@@ -337,8 +376,8 @@ exact sheet/cell for every finding so it's actionable.
    moved) without the other being kept in sync, which often also means the underlying change wasn't
    fully propagated to both places. Flag any pair of items whose relative order differs between the
    two sections (item X appears before item Y in one section but after Y in the other). Exclude
-   hidden items from this comparison the same way check 5 does (they're not always listed in every
-   section). When you can't tell which of the two orderings is authoritative (neither section
+   hidden items from this order comparison (Ⅳ seldom mentions them; their presence in Ⅵ is check 5's
+   business). When you can't tell which of the two orderings is authoritative (neither section
    carries an explicit "this is the source of truth" marker), report the finding as a plain "order
    mismatch" between the two locations without asserting which side is wrong, and let the designer
    decide which one to resequence.
@@ -488,8 +527,9 @@ every verdict; counts and examples are one snapshot.
 13. **Pasted pictures ↔ text (images other than Ⅰ．画面ﾚｲｱｳﾄ).** Designers paste tables and figures as
     pictures — ランクチェック表, branch tables, sample files — and those are design content the dump never
     shows: 139 of the 工程管理 PHASE1-3 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/ﾌｧｲﾙ出力仕様書
-    sheets carry PNG/JPEG pictures. Run once per workbook, after the live dump:
-    `python _shared/scripts/extract_images.py <workbook.xlsx> <scratch>/img --dump <live dump dir>` →
+    sheets carry PNG/JPEG pictures. Run once per workbook, after the live dump (`--hidden`: pictures on
+    hidden sheets are in scope too, reported 【非表示】 — `agent-guide.md`):
+    `python _shared/scripts/extract_images.py <workbook.xlsx> <scratch>/img --dump <live dump dir> --hidden` →
     `index.tsv` (sheet, kind, anchor range, px, est_tokens, note), one PNG per picture, and `covered.txt`.
     It reads the zip only, so it takes seconds (an openpyxl load of a merge-heavy book such as
     `PSJAO401` takes 10+ minutes — never load the workbook just for pictures).
@@ -518,12 +558,146 @@ every verdict; counts and examples are one snapshot.
     - **Not this check's business:** a picture of the old system's spec pasted beside the new text as
       reference — JAGUR IDs (`FMPAP10`, `FDCJM06`, `FXABD001`, `GXAB013`), usually anchored right of the
       form (`GXJC152A` `[769,52]`, `[876,50]`, `[979,54]`). Do not compare it with the text; it is
-      history, like the 画面ｲﾒｰｼﾞ sheets.
+      history, like the screenshots pasted on 画面ｲﾒｰｼﾞ sheets (whose *cells* check 14 does read).
     - **Budget.** If the summed `est_tokens` of the pictures to read — including the ones you open
       only to see whether they are old-system reference — exceeds ~20% of the workbook's live dump
       (characters / 2, without `_DELETED_DIGEST.txt`), say so before reading them and let the user
       choose: read all, or skip b. (`PXJCO152`: 4 pictures, 2,640 against a 26,970 threshold.) Text you cannot read in a picture is 未確認, not a finding. Cite a picture by sheet and
       anchor cell (`ﾁｪｯｸ処理設計書(GXJC152A) 画像 [471,4]`).
+
+Checks 14 and 15 come from my-review-skills' 「画面ｲﾒｰｼﾞ」/「《参考》画面項目遷移」 sections and the
+designers' answers behind them; adopted 2026-10-16, when the shared dump started to include these sheets.
+
+14. **画面ｲﾒｰｼﾞ sheets ↔ 画面設計書.** A `*画面ｲﾒｰｼﾞ*` sheet is the screen drawn in cells — labels, `XXXXX`
+    placeholders, `*` on required items, coloured fields — and the 画面設計書's Ⅰ．画面ﾚｲｱｳﾄ picture is pasted
+    from it (128 visible ones in the 工程管理 PHASE1-3 books, 2 to 3,163 live cells each).
+    - **Which sheets, which screen, which state.** Pair each drawn screen with its 画面設計書 by the title
+      above it (`PXJCO128` `画面ｲﾒｰｼﾞﾛｯﾄ停止登録` `[3,2]` `■A.ﾛｯﾄ停止一覧(新ｼｽﾃﾑ)` → screen A →
+      `画面設計書(GXJC128A)`), or, without a title, by the labels it shares with Ⅴ. One sheet often draws the
+      same screen several times, once per state (`PXJCO128` B: 新規 / ｺﾋﾟｰ登録 / 解除(未解除) / 解除済); first
+      work out which mode and 区分 each drawing shows — from its title, its example values (停止区分 `[90,24]`
+      「C:品目ｺｰﾄﾞ＋製造ﾛｯﾄNo」) and whether a list is filled — and compare it with **that** column of Ⅵ
+      (※n tables included). A drawing whose state you cannot tell is one 要確認 line. Not compared: a drawing
+      of a screen that no longer exists — its screen letter has no 画面設計書 sheet and the 表紙 改訂履歴 or the
+      digest records its removal (`PXJCO128` `[251,2]` ■D, 表紙 `[47,25]` 「GXJC128Dを除去」) — not reported
+      at all; and a sheet whose name marks a leftover (the `agent-guide.md` list, plus `旧…`, `BK_JAGUR…`) —
+      one line saying so. Several current variant sheets (`…_事業部説明用`, `…(Web版)`) are each compared.
+      When the screen IDs written on the drawing match no sheet, pair by screen name and leave the ID
+      mismatch to `naming-standard-compliance` (`PSJCO404` ■C/■D → `画面設計書(GSJC403D)`/`(GSJC403C)`).
+      **Two versions of one screen on one sheet** (same title, neither marked 旧, one dated: `PSJCO404` ■A
+      `[3,3]` and `[135,3]`, `[207,91]` 「2026/10/2版」): decide the current one from the version note and from
+      which one Ⅳ/Ⅲ match. If Ⅴ matches neither, do not run a-e item by item — report one 要確認 line: Ⅴ/Ⅵ
+      not yet updated to the new drawing (list the items only one side has), and the old drawing to be
+      deleted or marked 旧.
+    - **Out of scope:** typos (the sheet only has to agree with the design, not read well); cells outside
+      the drawn screen, deleted screens and leftovers (designers' answer 2026-10-02 No.19). Borders are not
+      in the dump, so take the screen's right edge from the fills: the window frame's gray border
+      (`theme:0 tint:-0.25` on `PSJCO404`) and the white background it encloses; failing that, the widest of
+      the title band (`C83:BQ85`), the header cells (user name / company label) and the list's last column.
+      Cells to the right of the frame are out, except a separate drawing labelled as another area or
+      variant (`PSJCO404` `[207,91]`-`[221,…]` 別体型/一体型, for Ⅳ G3-G5) — compare that like a screen (`PXJCO128` `[38,183]` `製造ﾛｯﾄNo(部分一致部分一致)`, `[70,255]`, `[71,166]`-`[78,201]`).
+      Also out: values that run past a field's width (designers' answer 2026-10-10 No.47 — `X`s cut off at a
+      button or the frame show that the 桁数 exceeds the display width, on purpose).
+    - **a. X count vs 桁数 — 低.** A placeholder's length (`XXXXXXXXX1XXXXX` = 15; the digits are
+      position markers and count) must not **exceed** the item's 桁数; fewer is fine. Report fewer only for
+      an item that always has that length (処置指示No = 4). A `code:name` placeholder (`X:XXXXXXXXX1…`,
+      `XXXXX:XXXXXXXXX1…`) is two values: compare each part with its own item. Dates and times drawn as
+      `YYYY/MM/DD` / `HH:MM` are not counted. A literal prefix drawn as itself (`46A` in `46AXXXXXX1X`)
+      counts as characters, and a concatenated placeholder with no separator is compared with the combined
+      length Ⅳ/Ⅴ describes (`PSJCO404` `[143,12]` `XXXXXXXXX1X` = 11 = 事業所 3 + 加工部門 8, `[1564,24]`).
+      (Designers' answers 2026-10-06 No.88/89; 課題193-959.) The 桁数
+      is Ⅴ's for an input item. A Label's Ⅴ 桁数 is `-`: compare it only through its Ⅲ 取得項目 → table column
+      length when the run has the layout, else skip it — **never borrow the 桁数 of a same-named input**
+      (`PXJCO128` list 停止者 `[67,45]` has 30 X's: it shows (1).停止者 = 作業者名, not G1's 10-digit 停止者 code).
+    - **b. Example values vs the current definition — 要確認.** A concrete value drawn on the screen
+      (`1:停止`, a 停止区分 name, a 数量単位) must match Ⅴ's 説明/初期値 and the `09.区分名称_step2` group
+      of that item (check 11's index) (課題1611). Compare ignoring full/half width and spaces — a difference
+      only there (`C:品目ｺｰﾄﾞ＋製造ﾛｯﾄNo` vs the master's `+`) is not reported. The same value must also be
+      drawn the same way throughout the sheet — one 工程ｺｰﾄﾞ with two different 工程名, a 振向元/振向先 pair
+      naming one code differently — because a wrong example is how a coder misreads where a name comes
+      from (低). A value drawn for an item Ⅴ does not have is check 5's missing item; if its label names a
+      区分 group, compare the codes with that group anyway (要確認 — `PSJCO404` 社内外区分 `[18,41]` 「1:社内」
+      while the master has 1 = 社外).
+    - **c. Edit format vs Ⅴ — 低.** The *shape* of a drawn value agrees with Ⅴ's 表示形式/説明
+      (`(1).ﾛｯﾄ構成区分+":"+区分名称`) (課題193-974): code+name vs code only (`PSJCO404` `[34,7]`
+      `XXXXXXXX：XXXXXXXXX1` while Ⅴ G3 `[1757,43]` shows the code alone), the parts joined, a radio
+      group (●/○) drawn where Ⅴ defines CheckBoxes or the reverse. Full/half width of the separator
+      (`：` vs `:`) and spacing are not reported.
+    - **d. Field colours and `*` — 中 for `*` vs 必須, 低 for colour.** Read the fills with
+      `python _shared/scripts/sheet_fills.py <workbook.xlsx> "画面ｲﾒｰｼﾞ" <out.tsv>` (zip only, a second
+      or less; one line per filled or non-empty cell: `[r,c]  fill  merge  text`). It does not resolve theme
+      colours: `theme:0` = lt1 (white), 1 = dk1, 2 = lt2, 3 = dk2, 4-9 = accent1-6; a tint lightens (+) or
+      darkens (−). On `PXJCO128`: labels `0070C0`; input fields `FFFFFF`, `theme:0` or `-` (no fill = white);
+      required input pink — `theme:5 tint:0.80` on most fields, `FFDCDC` on one (`PSJCO404`: `FCE4D6`
+      throughout); display-only / inactive
+      fields gray (`EDEDED`, `A6A6A6`, `theme:0 tint:-0.05`/`-0.15`/`-0.25`/`-0.35`). **Not judged by colour:**
+      the background of RadioButtons and CheckBoxes and separators such as `～` (`F9F9F9`); striped list
+      rows (white/`EDEDED` alternating); a frameless text-only Label.
+      Report, against the state the drawing shows: `*` on an item that is not 必須 in that state, a
+      required item with no `*`, or `*` on a Label whose Ⅴ 必須 is not ○ (課題1599; self-check call-out
+      画面設計書 列64/行5 — a Label that is 必須 ○ in Ⅴ, such as a file-name field filled by a file dialog,
+      `PSJCO404` `[120,4]` *取込ﾌｧｲﾙ / `GSJC403D` `[58,33]`, may carry `*`). A 必須
+      written `※n` is evaluated in that state; an either-one-required pair may both carry `*`. A required
+      item that changes with a 区分 whose `*` does not change is 要確認 (call-out 列67/行6). An input item
+      (Ⅴ 属性 TextBox / ComboBox / …) drawn gray although usable in that state, or a Label drawn as a white
+      field (課題208-289), is 低; so is an input drawn white although Ⅵ makes it 非活性 in that state, when
+      the same sheet draws inactive inputs gray elsewhere (`PXJCO128` 新規 drawing, 停止区分 C: 管理No
+      `[91,24]`, 処置指示No1-3 `[92,24]`…, all × in Ⅵ ※1's C column `[679,16]` — 要確認, it may be drawn
+      white on purpose). **Judge colours here, never from the rendered Ⅰ．画面ﾚｲｱｳﾄ PNG** — EMF rendering
+      shifts colours (designers' answer 2026-10-10 No.15). A program with no 画面ｲﾒｰｼﾞ sheet gets no colour
+      finding; say so in one line.
+    - **e. Notes — 要確認.** A judgement written in a note on the sheet (解除済/未解除 and the like)
+      matches the 画面設計書's condition; a drawing of a state that needs such a note and lacks it (`[178,3]`
+      解除 drawing without the 「※既に解除済の場合」 its sibling `[146,3]` has) is 低.
+    Validated 2026-10-16 on `PXJCO128` (one 低/要確認 colour finding) and `PSJCO404` (old/new versions on
+    one sheet, three 14b 区分 mismatches, two 14d `*`/必須 mismatches).
+    Cite cells as `画面ｲﾒｰｼﾞﾛｯﾄ停止登録 [22,31]`, and say which 画面設計書 item it was compared with.
+
+15. **《参考》画面項目遷移 sheets ↔ 画面設計書.** A `《参考》画面項目遷移*` sheet lays the screen out once per
+    operation step (■画面起動 → ■○○入力 → ■実行ﾎﾞﾀﾝ押下 …) with the values each step shows (`PXJCO124`
+    has two: `《参考》画面項目遷移` and `…(全層)` — the latter is the G1 全層ﾁｪｯｸ ON state, compared with
+    Ⅴ's G5 and its 全層 conditions). It is reference material, so every finding is **要確認**, with a weight
+    as in 14 (要確認・中 / 要確認・低); name both sides — either may be the stale one. Its wording is
+    proofread by `design-doc-typo-check` as usual.
+    - **Reading the steps.** A `…表示` step is the state just after the preceding input's ﾛｽﾄﾌｫｰｶｽ; a
+      `…編集` step is after the user overwrote inputs (a changed TextBox/ComboBox there is normal; a
+      changed Label must follow Ⅴ's formula); `■○○ﾎﾞﾀﾝ押下` / `…(実行後)` changes only what Ⅳ says that
+      event sets or clears, plus Ⅴ's `実行時:` values.
+    - **a. X count — 要確認・低** — as 14a, against Ⅴ's 桁数 (`PXJCO124`: 作業者ｺｰﾄﾞ `XXXXXXXXX1XX` = 12
+      against Ⅴ G1 No.4 `[906,24]` 桁数 10). An item whose Ⅴ 桁数 is `-` (Labels) is compared only when the
+      run has the table layout's 桁数; otherwise skip it.
+    - **b. Example values — 要確認・中** — a code drawn with a name must match Ⅴ and `09.区分名称_step2`
+      (`PXJCO124` `…(全層)` `[324,114]` 「1:シート」, while 数量単位 is 0=ｼｰﾄ, 1=基板); the same code carries the
+      same name within a step and across steps (one 工程ｺｰﾄﾞ drawn 「ＩＰＡ－Ａ」 in one step and
+      「1次ｼﾝﾀｰ(850℃ Dry)」 in another); and a lot/layer's fixed attributes (品目ｺｰﾄﾞ, KC品名) stay the same.
+    - **c. Edit format — 要確認・低** — as 14c (full-width `シート` vs `ｼｰﾄ`, separators).
+    - **d. Each step vs Ⅴ's 初期値・説明 — 要確認・中** — ■画面起動 shows Ⅴ's 初期値 (ﾛｸﾞｲﾝ情報.○○ …): an item
+      whose 初期値 is not blank drawn blank there is 要確認・低. A step after an input shows what Ⅴ says that
+      event sets (`PXJCO124` 管理No ﾛｽﾄﾌｫｰｶｽ: Ⅴ G4 No.36/37 set 振向先数 = 振向元数 and 残数 = 0, but `[446,53]`
+      shows 3,000 / 2,000). A radio/ComboBox default that depends on data (「(7).初期値の値により」) is not a
+      finding while the drawn value is one it can take; differing only from the fallback is 要確認・低.
+    - **e. Values across steps — 要確認・中** — an item the step did not touch keeps its value (`PXJCO124`
+      after 実行: 振向先処置指示No 0000 → 0002, 仕掛工程ｺｰﾄﾞ and 数量単位 changed, 処置指示ﾗﾝｸ blanked, while Ⅳ
+      `[818,20]` only sets 振向先管理No); a computed value (振向先数, 残数, 発行枚数 …) changes only on the
+      events Ⅴ's formula names.
+    - **f. `*` and headings — 要確認・中/低** — match Ⅴ and the current layout, i.e. the 画面ｲﾒｰｼﾞ sheet's
+      cells and Ⅴ's item order (Ⅰ is a picture). A step still carrying an old layout's heading row is 中
+      — say whether the data under it is drawn in the new columns (`PXJCO124` `[230,*]`, `[383,*]`: headings
+      `…KC品名|取引先名|仕掛工程ｺｰﾄﾞ…` over data laid out as `…層No|KC品名|品目ｺｰﾄﾞ…`). `*` on a Label is 低;
+      when the same `*` comes from the 画面ｲﾒｰｼﾞ sheet, report both cells in one line with check 14d.
+    - **g. Leftovers — 低** — a block away from every step that relates to nothing (a column of serial
+      numbers only: `PXJCO124` `[845,3]`-`[883,3]`) (self-check call-out 機能定義書 列57/行53).
+    Validated 2026-10-16 on `PXJCO124` (12 findings, none withdrawn on re-reading the cells).
+
+**Hidden leftovers.** Hidden rows holding an old copy of whole sections (`PSJCO404` `GSJC404A` rows
+711-1413 = an old Ⅲ (1)-(6) with placeholder `TSJCDXXX`, rows 1625-1662 = an old Ⅳ) and any other hidden
+body text no check's subject covers are reported **here**, once per sheet, 【非表示】 要確認, every range in
+the one line: 「非表示の行 711-1413, 1625-1662 に旧版の Ⅲ/Ⅳ が残っている。不要なら削除、必要なら再表示」;
+the other checks (and checks 1/4/9 here) do not report what is inside them. A **live** reference whose only
+target is hidden — Ⅴ `[1693,35]` 「Ⅲ．画面表示仕様>(1).検索時数量設定表示有無」, a name found only in hidden row
+`[733,6]` (the live (1) `[109,8]` is 「検索時数量設定」) — is a dangling reference, reported by whichever check
+resolves that kind of reference (here, as part of the same line when no other does). Rows holding only
+change-history memos are skipped (`agent-guide.md`, "Hidden sheets, rows and columns").
 
 **Shapes that are not defects (from the 2026-10 validation runs).**
 - An area can have **several Ⅵ control tables** (one per mode or per tab); merge them before

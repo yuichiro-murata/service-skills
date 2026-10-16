@@ -86,7 +86,13 @@ Rules that make the parse reliable:
   `2026/6/10 福浦 削除`). Do not resurrect it from `_DELETED_DIGEST.txt` to review it. A table whose
   update spec was withdrawn but which is still declared in Ⅲ．入出力定義 is a real finding — but it
   belongs to `design-doc-io-table-check`, not here.
-- **Hidden sheets are out of scope**, per the shared dump doc's default.
+- **Hidden sheets are in scope** (`agent-guide.md`, "Hidden sheets, rows and columns"): a hidden
+  `更新条件表(…)` is reviewed like a visible one and its findings start with 【非表示】, except a sheet the
+  agent guide classes as a leftover or withdrawn — one 【非表示】 要確認 line each. A hidden sheet never
+  stands in for a missing visible one. `PXJCO163` hides nine: four `…_削除` (leftovers), and
+  `TXJCD101`/`TXJCD201`/`TXJCD301`/`TXJCM601` whose table is not in Ⅲ at all and whose `[6,2]`
+  「Ⅰ．更新条件表」 is struck (withdrawn); `TXJCM004` keeps two UPDATE blocks while Ⅲ `[42,5]` gives that
+  table R only (withdrawn — one line, naming the disagreement).
 - **A dump record can span several physical lines.** The dump writes one line per sheet row, but a
   cell whose own value contains a newline (a multi-line 更新条件, a `※…`-annotated INSERT value)
   puts that newline straight into the file. Parse with `_shared/scripts/dump_cells.py` (`load()` groups by the
@@ -99,7 +105,7 @@ Rules that make the parse reliable:
 
 ### 1. Get the workbook dump
 
-If `rev-program-review` already dumped it, read those scratchpad files. Otherwise dump it live with `python _shared/scripts/live_dump.py <workbook> <out_dir>`
+If `rev-program-review` already dumped it, read those scratchpad files. Otherwise dump it live with `python _shared/scripts/live_dump.py <workbook> <out_dir> --hidden`
 (openpyxl; same format and digest as the shared dump). Only `更新条件表(*)` sheets matter for this check, plus the
 機能定義書 and 画面設計書 sheets for the trigger cross-check in step 4 C6. A table Ⅲ．入出力定義 marks
 C/U/D but which has no 更新条件表 sheet at all is `design-doc-io-table-check` step 6's finding, not this
@@ -180,9 +186,40 @@ and the WF sheets in the same workbook are the calibration set for those.
 `PXJCO192` produced four false findings in a row: `TSJCM139WF`, `TXJCM838WF` and both of
 `TXJAM026WF`'s INSERT blocks set `ﾗﾝﾀﾞﾑ値`, and `TXJAM025WF` sets `※3` (a footnote reference), while
 only `TXJCM137WF`/`TXJCM501` use the literal `1`. On this table the initial lock value is a design
-choice per table, so the only INSERT-side defect worth reporting is `排他ﾌﾗｸﾞ` left **unset**. On
-UPDATE the opposite holds: the value must express an increment (`+1`), because a literal that does
-not advance the counter defeats optimistic locking.
+choice per table, so for a **plain INSERT** (a new row) the only defect worth reporting is `排他ﾌﾗｸﾞ` left
+**unset**. On UPDATE the opposite holds: the value must express an increment (`+1`), because a literal
+that does not advance the counter defeats optimistic locking.
+
+**DELETE→INSERT (an update rewritten as delete-then-insert) is different: its INSERT must set
+`ﾗﾝﾀﾞﾑ値`** (self-check call-out 更新条件表 列55/行18 「更新ﾎﾞﾀﾝでDELETE→INSERTする機能は、INSERTで排他ﾌﾗｸﾞに
+ﾗﾝﾀﾞﾑ値を登録する」; adopted 2026-10-16). Re-inserting a fixed literal hands the row a lock value another
+screen may already hold — after `1` → delete → insert `1`, a stale screen's `1` still matches and its
+update goes through.
+- **What counts as DELETE→INSERT: a DELETE and an INSERT of the same table run in turn by the same
+  trigger** (same button, same condition). Signs: one operation column labelled `DELETE　INSERT`; or a
+  label in the rows between the 更新条件 cell and the `No.` header row joining `DELETE` and `INSERT` with
+  `→`/`⇒`/`/`/`・` (`PXJCO163` `TXJCM013` `[13,16]` `DELETE→INSERT` — it sits *under* the 更新条件 cell, not
+  in it); or separate DELETE and INSERT columns of one block whose 更新条件 gives them one trigger. Read
+  every `※n` first — on the values, on the operation labels and in the 更新条件 — from the notes at the
+  bottom of the sheet: `TXJCM012` `[14,16]` `DELETE　(※1)` with `[38,2]` 「削除ﾎﾞﾀﾝを押下時には削除処理のみ実行」
+  is DELETE→INSERT on 更新ﾎﾞﾀﾝ. **Not** DELETE→INSERT: a block whose 更新条件 gives each operation its own
+  trigger (`PXJCO163` `TSJCD014` `[12,16]` 「④に存在しない場合：INSERT…・削除ﾎﾞﾀﾝ押下時：DELETE」), an
+  INSERT/UPDATE upsert, a history INSERT beside an UPDATE. A DELETE block and an INSERT block of the same
+  table on one sheet with the same trigger (`TXJCD101` `[12,16]`/`[47,16]` both 「更新ﾎﾞﾀﾝ押下時」) is the
+  same pattern split in two — report it 要確認.
+- **Judge the INSERT's 排他ﾌﾗｸﾞ value** (the value column, not the 参照元 column beside the label).
+  Normalise first (NFKC, trim, drop quotes and a trailing note in brackets). **中**: a value that is then
+  only digits (`1`, `0`, `１`, `"1"`, `1(固定)`), or nothing (`-`, blank — set ﾗﾝﾀﾞﾑ値). **Accept**: `ﾗﾝﾀﾞﾑ値`
+  (`ﾗﾝﾀﾞﾑ値(1回の更新処理につき同じ値)` too) and a value advanced from the deleted row's own lock value,
+  named as such (`元排他ﾌﾗｸﾞ+1`, `①.排他ﾌﾗｸﾞ+1`). A bare `+1` — plus one to what, once the row is gone? —
+  is 要確認.
+**Exempt `TXJAM100` (検索条件保存ﾏｽﾀ)**: it is outside 排他ﾁｪｯｸ, so a fixed value there is fine (designers'
+answer 2026-10-10 No.88). Measured 2026-10-16 over the 122 工程管理 books: of 169 such INSERT values, 69
+are ﾗﾝﾀﾞﾑ値, 38 belong to TXJAM100, 10 are `+1`/`元排他ﾌﾗｸﾞ+1`, 39 (outside TXJAM100) are the literal
+`1`, and the rest are unset or footnotes — e.g. `PXJCO163` `TXJCM012`/`TXJCM013` `[22,36]`, `PSJCO305` `TSJCD332` `[22,36]`/`[62,36]`,
+`PXJCO161` `TXJCD203`/`TXJCD206` `[98,36]`; on hidden sheets (【非表示】) `PXJCO163` `TXJCD201` `[22,36]`,
+`TXJCD301` `[76,36]` (validated 2026-10-16 on PXJCO163 and PSJCO305 — but see the hidden-sheet rule:
+those two sheets are withdrawn, so they collapse into one line each).
 
 ### 4. Run the checks
 

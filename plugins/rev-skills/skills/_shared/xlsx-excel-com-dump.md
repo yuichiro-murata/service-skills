@@ -168,17 +168,19 @@ Measured on `SXJCB147_処置指示発行(ｻﾌﾞﾌﾟﾛ).xlsx` (7 sheets, 10
 ~390 partially-struck cells): 65s end to end, well inside a 600s timeout. Raise the Bash/PowerShell
 timeout for this step rather than skipping the cascade.
 
-**Skip 詳細設計書* and *画面ｲﾒｰｼﾞ* sheets — don't dump their content at all.** Confirmed across every
-REV skill's own instructions: most of the single-program skills explicitly say "don't read/dump
-詳細設計書 sheets" (it's near-empty boilerplate in practice), and `design-doc-formatting-consistency`
-also excludes both 詳細設計書 and the 画面ｲﾒｰｼﾞ mockup sheet from its scan scope (the mockup is a
-screenshot image with placeholder cells, confirmed content-free in every program checked so far).
-Dumping their full cell content into the shared scratchpad every REV is pure waste — no sibling
-skill ever reads those `.txt` files. **Do not extend this to every "ｲﾒｰｼﾞ"-named sheet** — a sheet
-like `ﾒｰﾙｲﾒｰｼﾞ` (a batch program's mail-notification template) carries real narrative text that
-`design-doc-internal-consistency`/`design-doc-typo-check` genuinely read and have found real
-findings in (a stale placeholder wording, confirmed on `PXJCB134_流動停止(ﾊﾞｯﾁ).xlsx`) — only skip a
-sheet whose name starts with `詳細設計` or contains `画面ｲﾒｰｼﾞ` specifically, not "ｲﾒｰｼﾞ" generally.
+**Skip 詳細設計書* sheets — don't dump their content at all.** Most of the single-program skills
+explicitly say "don't read/dump 詳細設計書 sheets" (it's the development team's sheet, near-empty
+boilerplate in practice, and out of scope by the designers' own answer). Only a sheet whose name
+starts with `詳細設計` is skipped.
+
+**Dump `*画面ｲﾒｰｼﾞ*` sheets** (since v1.26.0). They are not screenshots: in the 工程管理 PHASE1-3
+corpus (2026-10-16) the 128 visible 画面ｲﾒｰｼﾞ sheets hold 2 to 3,163 live cells each — the screen drawn in
+cells, with item labels, `XXXXX` placeholders sized to the 桁数, `*` on required items and fills for
+input/display/required fields (`PXJCO128` `画面ｲﾒｰｼﾞﾛｯﾄ停止登録`, 1,015 cells). The 画面設計書's Ⅰ．画面ﾚｲｱｳﾄ
+picture is pasted from them, so they are the evidence for the field colours, the `X` counts and the
+example values — `design-doc-internal-consistency` check 14 reads them. Pictures *pasted on* a
+画面ｲﾒｰｼﾞ sheet are another matter (`extract_images.py` still skips them; see `agent-guide.md`).
+`《参考》画面項目遷移*` sheets are dumped like any other sheet (check 15 reads them).
 
 Record each skipped sheet's `UsedRange.Rows.Count`/`Columns.Count` (cheap — no `Value2` pull needed)
 instead of a full dump, and report that alongside the rest. This one exception still needs it:
@@ -434,9 +436,11 @@ $out    = "<scratchpad dir>"
 $path   = "<absolute path to the target workbook>"
 $prefix = "<program id>"
 # Sheet scoping. $null = every visible sheet. Set it when the user scopes the REV, e.g.
-# @("表紙*","機能定義書*","帳票設計書*"). Hidden sheets (bk_ backups etc.) are out of scope by default.
+# @("表紙*","機能定義書*","帳票設計書*"). Hidden sheets ARE in scope for the workbook under review
+# (findings on them are reported with 【非表示】 — see agent-guide.md "Hidden sheets, rows and columns");
+# set $IncludeHiddenSheets = $false only when dumping a reference master with this script.
 $IncludeSheetPatterns = $null
-$IncludeHiddenSheets  = $false
+$IncludeHiddenSheets  = $true
 $ErrorActionPreference = 'Stop'   # abort at the first RPC error instead of writing a half dump
 
 function Test-Gray([double]$argb) {
@@ -488,6 +492,17 @@ $wb = $excel.Workbooks.Open($path, $true, $true)   # ReadOnly, no update-links p
 $deleted       = New-Object System.Collections.Generic.List[object]
 $skippedSheets = @()
 $summary       = @()
+$hiddenLines   = New-Object System.Collections.Generic.List[string]   # -> _HIDDEN.txt
+function Format-Ranges([int[]]$nums) {
+    $s = @($nums | Sort-Object -Unique); if ($s.Count -eq 0) { return '' }
+    $out = @(); $lo = $s[0]; $pv = $s[0]
+    for ($i = 1; $i -le $s.Count; $i++) {
+        if (($i -lt $s.Count) -and ($s[$i] -eq $pv + 1)) { $pv = $s[$i]; continue }
+        $out += $(if ($lo -eq $pv) { "$lo" } else { "$lo-$pv" })
+        if ($i -lt $s.Count) { $lo = $s[$i]; $pv = $s[$i] }
+    }
+    return ($out -join ',')
+}
 
 foreach ($ws in $wb.Worksheets) {
     $n = $ws.Name
@@ -497,10 +512,15 @@ foreach ($ws in $wb.Worksheets) {
         foreach ($pat in $IncludeSheetPatterns) { if ($n -like $pat) { $hit = $true; break } }
         if (-not $hit) { continue }
     }
-    if ($n -like '詳細設計*' -or $n -like '*画面ｲﾒｰｼﾞ*') {
+    if ($n -like '詳細設計*') {
         $u = $ws.UsedRange
         $skippedSheets += "$n : rows=$($u.Rows.Count) cols=$($u.Columns.Count) (skipped — out of scope for every REV skill; not dumped)"
         continue
+    }
+    $hstate = ''
+    if ($ws.Visible -ne -1) {
+        $hstate = $(if ($ws.Visible -eq 2) { "`tveryHidden" } else { "`thidden" })
+        $hiddenLines.Add("$n`tSHEET$($hstate.Replace("`t", ' '))")
     }
 
     $used = $ws.UsedRange
@@ -583,7 +603,33 @@ foreach ($ws in $wb.Worksheets) {
     $safe = [string]::Join('_', $n.Split([System.IO.Path]::GetInvalidFileNameChars()))
     $text = [XlsxDumpHelper]::FormatSheetLive($vals, $rows, $cols, $dead, $liveMap, $r0, $c0)
     [System.IO.File]::WriteAllText((Join-Path $out ($prefix + "_" + $safe + ".txt")), $text, [System.Text.Encoding]::UTF8)
-    $summary += "$n`t$($used.Rows.Count)x$($used.Columns.Count)`tdead=$nDead`tpartial=$nPart$trunc"
+    # Hidden rows/columns that hold live text, read from the sheet XML (no COM calls) -> _HIDDEN.txt
+    $sx = Read-ZipText $sheetPart[$n]
+    $hr = @(); $hc = @()
+    foreach ($m in [regex]::Matches($sx, '<row r="(\d+)"[^>]*hidden="1"')) {
+        $r = [int]$m.Groups[1].Value - $r0
+        if ($r -ge 1 -and $r -le $rows) {
+            foreach ($c in [XlsxDumpHelper]::NonEmptyCols($vals, $r, $rows, $cols)) {
+                if (-not $dead.Contains((([int64]$r) -shl 20) -bor ([int64]$c))) { $hr += ($r + $r0); break }
+            }
+        }
+    }
+    foreach ($m in [regex]::Matches($sx, '<col [^>]*>')) {
+        if ($m.Value -notmatch 'hidden="1"') { continue }
+        $lo = [int]([regex]::Match($m.Value, 'min="(\d+)"').Groups[1].Value)
+        $hi = [int]([regex]::Match($m.Value, 'max="(\d+)"').Groups[1].Value)
+        for ($ac = $lo; $ac -le [Math]::Min($hi, $cols + $c0); $ac++) {
+            $c = $ac - $c0; if ($c -lt 1) { continue }
+            for ($r = 1; $r -le $rows; $r++) {
+                $v = $vals[$r, $c]
+                if (($null -ne $v) -and ("$v".Trim().Length -gt 0) -and
+                    -not $dead.Contains((([int64]$r) -shl 20) -bor ([int64]$c))) { $hc += $ac; break }
+            }
+        }
+    }
+    if ($hr.Count -gt 0) { $hiddenLines.Add("$n`tROWS $(Format-Ranges $hr)") }
+    if ($hc.Count -gt 0) { $hiddenLines.Add("$n`tCOLS $(Format-Ranges $hc)") }
+    $summary += "$n`t$($used.Rows.Count)x$($used.Columns.Count)`tdead=$nDead`tpartial=$nPart$trunc$hstate"
 }
 } finally {
     if ($wb) { try { $wb.Close($false) } catch {} }
@@ -629,6 +675,9 @@ foreach ($grp in $deleted | Group-Object S) {
     & $flush
 }
 [System.IO.File]::WriteAllText((Join-Path $out "_DELETED_DIGEST.txt"), ($lines -join "`r`n"), [System.Text.Encoding]::UTF8)
+$hhead = "# _HIDDEN: hidden sheets (SHEET hidden|veryHidden) and, per dumped sheet, the hidden rows/columns`r`n" +
+         "# that hold live text (ROWS / COLS, ranges). A finding on any of them is prefixed 【非表示】.`r`n"
+[System.IO.File]::WriteAllText((Join-Path $out "_HIDDEN.txt"), $hhead + ($hiddenLines -join "`r`n"), [System.Text.Encoding]::UTF8)
 
 $summary -join "`n"
 $skippedSheets -join "`n"   # a suspiciously large row count on a skipped 詳細設計書 sheet is a signal naming-standard-compliance may need to check its content directly
@@ -744,10 +793,9 @@ Both consequences matter, and the second is worse:
    coordinates, so an offset dump makes every finding on that sheet unactionable.
 
 **Measured on the 61 workbooks of `01_Doc\08_機能定義書\11_工程管理\PHASE3`**: 33 of 715 visible
-multi-cell sheets do not start at `A1`; after this script's own `詳細設計*` / `*画面ｲﾒｰｼﾞ*` skips,
+multi-cell sheets do not start at `A1`; after the then `詳細設計*` / `*画面ｲﾒｰｼﾞ*` skips (v1.25.0),
 **12 of 600 in-scope sheets** are affected. Two are worth naming because they are sheets a REV
-actually reads: `PXJCB134_流動停止(ﾊﾞｯﾁ).xlsx`'s `ﾒｰﾙｲﾒｰｼﾞ` (offset r1/c1 — the very sheet the skip
-rule above carves out an exception *for*), and `SSJCB605_完成割合設定(ｻﾌﾞﾌﾟﾛ).xlsx`'s
+actually reads: `PXJCB134_流動停止(ﾊﾞｯﾁ).xlsx`'s `ﾒｰﾙｲﾒｰｼﾞ` (offset r1/c1 — a sheet the old 画面ｲﾒｰｼﾞ skip rule had to carve out an exception for), and `SSJCB605_完成割合設定(ｻﾌﾞﾌﾟﾛ).xlsx`'s
 `完成割合設定(ｻﾌﾞﾌﾟﾛ)_事業部説明なし` at offset **r33/c34**, where a cited `[5,3]` is really cell
 `AK38`. `PXJCO124_ﾛｯﾄ振向け.xlsx`'s two `《参考》画面項目遷移` sheets (881 and 836 rows, r2/c0) and
 `PXJCO192_処置指示登録.xlsx`'s `ﾛｯﾄ管理C　処置指示登録` (271x369, r0/c1) are the other large ones.

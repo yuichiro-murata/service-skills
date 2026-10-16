@@ -24,7 +24,7 @@
 
 | skill | チェック内容 |
 |-------|------------|
-| `design-doc-internal-consistency` | 設計書内部の相互参照（ｲﾍﾞﾝﾄ⇔処理概要、各ID登録、画面3点一致、排他制御） |
+| `design-doc-internal-consistency` | 設計書内部の相互参照（ｲﾍﾞﾝﾄ⇔処理概要、各ID登録、他ｻﾌﾞｼｽﾃﾑのﾒｯｾｰｼﾞID、画面3点一致（Hidden項目のⅥ記載を含む）、排他制御、画面ｲﾒｰｼﾞ・《参考》画面項目遷移ｼｰﾄ⇔画面設計書） |
 | `design-doc-io-table-check` | Ⅲ．入出力定義（CRUD一覧）の双方向網羅性 |
 | `xlsx-db-column-check` | 参照ｶﾗﾑがﾃｰﾌﾞﾙﾚｲｱｳﾄに実在するか／ｺｰﾄﾞ・名称の二重保持 |
 | `naming-standard-compliance` | 各ID採番規則・設計書記述ルール準拠 |

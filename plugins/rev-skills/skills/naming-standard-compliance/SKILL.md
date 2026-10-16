@@ -170,7 +170,10 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
 5. **表紙's "Ⅱ．設計書構成" list vs the sheets actually present** (checklist item near 2-1) — run
    this as a **standard, always-on check**, not an optional one: compare every row's Customer/
    Developer marker (`●`/`-`) against whether a matching sheet genuinely exists in the workbook
-   *and has real content* (not just an empty template). This has caught a real defect in every
+   *and has real content* (not just an empty template). **A hidden sheet does not count as present**
+   (the dump now includes hidden sheets — `_HIDDEN.txt` lists them): a doc type whose only sheet is
+   hidden is judged as absent, and the hidden sheet itself is one 【非表示】 要確認 line (`agent-guide.md`,
+   "Hidden sheets, rows and columns"). This has caught a real defect in every
    program reviewed with it so far that had extra doc types beyond the bare minimum: on
    `PXJCB134_流動停止(ﾊﾞｯﾁ).xlsx`, 表紙 marked both `ﾁｪｯｸ処理設計書`(No.4) and `詳細設計`(No.9) as
    `-`/`-` (not applicable) despite both `ﾁｪｯｸ処理設計書(PXJCB134)` (populated with real check

@@ -33,8 +33,8 @@ checks, or when the user asked for that check by name.
 
 **Called from `rev-program-review`?** The workbook is already dumped and the scope already chosen:
 read the dump paths you were given, don't re-dump, don't launch other checks. **Standalone?** Then
-you are your own orchestrator: dump the target with `scripts/live_dump.py <workbook> <out_dir>` (no Excel
-needed), and build any index or lookup you need with the shipped builders / `reference-index.md`.
+you are your own orchestrator: dump the target with `scripts/live_dump.py <workbook> <out_dir> --hidden` (no Excel
+needed; `--hidden` because hidden sheets of the workbook under review are in scope — never pass it for a master), and build any index or lookup you need with the shipped builders / `reference-index.md`.
 
 **Environment (this machine).**
 - The Bash tool may be broken (`add_item ("\??\C:\Program Files\Git", "/", ...) failed`) — prefer PowerShell.
@@ -55,9 +55,43 @@ needed), and build any index or lookup you need with the shipped builders / `ref
   and the standalone route — it reproduced an independent openpyxl implementation cell for cell on
   SXJCB147 (1,451 struck / 396 partial).
 
-**Don't dump or read `詳細設計*` / `*画面ｲﾒｰｼﾞ*` sheets** — no check reads them (the shared dump skips
-them and records only their size). `design-doc-formatting-consistency` documents its own deliberate
-exception note.
+**Don't dump or read `詳細設計*` sheets** — the development team's sheet, out of scope (the shared dump
+skips them and records only their size). `design-doc-formatting-consistency` documents its own deliberate
+exception note. **`*画面ｲﾒｰｼﾞ*` sheets are dumped and are design content** (since v1.26.0): the screen drawn
+in cells, from which the 画面設計書's Ⅰ．画面ﾚｲｱｳﾄ picture is pasted. `design-doc-internal-consistency`
+checks 14 and 15 own them and the `《参考》画面項目遷移*` sheets; every other check leaves both alone unless
+its SKILL.md says otherwise. The cells outside the drawn screen, deleted screens and leftovers on a
+画面ｲﾒｰｼﾞ sheet are out of scope (designers' answer 2026-10-02 No.19).
+
+**Hidden sheets, rows and columns are in scope** (designers' answer 2026-10-06 No.95, adopted
+2026-10-16). The target dump includes hidden sheets (summary line ends `hidden`/`veryHidden`), and
+`_HIDDEN.txt` beside the digest lists them plus, per sheet, the hidden rows/columns that hold live text
+(`画面設計書(GXJC128C)	ROWS 205-228`). Rules for every check:
+- **Report, never skip.** What is hidden is easy to miss — a copy-source leftover, an old block — so a
+  finding there is always reported, at least 要確認, with **`【非表示】`** at the start of the finding
+  text. Check every cited cell against `_HIDDEN.txt` before writing the finding.
+- **Hidden content is not evidence that something is live.** A table whose only 更新条件表 sheet is
+  hidden, a button whose only event row sits in a hidden row, a message ID used only on a hidden sheet:
+  judge the live (visible) design as if the hidden part were absent, and report the hidden part as its
+  own 【非表示】 finding (「非表示のｼｰﾄ/行に…が残っている。不要なら削除、必要なら再表示」) — never let it
+  satisfy a completeness check.
+- **A hidden sheet that is a leftover or withdrawn** gets **one** 【非表示】 要確認 line per sheet (what it
+  is, that it should be deleted or kept deliberately), not a full review of its content:
+  - by name — `bk_…`, `…_bk`, `…_BK`, `削除)…`, `…_削除`, `…(削除)`, `×…`, `不要…`, `…不要`, `old_…`, `…_old`,
+    `JAGUR_…`, or an untouched template stub (`ﾌｧｲﾙ出力仕様書(FXJDXXX)`, `ﾌｧｲﾙ出力仕様書()`);
+  - by content — its sheet title row (`Ⅰ．更新条件表` and the like, `[6,2]`) is struck (`_DELETED_DIGEST`),
+    or the table/file/report it specifies is not declared in 機能定義書 Ⅲ．入出力定義 (or is declared only
+    with operations the sheet does not do — `PXJCO163` hidden `更新条件表(TXJCM004)` holds UPDATEs, Ⅲ gives
+    TXJCM004 R only). Name that evidence in the line.
+  Any other hidden sheet is reviewed like a visible one.
+- **Hidden rows/columns.** A hidden row whose only live text is change history (a date + 担当 +
+  追加/削除/修正 memo: `PXJCO128` `画面設計書(GXJC128C)` rows 205-228, whose body is struck and only
+  `2022/5/7 ｺﾍﾞﾙｺTY` / `2023/12/19 日髙(230711)　削除` memos remain live) is not reported. A hidden row or
+  two inside a live section is reported by the check that owns that section (a hidden 更新条件表 row →
+  `update-condition-completeness`, a hidden Ⅴ row → `design-doc-writing-rules`). Hidden blocks that are an
+  old copy of whole sections, and hidden text no check owns, are reported once per sheet by
+  `design-doc-internal-consistency` ("Hidden leftovers"), all ranges in one line — the other checks do not
+  repeat them. A live reference whose only target is hidden content is dangling.
 
 **The dump is live** — struck/gray content is already gone; **do NOT run your own strikethrough/gray
 scan** (font-size/merge scanning is `design-doc-formatting-consistency`'s separate job). The
@@ -458,8 +492,9 @@ which group frame an item sits in, whether a control is drawn at all), get the p
   `System.Drawing.Imaging.Metafile` → `Bitmap` → `Save(...,ImageFormat::Png)` at ~1.6x scale, then
   Read the PNG. `_shared/scripts/extract_images.py <workbook> <out_dir>` does all of this (sheet
   mapping, EMF rendering, icons and duplicates marked) and writes `index.tsv`. **Which pictures are
-  current is decided by where they sit, not by their format:** a `.png` on a `画面ｲﾒｰｼﾞ*` sheet is a
-  screenshot of the *old* (JAGUR-era) screen, often with review annotations — history; but a `.png`
+  current is decided by where they sit, not by their format:** a `.png` pasted on a `画面ｲﾒｰｼﾞ*` sheet is
+  usually a screenshot of the *old* (JAGUR-era) screen, often with review annotations — history (the
+  sheet's **cells**, by contrast, are the current screen drawing — check 14); but a `.png`
   pasted on a 機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/ﾌｧｲﾙ出力仕様書 sheet is usually live design
   content (`PXJCO152` `ﾁｪｯｸ処理設計書(GXJC152A)` `[471,4]` ランクチェック表) and is compared with the text
   by `design-doc-internal-consistency` check 13. Only a picture of the old system's spec pasted beside

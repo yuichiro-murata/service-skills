@@ -69,8 +69,11 @@ Parsing rules that matter:
 - **The ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ sheets are separate sheets**, named `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(<帳票ID>)` and sometimes with
   a variant suffix (`ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(RSJC033)CP1,CMOS`, `…(RSJC033)識別CP1,CMOS`). They are wide
   (~211 columns) grid mock-ups of the printed page.
-- **`bk_`-prefixed and hidden sheets are out of scope** (`bk_帳票設計書(RSJC034)` etc.), per the
-  shared dump doc's default. A `bk_` sheet for a report with no live sheet is not a live report.
+- **`bk_`-prefixed and hidden sheets are not live reports** (`bk_帳票設計書(RSJC034)` etc.; `SXJCB147` hides
+  eleven `bk_帳票設計書…`). A `bk_` sheet for a report with no live sheet is not a live report. Hidden ones
+  are still reported, one 【非表示】 要確認 line per sheet (`agent-guide.md`, "Hidden sheets, rows and
+  columns"); a hidden sheet that is not a `bk_`/`不要_`/`old_` leftover is checked like a visible one,
+  findings prefixed 【非表示】.
 - Struck-through content is already resolved out of the dump; don't pull it back from
   `_DELETED_DIGEST.txt`.
 
@@ -78,7 +81,7 @@ Parsing rules that matter:
 
 ### 1. Get the workbook dump, and enumerate the reports
 
-From the shared dump (standalone: `python _shared/scripts/live_dump.py <workbook> <out_dir>`), list every live
+From the shared dump (standalone: `python _shared/scripts/live_dump.py <workbook> <out_dir> --hidden`), list every live
 `帳票設計書(<帳票ID>)` sheet and the `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(<帳票ID>)` sheets that pair with them.
 
 ### 2. Read the 帳票一覧 registry for the report IDs' WG

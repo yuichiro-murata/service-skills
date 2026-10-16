@@ -14,9 +14,12 @@ is the automatable part of that block.
 
 **A program with no visible `ﾌｧｲﾙ出力仕様書(*)` sheet — and no input spec (below) — is not in scope.**
 Say so in one line and stop.
-Hidden ones are out of scope too (the shared dump's default): across the project most hidden copies
-are untouched template stubs named `ﾌｧｲﾙ出力仕様書(FXJDXXX)` / `ﾌｧｲﾙ出力仕様書()`, or withdrawn ones
-renamed `削除)ﾌｧｲﾙ出力仕様書(…)`. Also out of scope: sheets that merely share the prefix but are not a
+A hidden one does not put the program in scope either, but it is reported (`agent-guide.md`, "Hidden
+sheets, rows and columns"): across the project most hidden copies are untouched template stubs named
+`ﾌｧｲﾙ出力仕様書(FXJDXXX)` / `ﾌｧｲﾙ出力仕様書()`, or withdrawn ones renamed `削除)ﾌｧｲﾙ出力仕様書(…)` — one
+【非表示】 要確認 line each (delete it, or say why it is kept). Any other hidden spec sheet (`PSJCO406`
+`ﾌｧｲﾙ出力仕様書(FSJC029)`) is checked like a visible one, findings prefixed 【非表示】, and never satisfies
+F2's "registered but no spec sheet" on its own. Also out of scope: sheets that merely share the prefix but are not a
 spec — `ﾌｧｲﾙ出力ｲﾒｰｼﾞ`, `ﾌｧｲﾙ出力のｲﾒｰｼﾞ→` (mock-ups) — and a `…_様式` companion sheet.
 
 **Input specs — `ﾌｧｲﾙ入出力仕様書(<ID>)` / `ﾌｧｲﾙ入力仕様書(<ID>)` — are file specs too, with a different
