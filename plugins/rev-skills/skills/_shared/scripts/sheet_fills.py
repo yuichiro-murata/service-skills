@@ -29,22 +29,46 @@ def _col(letters):
     return n
 
 
+def _dead_font(f):
+    """struck, or a gray rgb colour (r = g = b, 80 < r < 220) — live_dump.py's cell-level rule."""
+    if STRIKE.search(f):
+        return True
+    m = re.search(r'<color [^>]*rgb="[0-9A-Fa-f]{2}([0-9A-Fa-f]{6})"', f)
+    if m:
+        h = m.group(1); r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        return r == g == b and 80 < r < 220
+    return False
+
+
+def _runs(si):
+    """[(text, has_own_rPr, struck)] of one <si>; [] for a plain string. live_dump.py's rule: a run with its
+    own rPr overrides the cell font, a bare run inherits it."""
+    out = []
+    for r in re.findall(r"<r>(.*?)</r>", si, re.S):
+        rpr = re.search(r"<rPr>(.*?)</rPr>", r, re.S)
+        out.append((_txt(re.sub(r"<rPr>.*?</rPr>", "", r, flags=re.S)), bool(rpr), bool(rpr and STRIKE.search(rpr.group(1)))))
+    return out
+
+
+def _live(si_entry, cell_struck):
+    plain, runs = si_entry
+    if not runs:
+        return "" if cell_struck else plain
+    return "".join(t for t, own, st in runs if (not st if own else not cell_struck))
+
+
 def _shared(z):
     try:
         x = z.read("xl/sharedStrings.xml").decode("utf-8")
     except KeyError:
         return []
-    out = []
-    for si in re.findall(r"<si>(.*?)</si>", x, re.S):
-        runs = re.findall(r"<r>(.*?)</r>", si, re.S)
-        out.append("".join(_txt(r) for r in runs if not STRIKE.search(r)) if runs else _txt(si))
-    return out
+    return [(_txt(si), _runs(si)) for si in re.findall(r"<si>(.*?)</si>", x, re.S)]
 
 
 def _styles(z):
     x = z.read("xl/styles.xml").decode("utf-8")
     fonts = re.search(r"<fonts[^>]*>(.*?)</fonts>", x, re.S).group(1)
-    fstrike = [bool(STRIKE.search(f)) for f in re.findall(r"<font(?:/>|>.*?</font>)", fonts, re.S)]
+    fstrike = [_dead_font(f) for f in re.findall(r"<font(?:/>|>.*?</font>)", fonts, re.S)]
     fills = []
     fx = re.search(r"<fills[^>]*>(.*?)</fills>", x, re.S)
     for f in re.findall(r"<fill(?:/>|>.*?</fill>)", fx.group(1) if fx else "", re.S):
@@ -106,14 +130,14 @@ def main():
             sm = re.search(r's="(\d+)"', attrs)
             fill, struck = xs[int(sm.group(1))] if sm and int(sm.group(1)) < len(xs) else ("-", False)
             txt = ""
-            if body and not struck:
+            if body:
                 t = (re.search(r't="(\w+)"', attrs) or [None, "n"])[1]
                 v = re.search(r"<v>(.*?)</v>", body, re.S)
                 if t == "s" and v:
-                    txt = ss[int(v.group(1))]
+                    txt = _live(ss[int(v.group(1))], struck)
                 elif t == "inlineStr":
-                    txt = _txt(body)
-                elif v:
+                    txt = _live((_txt(body), _runs(body)), struck)
+                elif v and not struck:
                     txt = html.unescape(v.group(1))
             txt = txt.replace("\t", " ").replace("\r", "").replace("\n", "⏎").strip()
             if fill == "-" and not txt:

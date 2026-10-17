@@ -14,16 +14,16 @@ wanted two wastes a lot of time and tokens. Ask first, then run only what was se
 
 | # | skill | what it checks |
 |---|-------|----------------|
-| 1 | `design-doc-internal-consistency` | 内部相互参照（ｲﾍﾞﾝﾄ⇔処理概要、ﾚｽﾎﾟﾝｽ/画面項目ID/ﾁｪｯｸID登録、他ｻﾌﾞｼｽﾃﾑのﾒｯｾｰｼﾞID、画面3点一致（Hidden項目のⅥ記載を含む）、排他制御）＋処理/ﾁｪｯｸ順⇔ﾎﾞﾀﾝ順、区分名称の09.区分名称突合、画面ｲﾒｰｼﾞ・《参考》画面項目遷移ｼｰﾄ⇔画面設計書 |
+| 1 | `design-doc-internal-consistency` | 内部相互参照（ｲﾍﾞﾝﾄ⇔処理概要、ﾚｽﾎﾟﾝｽ/画面項目ID/ﾁｪｯｸID登録、他ｻﾌﾞｼｽﾃﾑのﾒｯｾｰｼﾞID、画面3点一致（Hidden項目のⅥ記載を含む）、排他制御）＋処理/ﾁｪｯｸ順⇔ﾎﾞﾀﾝ順、区分名称の09.区分名称突合、画面ｲﾒｰｼﾞ・《参考》画面項目遷移ｼｰﾄ⇔画面設計書、本文中の参照・※n、複製の片側修正、必須/文字種ﾁｪｯｸ⇔Ⅴ、ｻﾌﾞﾌﾟﾛ引数・遷移ﾊﾟﾗﾒｰﾀ |
 | 2 | `design-doc-io-table-check` | Ⅲ．入出力定義（CRUD一覧）の双方向網羅性 — 最重量・最高収穫のチェック |
-| 3 | `xlsx-db-column-check` | 参照ｶﾗﾑがﾃｰﾌﾞﾙﾚｲｱｳﾄに実在するか＋**画面の桁数とﾃｰﾌﾞﾙﾚｲｱｳﾄの桁数の整合**＋ｺｰﾄﾞ/名称の二重保持ｱﾝﾁﾊﾟﾀｰﾝ(名称がLabelの場合のみ指摘)＋検索条件のTXJAM100保存漏れ |
+| 3 | `xlsx-db-column-check` | 参照ｶﾗﾑがﾃｰﾌﾞﾙﾚｲｱｳﾄに実在するか＋**画面の桁数とﾃｰﾌﾞﾙﾚｲｱｳﾄの桁数の整合**＋ｺｰﾄﾞ/名称の二重保持ｱﾝﾁﾊﾟﾀｰﾝ(名称がLabelの場合のみ指摘)＋検索条件のTXJAM100保存漏れ＋SQLの意味（NULL比較・COUNT・LEFT JOIN・存在ﾁｪｯｸ・状態ｸﾞﾙｰﾌﾟ） |
 | 4 | `naming-standard-compliance` | 各ID採番規則・ﾍｯﾀﾞｰ情報・表紙 |
 | 5 | `update-condition-completeness` | 更新条件表の網羅性（NOT NULL/主キー/共通項目の設定漏れ、登録日時のUPDATE上書き、更新概要の書式） |
 | 6 | `report-design-check` | 帳票設計書（帳票一覧登録、Ⅱ．帳票仕様の記入漏れ、参照先ｴｲﾘｱｽ、取得項目⇔印字項目） |
 | 7 | `design-doc-formatting-consistency` | ﾌｫﾝﾄｻｲｽﾞ/ｾﾙ結合のブレ（体裁の衛生） |
 | 8 | `design-doc-typo-check` | 日本語の誤字脱字・変換ミス |
 | 9 | `file-output-spec-check` | ﾌｧｲﾙ出力仕様書（ﾌｧｲﾙID一貫性、ﾌｧｲﾙ一覧登録、Ⅱ．ﾌｧｲﾙ出力仕様の記入漏れ、共通ﾀﾞｳﾝﾛｰﾄﾞ注釈、画面項目ID番台/登録、ﾍｯﾀﾞｰ⇔明細、明細の参照先、編集方法、ﾌｧｲﾙﾚｲｱｳﾄ一致） |
-| 10 | `design-doc-writing-rules` | ｾﾙﾌﾁｪｯｸ記述ﾙｰﾙ（Ⅴ項目定義：大文字変換/ﾎﾞﾀﾝID 9xxx/選択□/No/TextBox桁数・文字種、項番の飛び・重複、取得件数の末行記載、ﾚｽﾎﾟﾝｽ表記、画面名＋画面ID） |
+| 10 | `design-doc-writing-rules` | ｾﾙﾌﾁｪｯｸ記述ﾙｰﾙ（Ⅴ項目定義：大文字変換/ﾎﾞﾀﾝID 9xxx/選択□/No/TextBox桁数・文字種、項番の飛び・重複、取得件数の末行記載、ﾚｽﾎﾟﾝｽ表記、画面名＋画面ID、ｽﾞｰﾑ名・IDと台帳、他機能名とﾌｧｲﾙ名） |
 
 Checks 5, 6 and 9 are narrower than the rest in one specific sense: each applies only when the
 workbook has the sheets it reads. A program with no `更新条件表(*)` sheet (a pure 照会 screen), no
@@ -155,6 +155,17 @@ to the next one unless the user says "同じ観点で" or similar.
      worth passing to `naming-standard-compliance` — pass those lines in naming's prompt). Check freshness
      with `build_screen_list.py <root> <tsv> --check` (FRESH/STALE; it counts with its own scope rules and
      checks `# format-version`) — never by recounting the folder yourself.
+   - **Parameter index** (sub-program 引数/戻り値, screen (1)ﾊﾟﾗﾒｰﾀ定義 — check 18) — when
+     `design-doc-internal-consistency` is selected:
+     `python _shared/scripts/build_param_index.py <...\01_Doc\08_機能定義書\<WG>> idx_param_<WG>.json` (~50 s for the 122
+     工程管理 books; reads the zip only; freshness by `--check`, which compares every book's mtime/size).
+   - **Program-name list** (`機能ID → 機能名` from the 機能定義書 file names, all WGs) — when `design-doc-writing-rules`
+     is selected (W8): `python _shared/scripts/build_program_list.py <...\01_Doc\08_機能定義書> lookup_program-name_08_機能定義書_ALL.tsv`
+     (~1 s; opens no workbook, so rebuild it every run).
+   - **Zoom list** (`ズームID → ｽﾞｰﾑ名称/表示名/個・共` from the visible `ｽﾞｰﾑ一覧*` sheets of the `03.ｽﾞｰﾑ管理台帳*.xlsx` ledgers
+     directly in `01_Doc\04_共通設計`) — when `design-doc-writing-rules` is selected (W7):
+     `python _shared/scripts/build_zoom_list.py <...\01_Doc\04_共通設計> lookup_zoom_03.ｽﾞｰﾑ管理台帳.tsv` (~12 s; `--check`).
+     Pass both paths in the writing-rules agent's prompt with the screen-name list.
    - **入力可文字種 table** — when `design-doc-writing-rules` is selected (W1f):
      `python _shared/scripts/build_kind_table.py <...\01_Doc\08_機能定義書\<WG>> lookup_kind_<WG>.tsv` (~45 s;
      freshness by the same `--check` flag). Pass its path; the agent runs

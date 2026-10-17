@@ -1,6 +1,6 @@
 ---
 name: xlsx-db-column-check
-description: Check whether a design doc (機能定義書/画面設計書/更新条件表) references DB columns that do not exist in the table's ﾃｰﾌﾞﾙﾚｲｱｳﾄ, and whether each screen item's 桁数 matches the column's length (e.g. a 工程名 TextBox of 30 against NVARCHAR2(60)). For 検索条件保存ﾏｽﾀ (TXJAM100) it also flags a saved master-derived name shown as a Label (only the code should be stored) and a typed search condition that is not saved (self-check No.47). Distinct from design-doc-io-table-check, which asks whether a table is declared at all. Use when the user asks to verify a program's design doc against the DB design files, e.g. 「使っているカラムがDB設計書に存在するか確認して」「存在しないカラムを使っていたら教えて」. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Check whether a design doc (機能定義書/画面設計書/更新条件表) references DB columns that do not exist in the table's ﾃｰﾌﾞﾙﾚｲｱｳﾄ, and whether each screen item's 桁数 matches the column's length (e.g. a 工程名 TextBox of 30 against NVARCHAR2(60)). For 検索条件保存ﾏｽﾀ (TXJAM100) it also flags a saved master-derived name shown as a Label (only the code should be stored) and a typed search condition that is not saved (self-check No.47). It also reads each 参照ｴﾝﾃｨﾃｨ block as SQL (step 7): NULL compared with =/<>, COUNT counting the wrong unit, a LEFT-joined column in WHERE, existence checks not narrowed to the business unit, and one =/<> against a multi-valued 移動ﾛｯﾄ状態 group. Distinct from design-doc-io-table-check, which asks whether a table is declared at all. Use when the user asks to verify a program's design doc against the DB design files, e.g. 「使っているカラムがDB設計書に存在するか確認して」「存在しないカラムを使っていたら教えて」. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # xlsx-db-column-check
@@ -448,7 +448,113 @@ no 更新条件表 sheet at all), there is nothing to run 6/6b against: say in o
 checks could not run and why, mark it 要確認, and leave the missing-sheet finding itself to
 `design-doc-io-table-check` step 6 when it is in the run (report it here only without it).
 
-### 7. Reporting
+### 7. SQL semantics of the 参照ｴﾝﾃｨﾃｨ blocks (S1-S5)
+
+Steps 2-5 ask whether a column exists and fits; this step asks whether the query, read as SQL, returns
+what the block's title and its users (Ⅰ checks, Ⅴ 説明) say it does. Scope: every live 参照ｴﾝﾃｨﾃｨ block step 2
+harvests (画面設計書 Ⅲ, ﾁｪｯｸ処理設計書 Ⅱ, 帳票設計書, 機能定義書, ﾌｧｲﾙ出力仕様書, 更新条件表 side blocks). Pasted SQL
+from col 54 on is out of scope. Calibrated 2026-10-17 on the 122 工程管理 PHASE1-3 books (2,468 blocks).
+Origin: my-review-skills' PXJCO124 baseline comparison (2026-10-11/12; adopted 2026-10-17) — the cells below.
+
+**Parse per query, not per block.** A condition row is No. (label col L), left side (L+2), operator (the
+cell holding `=`/`<>`/`LIKE`/`IN`/`IS`…, ~L+20 — find it by token, as in writing-rules W6), right side
+(next cell), notes further right (`※n`, `OR`, `)`); an opening bracket sits at L-1.
+`[82,4]=5 | [82,6]=A.管理No | [82,24]== | [82,28]=NULL` (`PXJCO124` `画面設計書(GXJC124B)`). **Split a block
+into queries at every `取得件数` row**: a following `取得項目` without its own 参照ｴﾝﾃｨﾃｨ (`a)ｻﾌﾞｸｴﾘB1…`,
+`①-2 対象工程の工程Noを取得`) is a new query that reuses the alias list but not the joins — without the
+split, `PXJCO161` `GXJC161B` `[387]` and `PXJCO101` `GXJC101A` `[358]` read as false LEFT-JOIN hits.
+A `NOT EXISTS` / `検索条件(NOT EXISTS)` sub-heading opens a correlated sub-query (`PSJCB804` `[258,5]`):
+its rows are not WHERE predicates of the outer query. **The 更新条件表 side blocks use the other shape** — `取得ﾃｰﾌﾞﾙ名` /
+`参照ﾃｰﾌﾞﾙ名` (step 2): left side col 58, operator col 68, right side col 74, brackets 54/84 (full-width `（）`), AND/OR col
+86, one query per `No.k` — and are in scope too (most of `PSJCO306`'s S1 rows sit there). An operator cell holding `※n`
+(`PSJCO306` `GSJC306A` `[271,25]`) is read after resolving the note; AND/OR are case-insensitive (`GSJC306B` `[97,46]` `or`).
+S2 and S4 need the table's unique key: the `ﾃｰﾌﾞﾙﾚｲｱｳﾄ` I01..I08 flags (cols 28-35, ordinal = key order)
+of the index that `＜ｲﾝﾃﾞｯｸｽ情報＞` names on a `ﾕﾆｰｸｷｰ` / `ﾕﾆｰｸｲﾝﾃﾞｯｸｽ` / `PRIMARY KEY` line (full-width spaces allowed:
+`ﾕﾆｰｸｷｰ　I01` on TXJAM008; `PRIMARY KEY I01` on TXJCD404; `I01` on 298 of 480 layouts, `IO1` typo on 8). `ﾕﾆｰｸｷｰ 無し`
+means no key **only when no ﾕﾆｰｸｲﾝﾃﾞｯｸｽ line follows** — TXJCD102 and TXJCD104 carry both, and their ﾕﾆｰｸｲﾝﾃﾞｯｸｽ is the
+key. No usable line → skip S2/S4 for that table and say so in one line.
+
+**S1 — NULL compared with `=`/`<>`/`≠` — 低, once per sheet.** In SQL `x = NULL` and `x <> NULL` are never
+true; the form is `IS NULL`/`IS NOT NULL` (an `IS` or `IS NOT` operator cell followed by a `NULL` cell —
+40 rows). Flag a condition or join row whose operator is `=`/`<>`/`≠`/`!=` and whose other side is
+`NULL` (case-insensitive, trimmed — 更新条件表 blocks write `Null` 9 times on `PSJCO306`), on either side
+(`NULL = C.管理No`). Measured: 173 rows, 62 sheets, 34 programs — the
+停止日時 template `(A.停止日時 = NULL OR A.停止日時 => ｼｽﾃﾑ日時)` (25 rows; its `=>` half is W6e's),
+`A.管理No = NULL` (53, 7 of them in joins), and others: `PXJCO124` `GXJC124B` `[82,28]`, `PXJCO131`
+`GXJC131A` `[307,28]`-`[309,28]` (`B.事業所ｺｰﾄﾞ/外注ｺｰﾄﾞ/分工場ｺｰﾄﾞ = NULL` on LEFT-joined 作業場ﾏｽﾀ),
+`PXJCO163` `GXJC163A` `[367,6]` (join `… OR NULL = C.管理No`), `PSJAO601` `GSJA601B` `[141,24]`
+`B.受信日時 <> NULL`. Why 低: it is a house-wide convention and the developers' own col-54 SQL writes
+`IS NULL` (30, never `= NULL`), so it is read correctly today; but literal SQL returns nothing, so list
+every cell (the sheet's line names them all) with the fix. When it sits in an `OR` that keeps a LEFT JOIN
+open (`PXJCO161` `ﾁｪｯｸ処理設計書(GXJC161B)` `[364]`/`[365]` `(B.管理No = Y.管理No OR B.管理No = NULL)`),
+say in the same line that read literally the branch is dead and the outer join becomes inner (S3). The same holds
+for an `OR` in WHERE: `(A.管理No = Y.管理No OR A.管理No = NULL)` on VXJCM004_31 (lot row or order-common row — 6 rows on
+4 sheets of `PSJCO306`) read literally returns only the lot row and drops the order-common one; say so.
+Not S1: prose conditions (`(2).単位ｺｰﾄﾞ≠NULLの場合`, `ﾛｸﾞｲﾝ情報.作業者ｺｰﾄﾞ=NULL` — 141 sentences;
+design language for 空), and pasted SQL.
+
+**S2 — COUNT counts the intended unit — 高 when confirmed, else 要確認.** For a `COUNT(<alias>.<col>)`
+without DISTINCT, take the alias table's unique key and remove every key column fixed by an `=`/`IN`
+condition, a 集約条件/集計条件 row or an `=` join. If `<col>` is a remaining key column **and** other key
+columns remain, the count is rows, not distinct `<col>` values. Report it only when the item names the
+unit of `<col>` (`層数` ↔ `層No`, `工程数` ↔ `工程ｺｰﾄﾞ`) or its users compare it as a quantity. Confirmed:
+`PXJCO124` `ﾁｪｯｸ処理設計書(GXJC124A)` `(4)` `[281,17]` `層数 = COUNT(A.層No)` grouped by 製造ｵｰﾀﾞｰNo
+(`[287]`-`[289]`) over `TXJCM004`, whose I01 is 会社ｺｰﾄﾞ/部門GRP/製造ｵｰﾀﾞｰNo/層No/工程ｺｰﾄﾞ/処置指示No — it
+counts 層×工程×処置指示 rows, and check No.2 `[77,14]` compares the two orders' 層数 (SJC-000199): 高, fix
+`COUNT(DISTINCT A.層No)` (and say whether 処置指示No should be fixed, S4). Also read the threshold the
+count is tested against: `PSJCO302` `GSJC302A` `[169,17]` `COUNT(*)>1の場合は"0"(未完了)` over rows already
+filtered to 未完了 states (`[178]` `NOT IN ※1`) shows 完了 for a 製造ﾛｯﾄNo with one unfinished lot — 要確認
+(`>0`?). Not S2: existence counts (`存在ﾁｪｯｸ COUNT(*)`, compared `>0`), row counts named 件数/回数
+(`PSJAO601` `GSJA601A` `[1406]` `保守回数`), `COUNT(A.会社ｺｰﾄﾞ)` used as `COUNT(*)` (`PSJAO401` `[353]`
+`仕掛ﾛｯﾄ数` — one row is one lot). Measured: 233 COUNTs, 24 with a free key column besides the counted one,
+1 definite. Fan-out through a 1:N join is a reading note, not a mechanical finding.
+
+**S3 — a LEFT-joined table's column in WHERE — 要確認; 中 when the block shows outer intent.** For each
+`結合条件(X LEFT JOIN R)` in the query, a 検索条件 row naming `R.` on either side turns the outer join into
+an inner one (rows without R get NULL and fail the test). Exclude: `R.x IS NULL` / `= NULL` (anti-join);
+`COALESCE`/`NVL` on R, or an `OR` group with such a branch (`PSJAO203` `GSJA203B` `[395]`/`[396]`); rows
+under a condition heading in the 検索条件 (`【(8).内外作区分="1"(外注)の場合、以下の検索条件を追加】`,
+`内外作区分が1:社外の時` — the login 外注/事業所 restriction on 作業場ﾏｽﾀ, ~20 programs, meant to drop
+rows); rows that a `※n` note makes conditional (「〜の場合のみ条件に追加」, 「入力された場合のみ」) or that test an optional
+screen input (`Y.…` with such a note); NOT EXISTS sub-queries. A `※n` or `Y.` that only gives the value's source does not
+exclude the row (`[310]` `A2.ﾎﾞﾃﾞｨ1 = ※2` stays in). Measured: 291 predicates → 9 rows in 5 programs. **中** when the block shows the rows must
+survive — COALESCE on R in 取得項目, or a sibling block with the same condition in 結合条件: `PSJCO604`
+`GSJC604A` `[129,6]` `B.棚卸DATA作成日時 = (5).棚卸DATA作成日時` with `A LEFT JOIN B` `[130]` and
+`[122,17]` `COALESCE(B.完成割合, 0)`, while ①今回 has no B filter (also `[201,6]`, `GSJC604B` `[615,6]`,
+`[718,6]`) — move the condition into 結合条件. Otherwise 要確認, 「意図どおりなら INNER JOIN と書く」:
+`PXJCO124` `ﾁｪｯｸ処理設計書(GXJC124A)` `(5)` `[308,6]` `A1.ｷｰ3 < A2.ｷｰ3` / `[310]` `A2.ﾎﾞﾃﾞｨ1 = ※2` with
+`A1 LEFT JOIN A2` `[311]`; `PSJAO701` `GSJA701A` `[151]`-`[153]`; `PXJCO121` `GXJC121A` `[457]`;
+`PSJCO403` `GSJC403A` `[898,8]`. Join order itself is W6b's.
+
+**S4 — existence/count narrowed to the business unit — 要確認, reading guideline.** For a query whose
+取得項目 is a COUNT or 存在有無 (or whose title says 存在/有無/件数) on a table whose unique key holds 管理No:
+when 管理No is fixed but a unit key column (the table's business-unit keys — 工程ｺｰﾄﾞ, 層No, 処置指示No, 枝番, and for
+焼成 tables 作業日/ｻﾔ) is not, ask whether the check
+can find another process's/layer's/branch's record. 83 such queries, 20 leave a unit key free; most are
+lot-level by design (`PXJCO125` ﾛｯﾄ取消 `[111]`/`[123]` — any 作業実績 blocks the 取消; `PXJCO901` `[29]`
+移動ﾛｯﾄ by 管理No). Report only with a reason, best a sibling that narrows the same table: `PXJCO124`
+`ﾁｪｯｸ処理設計書(GXJC124A)` `(3)②` `[258]`-`[269]` searches `TXJCD102` 個別作業実績 by 管理No+枝番 only for
+check No.14 「個別作業実績に存在する場合はｴﾗｰ」, while `PXJCO161` `GXJC161A` `(11)` `[516]`-`[522]` narrows the
+same table by 工程ｺｰﾄﾞ/作業者ｺｰﾄﾞ/資源ｺｰﾄﾞ — 要確認 「A.工程ｺｰﾄﾞ = B.仕掛工程ｺｰﾄﾞ が要るか」 (copied:
+`PXJCO152` `GXJC152A` `[753]`-`[764]`). An expression on the key (`A.工程ｺｰﾄﾞの先頭5桁 IN …`, `PXJCO161`
+`[1260]`) counts as narrowing.
+
+**S5 — one `=`/`<>` against a multi-valued 区分 — 中.** `07.共通項目取得.xlsx` sheet
+`共通項目取得(移動ﾛｯﾄ状態)` groups the 33 states (rows 17-49) by 有効ﾌﾗｸﾞ (通常/作業前/作業中/作業完了/完了/廃棄/出荷). A
+condition `X.移動ﾛｯﾄ状態 =|<> <v>` whose value or resolved `※n` footnote is such a group (`有効ﾌﾗｸﾞ(…)="1"の
+移動ﾛｯﾄ状態`, or several codes joined by `または`/`,`/`or`) must be `IN`/`NOT IN`: `PXJCO124`
+`画面設計書(GXJC124A)` `[704,24]` `A1.移動ﾛｯﾄ状態 <> ※1`, ※1 `[730]` = 有効ﾌﾗｸﾞ(完了); `PSJCO803` `GSJC803A`
+`[150,24]` `= ※1`, ※1 `[172]` `有効ﾌﾗｸﾞ="作業前"または"作業中"…`; `PXJCO161` `GXJC161D` `[238,24]`
+`= ※1 OR` `[239]` `= "63"`. An inline list written with `=` (`"11"(Y.新規発行にﾁｪｯｸ) or "22" …`, `PXJCO131`
+`GXJC131A` `[273]`, `PSJCO207` `GSJC207A` `[108]`; ｻﾝﾌﾟﾙ区分 in `PXJCO164`/`PXJCO165`) is 低 (write IN). A
+hard-coded list where 07 has a group is 要確認 against 07: `PSJCB303` `機能定義書` `[164,28]` lists the
+消滅/廃棄 codes but not 完了-group 26/32/83/99 and keeps the old label `"82"(ﾛｯﾄ抹消)` (now 過剰在庫);
+`PXJCO131` `[273]` still files 62 積層 under (作業中) although 07 moved it to 作業前 on 2026/2/16. Not S5:
+a single state compared with one value (`≠"91"(流動停止)`, `="25"(加工終了)`). Validated 2026-10-17 on `PXJCO124` (S1-S5 reproduced) and `PSJCO306` (S1 only, none false). Other 区分 have no group
+master — read them, don't scan. Read 07 live (`live_dump.py <07.共通項目取得.xlsx> <out> --sheets
+"^共通項目取得\(移動ﾛｯﾄ状態\)$"`).
+
+### 8. Reporting
 
 **Every cell coordinate quoted in this file is from one dated snapshot of a live workbook and drifts
 as rows are inserted and deleted** — the `PXJCO128` examples in steps 5 and 6 are the 2026/9/14
@@ -467,6 +573,9 @@ table has the matching column under another name / both the code and its master-
 being persisted when only the code should be). Order by confidence — exact misses, 桁数 mismatches,
 suspicious cross-references, and redundant code+name pairs first, likely-renames after, clearly
 labeled as lower-confidence judgment calls rather than confirmed defects.
+
+An S-finding (step 7) carries its evidence: the unique key and the fixed columns for S2/S4, the join label
+for S3, the resolved footnote and the 07 group for S5. S1 is one line per sheet listing every cell.
 
 A 桁数 finding carries its own evidence: give both numbers and both sources (`画面桁数=30` /
 `TXJAM023 工程名 NVARCHAR2(60)`), say which way it fails (truncation on entry/display, or overflow at

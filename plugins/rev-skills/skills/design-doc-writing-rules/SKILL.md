@@ -1,6 +1,6 @@
 ---
 name: design-doc-writing-rules
-description: Check a design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules: Ⅴ per-item rules (upper-case note on code inputs, button IDs in the 9xxx band, 選択 = □, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea carry 桁数 and 入力可文字種, 入力可文字種 consistent across screens, zoom buttons 表示 Z + Ⅳ参照), 項番 gaps/duplicates, 取得件数 at the end of each 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, screen names followed by their 画面ID, and 画面表示仕様 search conditions (LIKE needs a match mode, 名称 searches 部分一致) and join order (INNER before LEFT). How a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Check a design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules: Ⅴ per-item rules (upper-case note on code inputs, button IDs in the 9xxx band, 選択 = □, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea carry 桁数 and 入力可文字種, 入力可文字種 consistent across screens, zoom buttons 表示 Z + Ⅳ参照), 項番 gaps/duplicates, 取得件数 at the end of each 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, screen names followed by their 画面ID, and 画面表示仕様 search conditions (LIKE needs a match mode, 名称 searches 部分一致) and join order (INNER before LEFT). How a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name. Also W7 (zoom names/IDs vs 03.ｽﾞｰﾑ管理台帳) and W8 (other programs' names = their 機能定義書 file names).
 ---
 
 # design-doc-writing-rules
@@ -472,7 +472,8 @@ Item type comes from the left side's column name: **名称** = ends in `名`/`�
   given for this row only — a footnote that lists several cases (`停止区分"6:品目ｺｰﾄﾞ+製造ﾛｯﾄNo(部分一致)"`)
   is not a 部分一致 on 品目ｺｰﾄﾞ.
 - **e. Not an SQL operator — 低.** `=>` (15 rows, 10 sheets, 6 programs — all `A.停止日時 => ｼｽﾃﾑ日時` in
-  the `(A.停止日時 IS NULL OR …)` pair copied from one template: `PSJAO241` `GSJA241B-基本情報` `[330,24]`,
+  the `(A.停止日時 = NULL OR …)` pair copied from one template — its `= NULL` half is `xlsx-db-column-check`
+  S1 (`IS NULL`); report the pair in one line when both checks run: `PSJAO241` `GSJA241B-基本情報` `[330,24]`,
   `PSJAO401` `GSJA401B` `[473,24]`, `PSJCO401`, `PSJCO402`, `PXJAO701` `GXJA701B` `[275,24]`, `PXJCO101`
   `GXJC101C` ×6). Report once per sheet, fix `>=`. Same for `=<`, `==` or a full-width `＝`/`＜` if met.
   A blank operator with both sides filled occurs 0 times; if you meet one it is 中.
@@ -503,6 +504,129 @@ by `なし` (3). Worth a separate line when you see it: a label joining the driv
 wrong (中, a `design-doc-internal-consistency` matter, but report it here if nothing else will).
 Joins described only inside an entity name (`作業場ﾏｽﾀ(万一ﾏｽﾀとの紐付け切れた時の為LEFT_JOIN)`) or in pasted
 SQL samples are out of scope.
+
+### W7 — ズーム名・ズームIDが 03.ｽﾞｰﾑ管理台帳 と一致 (my-review-skills 「ズーム名・IDが台帳と違う」; 回答 20261010 No.54/55)
+
+Source: 「Ⅳ・Ⅴ・Ⅵ に書くズームの名前・ズームIDが `03.ｽﾞｰﾑ管理台帳*.xlsx` の名称・ID と完全に一致しているか」 (adopted
+2026-10-17). Calibrated on the 122 工程管理 `PHASE1`-`PHASE3` workbooks (live text); re-derive every verdict.
+
+**The ledger.** The prebuilt zoom list your prompt names; standalone, build it with
+`python _shared/scripts/build_zoom_list.py <...\01_Doc\04_共通設計> <out.tsv>` (~12 s, zip only; `--check` for freshness).
+It reads the visible `ｽﾞｰﾑ一覧*` sheets of `03.ｽﾞｰﾑ管理台帳.xlsx` (共通: `ｽﾞｰﾑ一覧【XJx】`/`【SJx】`), `…_基準情報.xlsx` and
+`…_工程管理.xlsx` (個別: `ｽﾞｰﾑ一覧【XJ】`/`【SJ】`) — never `90_JAGUR各管理台帳\`, never the hidden `旧ｽﾞｰﾑ管理台帳(共通)` /
+`ｽﾞｰﾑ一覧（共通、個別）` / `WORK…` sheets — finding the header by its `ｽﾞｰﾑID` label, live rows only (103 IDs, 128 rows in
+2026-10). Rules for the dictionary:
+- Live rows only: `ZSJA025` was `承認ﾛｰﾙｽﾞｰﾑ` (struck, 共通 `【SJx】` `[27]`) and is now `処置指示Noｽﾞｰﾑ（ﾘｯﾁ）` in `_工程管理`.
+- An ID may have several live rows (the 共通 ledger repeats a changed row below the original, `改訂履歴No.n` in col 61) and
+  several ledgers (`ZXJA018` is in all three). Accept any live `ｽﾞｰﾑ名称` of the ID. `ZXJA040` has two: `品目ｽﾞｰﾑ` `[30]` and
+  `品目ｺｰﾄﾞｽﾞｰﾑ` `[31]` (changed 2024/1/9; the corpus uses the latter 42 times).
+- Normalise full-/half-width parentheses and whitespace, including a line break inside the name
+  (`ﾃｰﾌﾞﾙ一覧ｽﾞｰﾑ(汎用ﾏｽﾀ)⏎(ZSJA020)`).
+- `ｽﾞｰﾑ名称` is the authority, not `表示名`: the ﾘｯﾁ twins share a 表示名 with their XJ twin (`ZSJA028` `品目詳細ｽﾞｰﾑ(ﾘｯﾁ)` /
+  表示名 `品目詳細ｽﾞｰﾑ` = `ZXJA005`'s 名称; also `ZSJA029`/`ZXJA029`, `ZSJA025`/`ZXJA035`, `ZSJA046`/`ZXJA030`).
+- Some names do not end in `ｽﾞｰﾑ` (`ZSJA040` `返品情報検索`, `ZSJA041` `出荷情報検索(ﾛｯﾄﾄﾚｰｽ)`), so never extract a name by
+  "…ｽﾞｰﾑ(".
+
+**Where zoom IDs appear.** Only in Ⅳ — 画面設計書 `Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細` and 機能定義書 `Ⅳ．機能処理概要`. Ⅴ and Ⅵ carry the
+**button** name (`品目ｺｰﾄﾞｽﾞｰﾑ` opening `品目詳細ｽﾞｰﾑ(ﾘｯﾁ)`), which is not the zoom's name and is not this rule. Three shapes:
+- **(A) inline `名称(ID)`** in 処理内容 — `PSJAO203` `GSJA203A` `[369,20]` `KC品名ｽﾞｰﾑ(ZXJA006)を起動する` (607 in 78 books,
+  592 exact).
+- **(B) the `※1.ｽﾞｰﾑ起動ﾊﾟﾗﾒｰﾀ` table** — heading `①KC品名ｽﾞｰﾑ`, then `ｽﾞｰﾑID` | `ZXJA006` or `"ZXJA006"` (`GSJA203A`
+  `[386]`-`[389]`; 285 in 57 books). The heading is the button name (`②停止指示者ｽﾞｰﾑ` → `ZXJA031` 作業者ｽﾞｰﾑ), so **never
+  compare a table heading with the ledger name**.
+- **(C) a heading `ID:名称`** (`PSJCO308` `GSJC308A` `[1049,5]` `① ZXJA030:工程ｽﾞｰﾑ`) — compare like (A).
+
+**Findings.**
+- **a. ID not in the ledger — 中.** 0 in the corpus.
+- **b. Table ID ≠ the Ⅳ event's ID — 中.** For each (B) table, find the Ⅳ row whose 画面項目 equals the heading and compare
+  its inline (A) ID: 223 agree, **5 disagree** — `PSJCO402` `GSJC402B` `[123,13]`/`[127,13]` `"ZSJA043"` (ﾃｰﾌﾟﾛｯﾄNoｽﾞｰﾑ)
+  while Ⅳ `[118,24]`/`[119,24]` launches `加工部門ｺｰﾄﾞｽﾞｰﾑ(ZSJA032)`; the same in `PSJCO404` `GSJC404A` `[1649,13]`/`[1653,13]`
+  (hidden rows — `【非表示】`); `PSJAO241` `GSJA241B-基本情報` `[1551,11]` `①KC品名ｽﾞｰﾑ` → `ZSJA035`. With no matching Ⅳ row
+  (57), report only when the heading's subject plainly contradicts the ID's ledger name: `PSJCO403` `GSJC403A`
+  `[1540,5]`/`[1542,13]` and `PSJCO404` `GSJC404A` `[1585,13]` — `作業場ｺｰﾄﾞｽﾞｰﾑ` with 引数 `G1).作業場ｺｰﾄﾞ` but `"ZXJA031"`
+  (作業者ｽﾞｰﾑ; Ⅳ uses `作業場ｽﾞｰﾑ(ZXJA029)`) — 中. Qualified button names are not that (`停止指示者ｽﾞｰﾑ`→作業者ｽﾞｰﾑ,
+  `送付先作業場ｽﾞｰﾑ`→`作業場(納品用)ｽﾞｰﾑ`, `加工期限通知先選択ｽﾞｰﾑ`→ｸﾞﾙｰﾌﾟ選択ｽﾞｰﾑ).
+- **c. (A)/(C) name ≠ the ledger 名称 of its ID.** Judge by **suffix match** on the normalised text before `(ID)` (balanced
+  parentheses kept: `品目詳細ｽﾞｰﾑ(ﾘｯﾁ)(ZSJA028)`): (1) if one of the ID's own live 名称 is a suffix, it agrees — a qualifier
+  or sentence in front is not reported (`[513,23]` reads 「…画面.管理Noをもとにｵｰﾀﾞｰ工程属性ｽﾞｰﾑ」, `PSJCO306` `[589,24]`
+  「"1"(有効のみ)をもとに資源ｽﾞｰﾑ」); (2) else if another ID's 名称 is a suffix (take the longest), the written name is that
+  名称 — **中**; (3) else the written name is the text after the last `をもとに`/`、`/`。`/space — **低**.
+  **中** when the written name is the 名称 of **another** ID — name or ID is wrong:
+  `PSJCO204` `GSJC204A` `[638,20]` `管理Noｽﾞｰﾑ(ZSJA042)` (ledger `管理Noｽﾞｰﾑ(不良ﾛｯﾄ統合用)`; `管理Noｽﾞｰﾑ` is `ZXJA012`);
+  `PXJCO123` `GXJC123A` `[513,23]` `ｵｰﾀﾞｰ工程属性ｽﾞｰﾑ(ZXJA034)` (`ZXJA011`'s name; ledger `ｵｰﾀﾞｰ工程属性(共通)ｽﾞｰﾑ`). **低**
+  otherwise — give the ledger name: `PSJCO205` `GSJC205A` `[385,24]`/`[387,24]` `返品情報検索ｽﾞｰﾑ(ZSJA040)`; `PXJCO164`
+  `GXJC164A` `[591,20]` `汎用GRPｽﾞｰﾑ(ZSJA021)` (→ `汎用工程GRPｽﾞｰﾑ`); `PXJCO122` `GXJC122A` `[638,20]`
+  `ｵｰﾀﾞｰ工程属性ｽﾞｰﾑ(共通)(ZXJA034)`; `PSJCO308` `GSJC308A` `[1038,24]` `共通ｽﾞｰﾑ(焼成管理No一覧(ZSJA048))`. A name that
+  matches only the ID's 表示名, while being its XJ twin's 名称, is 低, "add `(ﾘｯﾁ)`": `PSJCO309` `GSJC309A` `[1227,24]`
+  `作業場ｽﾞｰﾑ(ZSJA029)`, `PSJAO401` `GSJA401A` `[267,20]` `処置指示Noｽﾞｰﾑ(ZSJA025)`. A qualifier prefix with the ledger name
+  intact (`PXJCO161` `GXJC161B` `[1833,24]` `次工程作業場ｽﾞｰﾑ(ZXJA029)`) is not reported.
+- **d. Placeholder `XXXXｽﾞｰﾑ(XXXXXXX)` — 中** (the zoom has not been chosen; the sheet's call-outs often ask the question,
+  `PSJCO802` 「依頼元部門のｽﾞｰﾑは？」): 8 cells in 3 programs — `PSJCO802` `GSJC802A` `[140,24]`/`GSJC802B` `[225,24]`,
+  `PSJCO805` `GSJC805A`/`B`/`C`/`E`/`F`, `PSJCOA06` `GSJCA06B` `[226,24]`. One line per program.
+- **Not findings:** using only some of the ledger's 起動ﾊﾟﾗﾒｰﾀ/戻り値 (回答 20261010 No.54/55: `ﾃｰﾌﾟﾛｯﾄNoｽﾞｰﾑ(ZSJA043)` given
+  only ﾃｰﾌﾟﾛｯﾄNo is normal); a GX screen calling a ZS zoom or the reverse (414 GS→ZX, 33 GX→ZS in the corpus); `ｽﾞｰﾑｲﾝ`/`ｱｳﾄ`,
+  `F9:ｽﾞｰﾑ`, `ｽﾞｰﾑ画面で選択された値`, the 表示 `Z`, and edit masks such as `ZZZ9` (the ID regex is `Z[A-Z]{3}\d{3}`). The
+  LinkLabel rule for Z programs themselves concerns the ledger's own design sheets — out of scope here.
+Report b and d one line per sheet/program, c one line per sheet listing the cells. A zoom with no Ⅳ event at all stays
+`design-doc-internal-consistency`'s finding.
+
+### W8 — 他機能の名前は呼び出し先の機能定義書ファイル名どおり (課題152-1041・1046・1047・1050, 課題165-168)
+
+Source: my-review-skills 「他の機能（ｻﾌﾞﾌﾟﾛ・画面・バッチ）の名前を書くときは、呼び出し先の機能定義書のファイル名
+（`<機能ID>_<機能名>.xlsx` の機能名。例: `ﾛｯﾄ分割処理(ｻﾌﾞﾌﾟﾛ)`）と完全に一致させているか」 — abbreviations such as
+`ﾛｯﾄ分割処理ｻﾌﾞﾌﾟﾛ` or `処置指示書発行(ｻﾌﾞﾌﾟﾛ)` are findings, and once one is found every occurrence (I/O関連図, 機能処理概要,
+other sheets) is checked (adopted 2026-10-17). Calibrated on the 122 工程管理 books and validated on `PXJCO123`
+(reproduced) and `PSJCO306` (no finding, none false); re-derive every verdict.
+
+**The program list.** `機能ID → 機能名` from the **file names** of every workbook under `01_Doc\08_機能定義書` (all WGs), in
+`build_screen_list.py`'s scope — the list your prompt names; standalone,
+`python _shared/scripts/build_program_list.py <...\01_Doc\08_機能定義書> <out.tsv>` (~1 s, opens no workbook; 287 programs
+in 2026-10; `DUP-ID`/`UNPARSED` lines are not findings). Name = the file name after the first `_` (04_品質管理 carries a
+branch: `PXJDO101_010_規格登録` → key `PXJDO101_010`). `【共通】` is part of the name (`【共通】ﾀﾞｳﾝﾛｰﾄﾞ(PSJAO702)` is exact).
+
+**Scope.** Live text of every visible design sheet plus its **shape text** (I/O関連図 and other drawings: the `<a:t>` runs of
+`xl/drawings/drawingN.xml` for the sheet, struck runs dropped — map the sheet to its drawing as in check 13). Join a shape's
+runs and compare after removing line breaks, spaces and full/half-width differences in parentheses (`ﾛｯﾄ分割処理⏎(ｻﾌﾞﾌﾟﾛ)` is
+exact). Excluded:
+`表紙`, `改訂履歴`, `画面ｲﾒｰｼﾞ`, `詳細設計*`, and the revision margin (col 59 onwards). The program's **own** name is not this
+rule (header/表紙/Ⅴ．ﾌﾟﾛｸﾞﾗﾑ構成 are `naming-standard-compliance`).
+
+**Reference shapes and findings.**
+- **a. ID-anchored — `名称(ID)` / `【ID_名称】` / an ID cell followed by a name cell** (316 exact). Compare the adjacent name
+  with the list name for that ID; prefix and suffix matches count as exact (`…をｾｯﾄしﾛｯﾄｶｰﾄﾞ発行(ｻﾌﾞﾌﾟﾛ)(SXJCB141)` — the name
+  ends at the `(`; `【SXJCB122_ﾛｯﾄ分割処理(ｻﾌﾞﾌﾟﾛ)】参照` — it starts after the `_`). Strip a leading step number (`3-1)`,
+  `(4)`, `②`) first. A different name with the right ID is **低** (the reader can still find the callee); group per sheet
+  and callee, listing the cells. Measured: 28 cells in 10 programs — `PXJCO122` `[58,4]` `ﾛｯﾄ分割処理ｻﾌﾞﾌﾟﾛ(SXJCB122)`, the same
+  in `PXJCO123` `[75,4]`/`[183,21]`/`[392,5]`, `PSJCO307` `[307,19]`, `PSJCO308` `[353,5]`, `PXJCO161` `[419,5]`/`[628,6]`/
+  `[776,19]`; `ﾛｯﾄ統合処理ｻﾌﾞﾌﾟﾛ(SXJCB123)` ×6 in `PXJCO123`; `実績表項目ﾃﾞｰﾀ作成(処理)ｻﾌﾞﾌﾟﾛ(SXJCB178)` (file:
+  `実績表ﾃﾞｰﾀ作成処理(ｻﾌﾞﾌﾟﾛ)`) in `PXJCO123` `[168,4]`/`[336,4]`/`[407,5]`/`[32,16]` and `PXJCO124` `[139,4]`/`[36,15]`, where a
+  struck `ﾁｪｯｸｼｰﾄ` shows a half-finished rename — say so; `処置指示書発行(ｻﾌﾞﾌﾟﾛ)(SXJCB147)` in `PXJCO129` `GXJC129A` `[507,24]`,
+  `PXJCO130` `GXJC130A` `[211,20]`, and `PXJCO123` `[30,16]` 「【SXJCB147_処置指示書発行】参照」 (no `(ｻﾌﾞﾌﾟﾛ)`); `ﾛｯﾄｶｰﾄﾞ発行ｻﾌﾞﾌﾟﾛ` `PSJAO401` `[146,5]`/`[314,5]`;
+  `識別ｶｰﾄﾞ(共通)発行ｻﾌﾞﾌﾟﾛ` `PXJCO161` `[942,5]`; `PXJCB101` `[23,16]` `実績表ﾃﾞｰﾀ作成処理` (no `(ｻﾌﾞﾌﾟﾛ)`).
+- **b. ID not in the list.** **中** when it is a typo or truncation — give the candidate found by name: `PSJCO201` `GSJC201B`
+  `[435,24]` `識別ｶｰﾄﾞ(共通)発行(ｻﾌﾞﾌﾟﾛ)(SSJCB5072)` → `SSJCB507`; `PSJCO504` `[16,3]` `(PXJCO20)送品案内入力` → `PSJCO501`.
+  **要確認** when no 機能定義書 exists yet: `SXJCB184` `QA判定実績登録(ｻﾌﾞﾌﾟﾛ)` in `PXJCO161` `[38,4]`/`[810,5]` and `PXJCO904`
+  `[143,4]`/`GXJC904A` `[609,24]`.
+- **c. No ID, but marked as a program — `Xｻﾌﾞﾌﾟﾛ`, `X(ｻﾌﾞﾌﾟﾛ)`, `X(ﾊﾞｯﾁ)`.** Normalise both sides by deleting `【共通】`,
+  `(ｻﾌﾞﾌﾟﾛ)`, `ｻﾌﾞﾌﾟﾛ`, `(ﾊﾞｯﾁ[処理])`, `処理`, `ﾃﾞｰﾀ`, `書`, `項目`, `ﾏｽﾀ`. A text whose normalised form equals a listed name's
+  while the text itself differs is **低**, with the exact name: `PSJCO201` `[94,17]`/`PSJCO203` `[85,17]` `ﾛｯﾄ作成ｻﾌﾞﾌﾟﾛ`;
+  `PSJCO308` `[543,6]` `ﾛｯﾄ分割ｻﾌﾞﾌﾟﾛ`; `PXJCO161` 更新条件表 `TXJCD204` `[34,2]`/`[35,2]`, `TXJCM007` `[55,2]`/`[56,2]`/`[108,2]`/
+  `[109,2]`, `TXJCM057`, `TXJCM058` (one line per sheet); `PXJCO123` `[284,4]` 「(ﾛｯﾄ統合ｻﾌﾞﾌﾟﾛで実行)」, `[309,8]`/`[333,8]`
+  「(ﾛｯﾄ分割処理ｻﾌﾞﾌﾟﾛにて更新)」 (a mark inside a sentence counts); I/O関連図 `PXJCO123` shapes `実績表項目⏎作成処理⏎(ｻﾌﾞﾌﾟﾛ)`.
+  Match a `ｻﾌﾞﾌﾟﾛ`-marked text only against `S…B` IDs and a `(ﾊﾞｯﾁ)`-marked one only against `…B` IDs, never against the
+  program's own ID (`PXJCO123`'s own name normalises to `ﾛｯﾄ統合` too). A normalised form one character away from a listed
+  name (a dropped or wrong kana, a missing ﾞ/ﾟ) is **低 (誤記)** with the exact name: `PXJCO123` `GXJC123A` `[491,23]`
+  `ﾛｯﾄｶｰﾄ発行(ｻﾌﾞﾌﾟﾛ)` → `ﾛｯﾄｶｰﾄﾞ発行(ｻﾌﾞﾌﾟﾛ)`. Do **not**
+  run this name-only matching on unmarked words: it fires on process and data words (`ﾛｯﾄ分割処理に関しては`,
+  `処置指示発行ﾃﾞｰﾀﾏｽﾀ`, `流動停止`, `仕掛在庫照会ﾃﾞｰﾀ` — several hundred false hits).
+- **d. The callee's own header disagrees with its file name — 要確認**, routed to `naming-standard-compliance`
+  (`PXJCB101`/`PXJCB102` `[4,10]` `…(ﾊﾞｯﾁ処理)`; callers copying it are the same 要確認, not a W8 finding).
+- **Not this rule:** `…画面(PID)` (`着手入力画面(PXJCO904)` — W5's); an item list keyed by the callee (`PXJCO163` `GXJC163B`
+  `[964,5]`-`[975,5]` `作業場ｺｰﾄﾞ(PXJCO161)`); generic words (`帳票出力ｻﾌﾞﾌﾟﾛ`, a bare `ｻﾌﾞﾌﾟﾛ`, `ﾊﾞｯﾁ処理(PSJCB903)`); a name
+  used as a modifier inside a longer noun (`(23)処置指示発行ｻﾌﾞﾌﾟﾛ呼出処理無効ﾌﾗｸﾞ取得`); an ID/name pair whose name is the
+  program's **own** name but whose ID is another (`PSJCO401` `[103,5]` `PSJAO401 | 社内加工単価登録`, `PSJCO405` `[168,5]`
+  `PSJAO405`, `PXJCB131` `[145,5]` `PXJBO131`, `SXJCB123` `[161,5]` `SXJCO123`, `PSJCB807` sheet `機能定義書(PSJCB802)`
+  `[139,5]`) — a stale copy-source ID; pass it to `naming-standard-compliance` (中).
 
 ## Reporting
 
