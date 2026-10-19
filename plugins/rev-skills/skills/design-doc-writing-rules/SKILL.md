@@ -18,7 +18,10 @@ section.
 
 **Read `_shared/agent-guide.md` first** — scope selection, environment, the live dump (W2 needs
 `_DELETED_DIGEST.txt`), reporting conventions. W5 uses the all-WG screen-name list: use the one your
-prompt names, and build it yourself (see W5) when none was handed to you.
+prompt names, and build it yourself (see W5) when none was handed to you. W7 and W8 use the zoom list and
+the program-name list the same way. Hidden rows and columns of a live sheet (`_HIDDEN.txt`) are read like the
+rest: a W1-W8 finding there is reported with 【非表示】 (this check owns hidden Ⅴ rows, `agent-guide.md`); a
+whole hidden leftover sheet is not this check's.
 
 ## Checks
 
@@ -398,7 +401,7 @@ others are tables or earlier queries (`(4)-②受入済取得`). A `検索条件
 row is No. (label col), left side (label col +2, e.g. `A.取引先ｺｰﾄﾞ`), **operator**, right side, then
 notes (`※1`, `OR`, `)`) further right. **An opening bracket sits one column left of the No.**
 (`PSJCO309` `GSJC309B` `[132,3]` `((`, `PSJCO405` `GSJC405A` `[96,3]` `(`) — it does not end the table; read the row. Ignore the revision margin
-right of the form (col 59 onwards, typically 105-116: `2024/2/9 平島 改訂履歴No.2 変更`, `2026/9/15 宮園
+right of the form (col ≥ 100, typically 105-116: `2024/2/9 平島 改訂履歴No.2 変更`, `2026/9/15 宮園
 順番を変更`) — it is change history, not a note. **Find the operator column per table** as the column that holds
 the comparison tokens (`=`, `LIKE`, `<>`, `>=`, `<=`, `IN`, `IS`, `IS NOT`); it is label col +20 in the
 standard layout (`[83,4]` → `[83,24]`, right side `[83,28]`), but a nested block can shift it
@@ -473,7 +476,7 @@ Item type comes from the left side's column name: **名称** = ends in `名`/`�
   is not a 部分一致 on 品目ｺｰﾄﾞ.
 - **e. Not an SQL operator — 低.** `=>` (15 rows, 10 sheets, 6 programs — all `A.停止日時 => ｼｽﾃﾑ日時` in
   the `(A.停止日時 = NULL OR …)` pair copied from one template — its `= NULL` half is `xlsx-db-column-check`
-  S1 (`IS NULL`); report the pair in one line when both checks run: `PSJAO241` `GSJA241B-基本情報` `[330,24]`,
+  S1 (`IS NULL`); W6e reports only the `=>` cell and S1 only the `= NULL` cell, each naming the other: `PSJAO241` `GSJA241B-基本情報` `[330,24]`,
   `PSJAO401` `GSJA401B` `[473,24]`, `PSJCO401`, `PSJCO402`, `PXJAO701` `GXJA701B` `[275,24]`, `PXJCO101`
   `GXJC101C` ×6). Report once per sheet, fix `>=`. Same for `=<`, `==` or a full-width `＝`/`＜` if met.
   A blank operator with both sides filled occurs 0 times; if you meet one it is 中.
@@ -584,12 +587,14 @@ other sheets) is checked (adopted 2026-10-17). Calibrated on the 122 工程管�
 in 2026-10; `DUP-ID`/`UNPARSED` lines are not findings). Name = the file name after the first `_` (04_品質管理 carries a
 branch: `PXJDO101_010_規格登録` → key `PXJDO101_010`). `【共通】` is part of the name (`【共通】ﾀﾞｳﾝﾛｰﾄﾞ(PSJAO702)` is exact).
 
-**Scope.** Live text of every visible design sheet plus its **shape text** (I/O関連図 and other drawings: the `<a:t>` runs of
+**Scope.** Live text of every design sheet (hidden ones too, findings 【非表示】 — except leftover/withdrawn hidden
+sheets, `agent-guide.md`) plus its **shape text** (I/O関連図 and other drawings: the `<a:t>` runs of
 `xl/drawings/drawingN.xml` for the sheet, struck runs dropped — map the sheet to its drawing as in check 13). Join a shape's
 runs and compare after removing line breaks, spaces and full/half-width differences in parentheses (`ﾛｯﾄ分割処理⏎(ｻﾌﾞﾌﾟﾛ)` is
 exact). Excluded:
-`表紙`, `改訂履歴`, `画面ｲﾒｰｼﾞ`, `詳細設計*`, and the revision margin (col 59 onwards). The program's **own** name is not this
-rule (header/表紙/Ⅴ．ﾌﾟﾛｸﾞﾗﾑ構成 are `naming-standard-compliance`).
+`表紙`, `改訂履歴`, `画面ｲﾒｰｼﾞ`, `詳細設計*`, and the revision margin (col ≥ 100 — not col 59: ﾁｪｯｸ処理設計書 keeps
+ﾁｪｯｸ詳細 in col 59 and ﾁｪｯｸ補足 in 86, and 更新条件表 side blocks run to 86). The program's **own** name in its header/表紙 is
+not this rule (`naming-standard-compliance`); its own Ⅴ．ﾌﾟﾛｸﾞﾗﾑ構成 row is, as e below.
 
 **Reference shapes and findings.**
 - **a. ID-anchored — `名称(ID)` / `【ID_名称】` / an ID cell followed by a name cell** (316 exact). Compare the adjacent name
@@ -619,18 +624,20 @@ rule (header/表紙/Ⅴ．ﾌﾟﾛｸﾞﾗﾑ構成 are `naming-standard-compl
   `ﾛｯﾄｶｰﾄ発行(ｻﾌﾞﾌﾟﾛ)` → `ﾛｯﾄｶｰﾄﾞ発行(ｻﾌﾞﾌﾟﾛ)`. Do **not**
   run this name-only matching on unmarked words: it fires on process and data words (`ﾛｯﾄ分割処理に関しては`,
   `処置指示発行ﾃﾞｰﾀﾏｽﾀ`, `流動停止`, `仕掛在庫照会ﾃﾞｰﾀ` — several hundred false hits).
-- **d. The callee's own header disagrees with its file name — 要確認**, routed to `naming-standard-compliance`
-  (`PXJCB101`/`PXJCB102` `[4,10]` `…(ﾊﾞｯﾁ処理)`; callers copying it are the same 要確認, not a W8 finding).
+- **d. The callee's own header disagrees with its file name — 要確認, reported here** (naming checks only the
+  program under review): `PXJCB101`/`PXJCB102` `[4,15]` 「製造ｵｰﾀﾞｰ反映(ﾊﾞｯﾁ処理)」/「製造ｵｰﾀﾞｰ完了処理(ﾊﾞｯﾁ処理)」;
+  callers copying it are the same line, not a separate finding.
 - **Not this rule:** `…画面(PID)` (`着手入力画面(PXJCO904)` — W5's); an item list keyed by the callee (`PXJCO163` `GXJC163B`
-  `[964,5]`-`[975,5]` `作業場ｺｰﾄﾞ(PXJCO161)`); generic words (`帳票出力ｻﾌﾞﾌﾟﾛ`, a bare `ｻﾌﾞﾌﾟﾛ`, `ﾊﾞｯﾁ処理(PSJCB903)`); a name
-  used as a modifier inside a longer noun (`(23)処置指示発行ｻﾌﾞﾌﾟﾛ呼出処理無効ﾌﾗｸﾞ取得`); an ID/name pair whose name is the
-  program's **own** name but whose ID is another (`PSJCO401` `[103,5]` `PSJAO401 | 社内加工単価登録`, `PSJCO405` `[168,5]`
+  `[964,5]`-`[975,5]` `作業場ｺｰﾄﾞ(PXJCO161情報)`); generic words (`帳票出力ｻﾌﾞﾌﾟﾛ`, a bare `ｻﾌﾞﾌﾟﾛ`, `ﾊﾞｯﾁ処理(PSJCB903)`); a name
+  used as a modifier inside a longer noun (`(23)処置指示発行ｻﾌﾞﾌﾟﾛ呼出処理無効ﾌﾗｸﾞ取得`).
+- **e. The program's own name with another program's ID — 中** (a stale copy-source ID in Ⅴ．ﾌﾟﾛｸﾞﾗﾑ構成, reported
+  here as 「Ⅴ．ﾌﾟﾛｸﾞﾗﾑ構成の機能IDが流用元のまま」): `PSJCO401` `[103,5]` `PSJAO401 | 社内加工単価登録`, `PSJCO405` `[168,5]`
   `PSJAO405`, `PXJCB131` `[145,5]` `PXJBO131`, `SXJCB123` `[161,5]` `SXJCO123`, `PSJCB807` sheet `機能定義書(PSJCB802)`
-  `[139,5]`) — a stale copy-source ID; pass it to `naming-standard-compliance` (中).
+  `[139,5]`.
 
 ## Reporting
 
-Group by check (W1-W6), then by sheet. Every rule here is low severity on its own unless the check
+Group by check (W1-W8), then by sheet. Every rule here is low severity on its own unless the check
 says otherwise (a duplicate/misfiled circled section that another doc cites by number is 中; a
 placeholder ID such as `XXXXXXX` is 中). When one deviation repeats across a whole sheet, report it
 once per sheet with the cells listed, as each section says — these rules fire widely and a row-by-row

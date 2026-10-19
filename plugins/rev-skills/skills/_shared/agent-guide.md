@@ -11,7 +11,7 @@ not pay for it.
 | You are… | Read |
 |---|---|
 | A check agent handed a ready dump (normal case under `rev-program-review`) | **This file only.** |
-| A check agent that must read a **reference master** (ﾃｰﾌﾞﾙﾚｲｱｳﾄ, `04.ﾒｯｾｰｼﾞ管理_*`, `05.ｼｽﾃﾑ共通設計書`, `06-0x_*一覧_*`, `07.共通項目取得`, …) | This file. Read the master **live** with `scripts/live_dump.py <master> <out_dir> --sheets <regex>` (see "Reading a reference file yourself"). **Never** use the COM cross-session cache in `xlsx-excel-com-dump.md` for a master — it writes raw `Value2` with struck text included, and layouts carry struck cells too (TXJCM006 `[81,40]`). One out_dir per master (or `--prefix`, which also names the digest `_DELETED_DIGEST_<prefix>.txt`); anchor `--sheets` (`^ﾃｰﾌﾞﾙﾚｲｱｳﾄ$` — unanchored also matches `旧ﾃｰﾌﾞﾙﾚｲｱｳﾄ`, `JAG_…`, `…_20251002時点`); `--max-col` for very wide registries. `ｼｽﾃﾑ共通設計書.工程管理共通ﾙｰﾙ` → `05.ｼｽﾃﾑ共通設計書`. Prebuilt-lookup builders: `scripts/build_kbn_index.py` (区分名称), `scripts/build_screen_list.py` (screen names), `scripts/build_kind_table.py` + `scripts/kind_consistency.py` (入力可文字種, writing-rules W1f), `scripts/build_zoom_list.py` (zoom ledger, W7), `scripts/build_program_list.py` (program names, W8), `scripts/build_param_index.py` (sub-program 引数/戻り値 and screen (1)ﾊﾟﾗﾒｰﾀ定義, internal check 18). `scripts/xlsx_zip.py` reads live cell text straight from the zip (any sheet, seconds) when you only need a few cells of a reference workbook. |
+| A check agent that must read a **reference master** (ﾃｰﾌﾞﾙﾚｲｱｳﾄ, `04.ﾒｯｾｰｼﾞ管理_*`, `05.ｼｽﾃﾑ共通設計書`, `06-0x_*一覧_*`, `07.共通項目取得`, …) | This file. Read the master **live** with `scripts/live_dump.py <master> <out_dir> --sheets <regex>` (see "Reading a reference file yourself"). **Never** use the COM cross-session cache in `xlsx-excel-com-dump.md` for a master — it writes raw `Value2` with struck text included, and layouts carry struck cells too (TXJCM006 `[81,40]`). One out_dir per master (or `--prefix`, which also names the digest `_DELETED_DIGEST_<prefix>.txt`); anchor `--sheets` (`^ﾃｰﾌﾞﾙﾚｲｱｳﾄ$` — unanchored also matches `旧ﾃｰﾌﾞﾙﾚｲｱｳﾄ`, `JAG_…`, `…_20251002時点`); `--max-col` for very wide registries. `ｼｽﾃﾑ共通設計書.工程管理共通ﾙｰﾙ` → `05.ｼｽﾃﾑ共通設計書`. Prebuilt-lookup builders: `scripts/build_kbn_index.py` (区分名称), `scripts/build_screen_list.py` (screen names), `scripts/build_kind_table.py` + `scripts/kind_consistency.py` (入力可文字種, writing-rules W1f), `scripts/build_zoom_list.py` (zoom ledger, W7), `scripts/build_program_list.py` (program names, W8), `scripts/build_param_index.py` (sub-program 引数/戻り値 and screen (1)ﾊﾟﾗﾒｰﾀ定義 and callers, internal checks 12 and 18). `scripts/xlsx_zip.py` is a Python helper (`from xlsx_zip import iter_sheets`; no command line) that reads live cell text straight from the zip in seconds — visible sheets unless `include_hidden=True`, struck/gray cells and struck runs dropped, merged non-anchor cells skipped; unlike `live_dump.py` it does not drop a rich-text cell whose live runs are all gray, and time cells come back as day fractions. Use it when you only need a few cells of a reference workbook. |
 | The orchestrator, or a standalone run that must dump the **target workbook** itself | This file **and** `xlsx-excel-com-dump.md` in full. |
 | Anyone building a reference index (画面項目辞書 …) | `reference-index.md` (builders, freshness, subsetting). Reading an index is covered below. |
 | `design-doc-formatting-consistency` | Additionally `xlsx-formatting-scan.md`. |
@@ -61,29 +61,38 @@ exception note. **`*画面ｲﾒｰｼﾞ*` sheets are dumped and are design con
 in cells, from which the 画面設計書's Ⅰ．画面ﾚｲｱｳﾄ picture is pasted. `design-doc-internal-consistency`
 checks 14 and 15 own them and the `《参考》画面項目遷移*` sheets; every other check leaves both alone unless
 its SKILL.md says otherwise. The cells outside the drawn screen, deleted screens and leftovers on a
-画面ｲﾒｰｼﾞ sheet are out of scope (designers' answer 2026-10-02 No.19).
+画面ｲﾒｰｼﾞ sheet are out of scope (designers' answer 2026-10-02 No.19 — "leftovers" here means stray cells
+on the sheet; a whole leftover *sheet* is the one-line rule below).
 
 **Hidden sheets, rows and columns are in scope** (designers' answer 2026-10-06 No.95, adopted
 2026-10-16). The target dump includes hidden sheets (summary line ends `hidden`/`veryHidden`), and
 `_HIDDEN.txt` beside the digest lists them plus, per sheet, the hidden rows/columns that hold live text
 (`画面設計書(GXJC128C)	ROWS 205-228`). Rules for every check:
 - **Report, never skip.** What is hidden is easy to miss — a copy-source leftover, an old block — so a
-  finding there is always reported, at least 要確認, with **`【非表示】`** at the start of the finding
-  text. Check every cited cell against `_HIDDEN.txt` before writing the finding.
+  finding there is always reported, with **`【非表示】`** at the start of the finding text. It keeps the
+  severity it would have on a visible sheet, except that 低 becomes 要確認 (the designer must decide
+  whether the hidden part should exist at all). Check every cited cell against `_HIDDEN.txt` before writing
+  the finding.
 - **Hidden content is not evidence that something is live.** A table whose only 更新条件表 sheet is
   hidden, a button whose only event row sits in a hidden row, a message ID used only on a hidden sheet:
   judge the live (visible) design as if the hidden part were absent, and report the hidden part as its
   own 【非表示】 finding (「非表示のｼｰﾄ/行に…が残っている。不要なら削除、必要なら再表示」) — never let it
   satisfy a completeness check.
 - **A hidden sheet that is a leftover or withdrawn** gets **one** 【非表示】 要確認 line per sheet (what it
-  is, that it should be deleted or kept deliberately), not a full review of its content:
+  is, that it should be deleted or kept deliberately), not a full review of its content. **One check owns
+  that line, by sheet type**: `更新条件表(…)` → `update-condition-completeness`; `帳票設計書(…)` /
+  `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ(…)` → `report-design-check`; `ﾌｧｲﾙ出力/入力/入出力仕様書(…)` → `file-output-spec-check`;
+  every other sheet (画面設計書, ﾁｪｯｸ処理設計書, 機能定義書, 画面ｲﾒｰｼﾞ, scratch copies) →
+  `design-doc-internal-consistency`. No other check reports it or reviews its content (naming uses it
+  only to judge that the doc type is absent). When the owning check is not in the run, the orchestrator
+  writes the line itself from `_HIDDEN.txt` in Step 3.5. A leftover/withdrawn sheet is recognised:
   - by name — `bk_…`, `…_bk`, `…_BK`, `削除)…`, `…_削除`, `…(削除)`, `×…`, `不要…`, `…不要`, `old_…`, `…_old`,
     `JAGUR_…`, or an untouched template stub (`ﾌｧｲﾙ出力仕様書(FXJDXXX)`, `ﾌｧｲﾙ出力仕様書()`);
   - by content — its sheet title row (`Ⅰ．更新条件表` and the like, `[6,2]`) is struck (`_DELETED_DIGEST`),
     or the table/file/report it specifies is not declared in 機能定義書 Ⅲ．入出力定義 (or is declared only
     with operations the sheet does not do — `PXJCO163` hidden `更新条件表(TXJCM004)` holds UPDATEs, Ⅲ gives
     TXJCM004 R only). Name that evidence in the line.
-  Any other hidden sheet is reviewed like a visible one.
+  Any other hidden sheet is reviewed like a visible one by every check (findings 【非表示】).
 - **Hidden rows/columns.** A hidden row whose only live text is change history (a date + 担当 +
   追加/削除/修正 memo: `PXJCO128` `画面設計書(GXJC128C)` rows 205-228, whose body is struck and only
   `2022/5/7 ｺﾍﾞﾙｺTY` / `2023/12/19 日髙(230711)　削除` memos remain live) is not reported. A hidden row or

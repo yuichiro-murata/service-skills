@@ -104,7 +104,11 @@ breakdown table is dead boilerplate is all it warrants.
 Collect every table ID mentioned in "Ⅲ．入出力定義" (機能定義書 sheet). Separately collect every
 table ID/alias used in 画面設計書's "参照ｴﾝﾃｨﾃｨ" blocks (or, for a batch program with no
 画面設計書, the equivalent inline 参照ｴﾝﾃｨﾃｨ blocks inside 機能定義書's own "Ⅳ．機能処理概要", or a
-帳票設計書's own get-item blocks) and in every 更新条件表(<TableID>) sheet's header. **Also read
+帳票設計書's own get-item blocks) and in every **visible** 更新条件表(<TableID>) sheet's header. A hidden
+更新条件表 (or any hidden sheet — `_HIDDEN.txt`) is neither evidence that a table is used nor a source of
+"used but not declared" / CRUD-letter findings: `update-condition-completeness` writes its one 【非表示】
+line (`agent-guide.md`, "Hidden sheets, rows and columns"). Content in hidden *rows* of a visible sheet is
+likewise not usage. **Also read
 every 更新条件表 sheet's body**, not just its header — the "取得内容"/"取得条件" column (the source
 of each column being set) routinely cites *other* tables that feed values into the one being
 updated, and it does this **by the source table's Japanese name only, never by table ID** (e.g.

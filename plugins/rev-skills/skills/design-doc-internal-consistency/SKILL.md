@@ -1,6 +1,6 @@
 ---
 name: design-doc-internal-consistency
-description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency: every screen event reflected in the processing overview, responses registered, screen-item/message IDs registered in their masters, no other subsystem's message IDs in a 工程管理 program, Ⅳ message text matching its ID (No.31), layout/item-definition/control-spec agreeing (incl. Hidden items listed in Ⅵ, Ⅳ↔Ⅴ item order, ○/〇 in Ⅵ, yyyy/MM/dd in 表示形式), exclusive control present when the program updates, process/check order vs button order, 区分名称 references resolving in 09.区分名称_step2.xlsx, 【更新条件表(ID) section】 pointers resolving, pasted pictures (tables/figures other than the screen layout) agreeing with the text, with no live text hidden under them, and the 画面ｲﾒｰｼﾞ / 《参考》画面項目遷移 sheets agreeing with the 画面設計書 (X counts vs 桁数, example values, field colours and * vs 必須). Also: every in-text reference (sheet, event, (n), ※n, (n).名前) resolving, one copy of a duplicated block fixed while the other was not or a deleted item still used (16), Ⅴ 必須/入力可文字種 vs the 必須/文字種/日付 checks (17), and sub-program arguments / screen-transition parameters vs the callee's definition in another workbook (18). Not the Ⅲ．入出力定義 check (`design-doc-io-table-check`) nor the self-check writing rules (`design-doc-writing-rules`). Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書, or whether a design doc is internally consistent / 漏れがないか. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency: events vs the processing overview, response/screen-item/message IDs registered (and no other subsystem's message IDs), Ⅳ message text vs its ID, layout/Ⅴ/Ⅵ agreeing (Hidden items in Ⅵ, item order, ○/〇, yyyy/MM/dd), exclusive control, process/check order vs buttons, 区分名称 and in-text references resolving, pasted pictures and the 画面ｲﾒｰｼﾞ/《参考》画面項目遷移 sheets vs the design, copies edited on one side only, 必須/文字種 checks vs Ⅴ, and sub-program/transition parameters vs the callee. Not the Ⅲ．入出力定義 check nor the self-check writing rules. Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書 or whether it is internally consistent; for a full REV the entry point is `rev-program-review`.
 ---
 
 # design-doc-internal-consistency
@@ -316,8 +316,10 @@ exact sheet/cell for every finding so it's actionable.
    defines as a displayed Label whose Ⅵ row is 非表示 in every column with no event showing it
    (`PSJCO404` `GSJC404A` `[1846]`-`[1848]` 加工区分/加工分類ｺｰﾄﾞ/状態 — drawn on the 画面ｲﾒｰｼﾞ sheet) — should
    it be Hidden, or is a display event missing? Measured 2026-10-16 (re-counted 2026-10-17 with
-   the run-level strike rule): of 1,466 Hidden items in the 122 工程管理 books, 233 never appear in their sheet's Ⅵ text (e.g. `PXJCO130` `GXJC130C`
-   `[310]`-`[327]` ﾌｪｰｽﾞID…ﾌｪｰｽﾞ工程ｺｰﾄﾞ, `PXJCO122` `GXJC122A` `[955]` 処置指示No※1) — expect findings.
+   the run-level strike rule): of 1,466 Hidden items in the 122 工程管理 books, 209 never appear in their sheet's Ⅵ text once `※n` is dropped
+   from the Ⅴ name (re-counted 2026-10-19; e.g. `PXJCO130` `GXJC130C` `[310]`-`[327]` ﾌｪｰｽﾞID…ﾌｪｰｽﾞ工程ｺｰﾄﾞ) — expect
+   findings. Drop `※n` before matching: `PXJCO122` `GXJC122A` Ⅴ `[955]` `処置指示No※1` is Ⅵ `[1137,5]` `処置指示No`
+   (非表示) — present.
 
    **Ⅵ usage conditions (`※n`) against Ⅳ.** A Ⅵ cell holding `※n` instead of `○`/`×` makes the item's
    usability conditional; read the footnote and confirm Ⅳ's event for that item agrees (`PSJCO403`
@@ -517,8 +519,8 @@ every verdict; counts and examples are one snapshot.
     `更新条件表(<ID>)` must exist (exact ID; trailing spaces in the sheet name don't count), and a section
     must appear in it as a `【…】` heading (col 16) or a `■` heading (col 2) — compare after stripping
     whitespace and an unbalanced `)`. Report each dangling pointer (中), naming the nearest existing
-    sheet/section. `PXJCO161` 機能定義書: `[703,26]` `TXJCM999` (no such sheet; `更新条件表(TSJCM999)`
-    exists); `[979,26]`/`[981,26]` section `処理取消ﾎﾞﾀﾝ押下時` (TXJCD404/TXJCD407 now have
+    sheet/section. `PXJCO161` 機能定義書: `[736,26]` `TXJCM999` (no such sheet; `更新条件表(TSJCM999)`
+    exists); `[1012,26]`/`[1014,26]` section `処理取消ﾎﾞﾀﾝ押下時` (TXJCD404/TXJCD407 now have
     `【途中入力取消ﾎﾞﾀﾝ押下時】`); `[153,6]`/`[365,7]`/`[371,7]` `流動停止:ﾛｯﾄ停止ﾁｪｯｸ`/`:加工期限ﾁｪｯｸ`
     (TXJCM006 has only `■流動停止`/`【流動停止】`). This check owns these pointers;
     `design-doc-io-table-check` and `xlsx-db-column-check` leave them here (a pointer to a sheet that is
@@ -530,16 +532,18 @@ every verdict; counts and examples are one snapshot.
     a trailing 参照. Measured 2026-10-17 on the 122 工程管理 PHASE1-3 books.
     - **Sheet pointers** `【画面設計書|ﾁｪｯｸ処理設計書|機能定義書|ﾌｧｲﾙ出力仕様書|帳票設計書(ID) …】` and `画面設計書(ID).Ⅲ…(n)` /
       `ﾁｪｯｸ処理設計書(ID).Ⅱ…(n)`: the sheet must exist (a variant sheet `GSJA241B-基本情報`, `帳票設計書(RXJA003)_ﾃﾝﾌﾟﾚｰﾄ未登録時`
-      counts by prefix; another program's ID — `GXJC901A`, `PXJCO901` — resolves in that program's workbook, via the
-      parameter index's `screens`/`programs` or the screen-name list). Missing — 中, naming the likely sheet: `PSJAO203`
+      counts by prefix; another program's ID — `GXJC901A`, `PXJCO901` — resolves in that program's workbook: a screen ID
+      via the parameter index's `screens`, a program ID via the program-name list (`build_program_list.py`; the index's
+      `programs` holds only programs with an argument table; the all-WG screen-name list, when the run built it, covers
+      other WGs' screens). An ID that none of these covers is 未確認, not missing). Missing — 中, naming the likely sheet: `PSJAO203`
       機能定義書 `[79,4]` and 17 more `GSJC203A/B/C` for `GSJA203…`; ID typos `GSJC123A` (`PXJCO123` `[12,59]`), `GSJC125A`,
       `GXJC0121A`, `GXJC0129B`, `GSJC906B`, `GXJCO130A`, `SGJC404A`/`GSJCA404B` (`PSJCO404` `[152,4]`/`[162,4]`); placeholder
       `FSJCxxx` (`PSJCO403`/`405` `[75,24]`); `PSJCO402` points eight times at ﾁｪｯｸ処理設計書 sheets the workbook does not
       have. Measured: 50 of 1,204 bracket pointers and 20 of 636 `(ID).Ⅲ(n)` pointers. Accept `の`, `、`, `:` as well as
       `.` between the sheet and the section (`画面設計書(ID)のⅢ…`, `画面設計書(GXJC165A)、Ⅲ.画面表示仕様:(10)明細の保留区分名取得`
       — `PXJCO165` `FXJC013` `[17,4]`/`[177,23]`; the latter names (10) 「明細の保留区分名取得」 while (10) is 「明細ﾃﾞｰﾀ取得」 —
-      低). A workbook pointer `【<ProgramID>_<名称>】` is checked here for its ID only; the name is `design-doc-writing-rules`
-      W8's.
+      低). A workbook pointer `【<ProgramID>_<名称>】` belongs to `design-doc-writing-rules` W8 (ID and name); skip it
+      here unless W8 is not in the run.
     - **Event and section.** `【ﾁｪｯｸ処理設計書(ID) ○○押下時】` must match a live 【…】 heading of that sheet: a merged heading
       counts when one of its `、`- or `/`-separated parts names the event (designers' answer 2026-10-10 No.84; `PXJCO122`
       【検索/実行ﾎﾞﾀﾝ押下時】), as does a qualifier written elsewhere (`PXJCO192` 「工程ｾｯﾄﾎﾞﾀﾝ(処置指示工程)押下時」 =
@@ -551,9 +555,12 @@ every verdict; counts and examples are one snapshot.
       `Ⅱ．ﾁｪｯｸ処理詳細(n)` a live Ⅱ heading (col ≤ 5). **On a ﾁｪｯｸ処理設計書 a bare `(n)` resolves to that sheet's own Ⅱ
       `(n)` first** (`PXJCO124` `GXJC124A` `[161,59]` 「(6)にて」 is Ⅱ `[323,2]` 「(6).帳票ﾏｽﾀ取得」, not the screen's Ⅲ(6)); go to
       the screen's Ⅲ only when `画面設計書(ID).Ⅲ` or `Ⅲ．画面表示仕様` is written. Report a miss (中), and say when the
-      number exists only struck: `PSJAO401` `ﾁｪｯｸ処理設計書(GSJA401B)` `[112,59]` → `GSJA401D` Ⅲ(11), which ends at (8);
-      `GSJA401E` `[273,3]` Ⅲ(3), struck. The screen-clear wording 「Ⅲ.画面表示仕様.(n)の取得ﾚｺｰﾄﾞ有無による初期値ﾊﾟﾀｰﾝ…」 is
-      the sample's own and only its number is checked (designers' answer 2026-10-02 No.80). 25 found.
+      number exists only struck: `PSJAO401` `ﾁｪｯｸ処理設計書(GSJA401B)` `[112,59]` → `GSJA401D` Ⅲ(11), which ends at (8).
+      `【画面設計書(ID)】Ⅲ．…(n)` resolves in **that** ID's Ⅲ: `PSJAO401` `GSJA401E` `[273,3]` 【画面設計書(GSJA401A)】Ⅲ(3) is
+      live at `GSJA401A` `[203,4]` 「(3)Rev制御区分取得」 — not a finding, though GSJA401E's own (3) `[175,4]` is struck. The
+      screen-clear wording 「Ⅲ.画面表示仕様.(n)の取得ﾚｺｰﾄﾞ有無による初期値ﾊﾟﾀｰﾝ…」 is
+      the sample's own and only its number is checked (designers' answer 2026-10-02 No.80). About 20 found (the
+      first count, 25, resolved some pointers in the wrong sheet).
     - **※n, both directions.** Resolve each live `※n` to a live note: a cell at col ≤ 8 starting `※n` with text, a line
       starting `※n` inside any cell, a legend `※2:…、※3:…`, a range `※1～※5`. Notes are numbered per table, so resolve a
       use to the **first definition of that number after it within the same table** (up to the next `1.`/`2.`/`(n)`
@@ -564,7 +571,8 @@ every verdict; counts and examples are one snapshot.
       `[196,14]` 「(※4)」, note `[439,3]` struck); a note nothing references (低; 96). Not uses: `※8桁目以降`-style
       annotations (桁/件/日/文字 after the digits), `※0`, numbers ≥ 50, `※05.ｼｽﾃﾑ共通設計書` (neither a use nor a note —
       `PXJCO165` `[73,5]`/`[78,5]`), and a `※n` inside 【…】 or after
-      `(ID).` (it points into another sheet — the bracket rule checks it). A note emptied by strikethrough is check 16d's.
+      `(ID).` (it points into another sheet — the bracket rule checks it). A note emptied by strikethrough, and a note whose
+      only referrers are struck, are check 16d's — not reported here.
     - **Names.** `(n).X` in Ⅲ/Ⅳ/Ⅴ must be one of Ⅲ(n)'s 取得項目 names (the name given in that table, not the DB column;
       containment either way, NFKC, `(1-N)` and `※n` dropped). Cut X at prose (を/が/に/で/の場合/より/から) and skip an X that
       is the block's own title or ends in 取得/処理/ﾁｪｯｸ/設定; skip (n) blocks without a 取得項目 table (delegations); do not
@@ -637,8 +645,8 @@ designers' answers behind them; adopted 2026-10-16, when the shared dump started
       digest records its removal (`PXJCO128` `[251,2]` ■D, 表紙 `[47,25]` 「GXJC128Dを除去」) — not reported
       at all; and a sheet whose name marks a leftover (the `agent-guide.md` list, plus `旧…`, `BK_JAGUR…`) —
       one line saying so. Several current variant sheets (`…_事業部説明用`, `…(Web版)`) are each compared.
-      When the screen IDs written on the drawing match no sheet, pair by screen name and leave the ID
-      mismatch to `naming-standard-compliance` (`PSJCO404` ■C/■D → `画面設計書(GSJC403D)`/`(GSJC403C)`).
+      When the screen IDs written on the drawing match no sheet, pair by screen name and report the ID
+      mismatch here, 低 (`PSJCO404` ■C/■D → `画面設計書(GSJC403D)`/`(GSJC403C)`, whose own headers say PSJCO403).
       **Two versions of one screen on one sheet** (same title, neither marked 旧, one dated: `PSJCO404` ■A
       `[3,3]` and `[135,3]`, `[207,91]` 「2026/10/2版」): decide the current one from the version note and from
       which one Ⅳ/Ⅲ match. If Ⅴ matches neither, do not run a-e item by item — report one 要確認 line: Ⅴ/Ⅵ
@@ -650,7 +658,8 @@ designers' answers behind them; adopted 2026-10-16, when the shared dump started
       (`theme:0 tint:-0.25` on `PSJCO404`) and the white background it encloses; failing that, the widest of
       the title band (`C83:BQ85`), the header cells (user name / company label) and the list's last column.
       Cells to the right of the frame are out, except a separate drawing labelled as another area or
-      variant (`PSJCO404` `[207,91]`-`[221,…]` 別体型/一体型, for Ⅳ G3-G5) — compare that like a screen (`PXJCO128` `[38,183]` `製造ﾛｯﾄNo(部分一致部分一致)`, `[70,255]`, `[71,166]`-`[78,201]`).
+      variant (`PSJCO404` `[207,91]`-`[221,…]` 別体型/一体型, for Ⅳ G3-G5) — compare that like a screen. Out, for
+      example: `PXJCO128` `[38,183]` `製造ﾛｯﾄNo(部分一致部分一致)`, `[70,255]`, `[71,166]`-`[78,201]`.
       Also out: values that run past a field's width (designers' answer 2026-10-10 No.47 — `X`s cut off at a
       button or the frame show that the 桁数 exceeds the display width, on purpose).
     - **a. X count vs 桁数 — 低.** A placeholder's length (`XXXXXXXXX1XXXXX` = 15; the digits are
@@ -702,8 +711,9 @@ designers' answers behind them; adopted 2026-10-16, when the shared dump started
       shifts colours (designers' answer 2026-10-10 No.15). A program with no 画面ｲﾒｰｼﾞ sheet gets no colour
       finding; say so in one line.
     - **e. Notes — 要確認.** A judgement written in a note on the sheet (解除済/未解除 and the like)
-      matches the 画面設計書's condition; a drawing of a state that needs such a note and lacks it (`[178,3]`
-      解除 drawing without the 「※既に解除済の場合」 its sibling `[146,3]` has) is 低.
+      matches the 画面設計書's condition; a drawing of a state that needs such a note and lacks it is 低
+      (`PXJCO128` `[178,3]` ■B 解除 drawing has no state note, while its sibling `[146,3]` carries 「※まだ解除されていない場合」 —
+      `[178,3]` needs the matching 「※既に解除済の場合」).
     Validated 2026-10-16 on `PXJCO128` (one 低/要確認 colour finding) and `PSJCO404` (old/new versions on
     one sheet, three 14b 区分 mismatches, two 14d `*`/必須 mismatches).
     Cite cells as `画面ｲﾒｰｼﾞﾛｯﾄ停止登録 [22,31]`, and say which 画面設計書 item it was compared with.
@@ -758,7 +768,7 @@ designers' answers behind them; adopted 2026-10-16, when the shared dump started
       the struck fragment of a partially struck cell (digest `PART raw/live`). If the other copy's same column still contains
       that fragment live (and has no strike of its own there), the edit was not propagated: `PXJCO123`
       `ﾁｪｯｸ処理設計書(GXJC123A)` `[973,28]` `C.実績項目IDｺｰﾄﾞ`→`C.実績項目ID` (NCRN-5863「項目名誤りを修正」) while the ｸﾗｽ1 copy
-      `[1087,28]` still reads `C.実績項目ｺｰﾄﾞ` (same alias C = TXJCD407); `PXJCO152` `GXJC152A` `[856,28]`/`[970,28]` the same;
+      `[1087,28]` still reads `C.実績項目ｺｰﾄﾞ` (same alias C = TXJCD407); `PXJCO152` `ﾁｪｯｸ処理設計書(GXJC152A)` `[856,28]`/`[970,28]` the same;
       `PXJCO906` `ﾁｪｯｸ処理設計書(GXJC906A)` `[27,59]` moved to 「画面設計書(GXJC906A).Ⅲ.画面表示仕様(3)参照」 while `(GXJC906B)`
       `[74,59]` keeps 「共通項目取得.作業者 参照」; `PXJCO124` `GXJC124A` G4 ※3 `[1054,5]` struck 「読込」 while G5 ※2 `[1213,5]`
       still says 「読込時、…」. Measured 2026-10-17 on the 122 工程管理 books: 1,914 copy pairs, 35 such cells in 16 books;
@@ -803,7 +813,8 @@ designers' answers behind them; adopted 2026-10-16, when the shared dump started
       「2026/9/3 益満削除」 at `[36,105]`/`[37,105]` while `[30]`/`[32]`/`[38]`/`[39]` of that date are struck; `画面設計書` `[286]`
       取得項目 作業者ｺｰﾄﾞ live, memo 「2026/6/3 益満（削除）」, unused in G2 Ⅴ. Silent when Ⅴ/Ⅵ still has the live item (the memo
       is merely old: `GXJC124A` Ⅵ `[1325]` 再印刷ﾎﾞﾀﾝ).
-    - **Strikethrough detection.** Use the live dump and its digest (or `_shared/scripts/xlsx_zip.py`). A cell whose own
+    - **Strikethrough detection.** Use the live dump and its digest (`_shared/scripts/xlsx_zip.py` follows the same
+      run rule, if you need cells the dump lacks). A cell whose own
       font is struck can still hold live runs that carry their own unstruck formatting — openpyxl and `live_dump.py` keep
       those runs (`PXJCO124` `GXJC124A` `[1021,18]` `Hidden`); a scan that drops the whole cell invents deletions.
 
@@ -886,8 +897,9 @@ PHASE1-3 books — confirm each in the dump before reporting.
     引数/戻り値 rows, screen → Ⅱ (1)ﾊﾟﾗﾒｰﾀ定義 rows, ~50 s for 122 books, `--check` for freshness). Standalone, build it yourself.
     Then open the callee's cell in its workbook only to quote it. A callee outside the index (`GXJZ…`, `GSJA…` screens,
     `SXJCB184`) is one line 「呼び出し先の設計書が未入手のため未確認」, not a finding. **When the program under review is itself a
-    sub-program, run (ii) in reverse over its callers** (grep the WG's books for its ID; `SXJCB178` has 14 callers,
-    `SXJCB147` 13, `SXJCB141` 12).
+    sub-program, run (ii) in reverse over its callers** — the index's `callers` lists every row of another book
+    that names the ID (`SXJCB178` has 14 calling books, `SXJCB147` 13, `SXJCB141` 12); .xlsx files are zipped, so a
+    plain grep finds nothing.
     - **(ii) Sub-program calls.** Caller: a 機能定義書/画面設計書 table `No.|名前|引数名|設定値`, usually under
       「ﾌﾟﾛｸﾞﾗﾑ間の引数定義(大文字/小文字を識別する)」. Callee: its 機能定義書 Ⅳ table `No.|名前|引数名|説明|省略時`
       (`SXJCB121` `[69]`-`[150]`; `SXJCB123` heads it `項目`) and `No.|名前|戻り値|説明` (`[180]`-`[184]`). Identify the callee from
@@ -903,9 +915,10 @@ PHASE1-3 books — confirm each in the dump before reporting.
         `ShikibetsuSU` vs `SXJCB147` `[113]` `ShikibetsuCardOutputSu`. An omitted argument whose 省略時 is `NULL`/`空白`/a value is
         not reported;
       - **order** (低) and **1-N vs single** (要確認) between the two tables — none found in 2026-10, keep the rule;
-      - **an empty 設定値 for an argument whose 省略時 is 不可 — 要確認** (`PXJCO161` `[458]` `MeisaiKoSu`, `[461]`
-        `MeisaiSeizoLotNo` vs `SXJCB122` `[90]`/`[93]`); a list parent row (`KanriNoList` with its children indented below) has
-        no value of its own;
+      - **an empty 設定値 for an argument whose 省略時 is 不可 — 要確認**. A 設定値 that is only `※n` is not empty: read the
+        note for the value's source (`PXJCO161` `[458,23]`/`[461,23]` `※4` → `[516,7]` 「G8)分割領域のみに入力有の場合…」, for
+        `SXJCB122` `[90]`/`[93]` 不可 — fine); a list parent row (`KanriNoList` with its children indented below) has no
+        value of its own;
       - **return values — 中 when not received, 要確認 when the use is not stated.** Within the step that contains the call (up to
         the next sibling step heading — and including that next step when its heading is a 「戻り値」 one: `PXJCO124` is laid
         out (2)呼出→(3)戻り値, (4)→(5), (6)→(7)戻り値 `[258]`-`[262]`; not a fixed row window), the caller must receive the callee's 戻り値 (ErrList at least) and say what happens: error →
@@ -924,7 +937,7 @@ PHASE1-3 books — confirm each in the dump before reporting.
       whose (1) `[63]`-`[72]` has no 管理No); order — 低 (`PXJCO128` `GXJC128A` `[379,23]`/`[444,23]` ﾓｰﾄﾞ→ﾛｯﾄ停止ｷｰ vs `GXJC128B`
       `[109]`/`[110]`); value-source wording outside `ﾛｸﾞｲﾝ情報.`/`ﾊﾟﾗﾒｰﾀ.`/`画面.`/`遷移元画面.`/`遷移元.`/`呼出し元画面.`/`<画面名>.`
       (`加工手順詳細.X`, 91 rows) — 低 (`GXJC134A` `[68]`-`[71]`
-      `元画面.会社ｺｰﾄﾞ`… with no `※共通`), and a callee (1) saying `ﾛｸﾞｲﾝ情報.X` where the caller passes `画面.X` or the reverse —
+      `元画面.会社ｺｰﾄﾞ`…, rows marked `※共通` in col 11), and a callee (1) saying `ﾛｸﾞｲﾝ情報.X` where the caller passes `画面.X` or the reverse —
       要確認. A non-共通 (1) item the caller does not pass is 要確認 only, and silent when the omission matches a mode
       (`GXJC128A` `[378]` 新規 passes only `ﾓｰﾄﾞ:"0"`). Prose transitions (「選択された明細の情報を基に…へ遷移」 — ~160 cells) and
       callee rows reading `遷移元画面.X` (188) are compared by reading, not by script: does the caller's Ⅴ have X, and does the
@@ -935,11 +948,13 @@ PHASE1-3 books — confirm each in the dump before reporting.
     5 return-value candidates of which 2 were handled later), 10 explicit transition lists (2 passed-not-defined, 2 order,
     1 wording).
 
-**Hidden leftovers.** Hidden rows holding an old copy of whole sections (`PSJCO404` `GSJC404A` rows
+**Hidden leftovers.** This check also writes the one 【非表示】 要確認 line for every leftover/withdrawn hidden sheet
+other than 更新条件表 / 帳票設計書 / ﾌｧｲﾙ仕様書 (画面設計書, ﾁｪｯｸ処理設計書, 機能定義書, 画面ｲﾒｰｼﾞ, scratch copies — the
+`agent-guide.md` ownership rule), naming the evidence. Hidden rows holding an old copy of whole sections (`PSJCO404` `GSJC404A` rows
 711-1413 = an old Ⅲ (1)-(6) with placeholder `TSJCDXXX`, rows 1625-1662 = an old Ⅳ) and any other hidden
 body text no check's subject covers are reported **here**, once per sheet, 【非表示】 要確認, every range in
 the one line: 「非表示の行 711-1413, 1625-1662 に旧版の Ⅲ/Ⅳ が残っている。不要なら削除、必要なら再表示」;
-the other checks (and checks 1/4/9 here) do not report what is inside them. A **live** reference whose only
+no other check — of this skill or another — reports what is inside them. A **live** reference whose only
 target is hidden — Ⅴ `[1693,35]` 「Ⅲ．画面表示仕様>(1).検索時数量設定表示有無」, a name found only in hidden row
 `[733,6]` (the live (1) `[109,8]` is 「検索時数量設定」) — is a dangling reference, reported by whichever check
 resolves that kind of reference (here, as part of the same line when no other does). Rows holding only

@@ -90,7 +90,8 @@ which is change history.
 
 1. Use the dump `rev-program-review` handed you; standalone, run
    `python _shared/scripts/live_dump.py <workbook> <out_dir> --hidden` (it skips 詳細設計書). A typo on a
-   hidden sheet or row (`_HIDDEN.txt`) is reported with 【非表示】 (`agent-guide.md`). A large dump
+   hidden sheet or row (`_HIDDEN.txt`) is reported with 【非表示】, except on a leftover/withdrawn hidden sheet, which
+   is not proofread (`agent-guide.md`). A large dump
    (`PXJCO161` `GXJC161B` is 640 KB) cannot be read whole: load it with `_shared/scripts/dump_cells.py`,
    keep the in-scope cells that contain Japanese text, de-duplicate identical values (keep every
    coordinate for the report), and read that list.

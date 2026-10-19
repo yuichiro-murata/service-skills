@@ -122,8 +122,12 @@ def main():
         tg = tg if tg.startswith("xl/") else "xl/" + tg
         x = z.read(tg).decode("utf-8")
         merges = {}
-        for mm in re.finditer(r'<mergeCell ref="([A-Z]+)(\d+):([A-Z]+\d+)"', x):
-            merges[(int(mm.group(2)), _col(mm.group(1)))] = f"{mm.group(1)}{mm.group(2)}:{mm.group(3)}"
+        nonanchor = set()   # text there is a stale value Excel kept under the merge (live_dump drops it)
+        for mm in re.finditer(r'<mergeCell ref="([A-Z]+)(\d+):([A-Z]+)(\d+)"', x):
+            r1, c1, c2, r2 = int(mm.group(2)), _col(mm.group(1)), _col(mm.group(3)), int(mm.group(4))
+            merges[(r1, c1)] = f"{mm.group(1)}{mm.group(2)}:{mm.group(3)}{mm.group(4)}"
+            if (r2 - r1 + 1) * (c2 - c1 + 1) <= 200000:
+                nonanchor.update((r, c) for r in range(r1, r2 + 1) for c in range(c1, c2 + 1) if (r, c) != (r1, c1))
         w(f"## {name}\n")
         for c in re.finditer(r'<c r="([A-Z]+)(\d+)"([^>]*?)(?:/>|>(.*?)</c>)', x, re.S):
             r, col, attrs, body = int(c.group(2)), _col(c.group(1)), c.group(3), c.group(4) or ""
@@ -132,13 +136,15 @@ def main():
             txt = ""
             if body:
                 t = (re.search(r't="(\w+)"', attrs) or [None, "n"])[1]
-                v = re.search(r"<v>(.*?)</v>", body, re.S)
+                v = re.search(r"<v(?: [^>]*)?>(.*?)</v>", body, re.S)
                 if t == "s" and v:
                     txt = _live(ss[int(v.group(1))], struck)
                 elif t == "inlineStr":
                     txt = _live((_txt(body), _runs(body)), struck)
                 elif v and not struck:
                     txt = html.unescape(v.group(1))
+            if (r, col) in nonanchor:
+                txt = ""
             txt = txt.replace("\t", " ").replace("\r", "").replace("\n", "⏎").strip()
             if fill == "-" and not txt:
                 continue

@@ -29,7 +29,8 @@ Checks 5, 6 and 9 are narrower than the rest in one specific sense: each applies
 workbook has the sheets it reads. A program with no `更新条件表(*)` sheet (a pure 照会 screen), no
 `帳票設計書(*)` sheet, or no visible `ﾌｧｲﾙ出力仕様書(*)` sheet has nothing for that check to do —
 still offer it, but if the user selects it and the sheets aren't there, say so in one line in the
-merged report rather than running an empty analysis.
+merged report rather than running an empty analysis — and still run it when the workbook has only
+**hidden** sheets of that type, which it handles (one 【非表示】 line for a leftover, a 【非表示】 review otherwise).
 
 WG-folder-scoped comparison skills are **not** part of this menu — bundle those in only when the
 user's request is itself folder-scoped, or they explicitly ask for them.
@@ -134,7 +135,7 @@ to the next one unless the user says "同じ観点で" or similar.
    its `82.画面項目辞書_*.xlsx`, and a program using shared `XJZ`/`SJZ` items needs the `_共通` file
    as well as its own WG's. Subset each to the program's IDs, and pass both paths per file in the
    agent's prompt — the subset to read, the full index to grep.
-   In the same step, build the two folder-wide lookups that a check would otherwise rebuild per agent
+   In the same step, build the folder-wide lookups that a check would otherwise rebuild per agent
    with the shipped scripts, cached under `~/.claude/skills/_cache/reference-index/` with the file
    names below. **Compare freshness as values** (datetime / integer), never as strings — Python and
    PowerShell print different fractional-second digits, so a string compare always misses. A cache
@@ -155,12 +156,12 @@ to the next one unless the user says "同じ観点で" or similar.
      worth passing to `naming-standard-compliance` — pass those lines in naming's prompt). Check freshness
      with `build_screen_list.py <root> <tsv> --check` (FRESH/STALE; it counts with its own scope rules and
      checks `# format-version`) — never by recounting the folder yourself.
-   - **Parameter index** (sub-program 引数/戻り値, screen (1)ﾊﾟﾗﾒｰﾀ定義 — check 18) — when
-     `design-doc-internal-consistency` is selected:
+   - **Parameter index** (sub-program 引数/戻り値, screen (1)ﾊﾟﾗﾒｰﾀ定義, and who names which program —
+     checks 12 and 18) — when `design-doc-internal-consistency` is selected:
      `python _shared/scripts/build_param_index.py <...\01_Doc\08_機能定義書\<WG>> idx_param_<WG>.json` (~50 s for the 122
      工程管理 books; reads the zip only; freshness by `--check`, which compares every book's mtime/size).
    - **Program-name list** (`機能ID → 機能名` from the 機能定義書 file names, all WGs) — when `design-doc-writing-rules`
-     is selected (W8): `python _shared/scripts/build_program_list.py <...\01_Doc\08_機能定義書> lookup_program-name_08_機能定義書_ALL.tsv`
+     (W8) or `design-doc-internal-consistency` (check 12 resolves other programs' IDs with it) is selected: `python _shared/scripts/build_program_list.py <...\01_Doc\08_機能定義書> lookup_program-name_08_機能定義書_ALL.tsv`
      (~1 s; opens no workbook, so rebuild it every run).
    - **Zoom list** (`ズームID → ｽﾞｰﾑ名称/表示名/個・共` from the visible `ｽﾞｰﾑ一覧*` sheets of the `03.ｽﾞｰﾑ管理台帳*.xlsx` ledgers
      directly in `01_Doc\04_共通設計`) — when `design-doc-writing-rules` is selected (W7):
@@ -179,7 +180,8 @@ to the next one unless the user says "同じ観点で" or similar.
    this skill only decides *which* checks run. **Each agent's prompt must say**: read
    `_shared/agent-guide.md` (not the whole of `xlsx-excel-com-dump.md`), the dump directory and
    digest path (`_DELETED_DIGEST.txt`, or `_DELETED_DIGEST_<prefix>.txt` from a `--prefix` live dump), the
-   `_HIDDEN.txt` path, the per-sheet `dead=`/`partial=` counts the dump printed (and which sheets are hidden), and the
+   `_HIDDEN.txt` path (`_HIDDEN_<prefix>.txt` with `--prefix`), the `07.共通項目取得.xlsx` path
+   (`01_Doc\04_共通設計\`) to `xlsx-db-column-check` for S5, the per-sheet `dead=`/`partial=` counts the dump printed (and which sheets are hidden), and the
    index/lookup paths that check uses — and that the workbook must never be saved. Do not tell the
    formatting agent to load read-only: its scan needs `merged_cells`, which `read_only=True` lacks. The orchestrator itself
    reads both `agent-guide.md` and `xlsx-excel-com-dump.md`, since it produces the dump.
@@ -212,7 +214,9 @@ user's very next message after the report was 「取り消し線加味して誤�
    (`3D`) header copy reading `-` was raised 15+ times on the PSJCO501 REV, yet ~115 of 323 PHASE2
    sheets do it; only a copy that *contradicts* the left one is a finding.
 
-3. **Hidden content.** Look every cited cell up in `_HIDDEN.txt`: a finding on a hidden sheet or in a
+3. **Hidden content.** Merge duplicate 【非表示】 lines (one per hidden sheet, by the owner `agent-guide.md`
+   names), and write that line yourself for a leftover/withdrawn hidden sheet whose owning check was not
+   in the run. Look every cited cell up in `_HIDDEN.txt`: a finding on a hidden sheet or in a
    hidden row/column must start with `【非表示】` and be at least 要確認, and a finding whose only
    evidence of "this exists" is hidden content is wrong the other way round (`agent-guide.md`, "Hidden
    sheets, rows and columns"). Fix the label or the verdict here rather than sending it back.

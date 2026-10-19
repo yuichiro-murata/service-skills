@@ -13,7 +13,9 @@ this skill existed, nothing reviewed this sheet at all: `report-design-check` ex
 is the automatable part of that block.
 
 **A program with no visible `ﾌｧｲﾙ出力仕様書(*)` sheet — and no input spec (below) — is not in scope.**
-Say so in one line and stop.
+Say so in one line and stop — after handling each hidden spec sheet it does have (this check owns them,
+`agent-guide.md`): one 【非表示】 line for a leftover/withdrawn one, a normal review (findings 【非表示】) for any
+other.
 A hidden one does not put the program in scope either, but it is reported (`agent-guide.md`, "Hidden
 sheets, rows and columns"): across the project most hidden copies are untouched template stubs named
 `ﾌｧｲﾙ出力仕様書(FXJDXXX)` / `ﾌｧｲﾙ出力仕様書()`, or withdrawn ones renamed `削除)ﾌｧｲﾙ出力仕様書(…)` — one
@@ -158,8 +160,9 @@ Report it as **one** line listing every undeclared file ID — or leave it to `d
 **F2 — ﾌｧｲﾙ一覧への登録.** Every live file ID must have a live registry row; that row's `備考` should
 name this program's function (compare against the 3C `ﾌﾟﾛｸﾞﾗﾑ名` `[3,15]`, allowing the `付属機能/`
 prefix and a `(ｻﾌﾞﾌﾟﾛ)`/`(ﾊﾞｯﾁ)` suffix). Report both directions: a spec with no registry row, and a
-registry row whose 備考 names this program with no spec sheet (check for a hidden or `削除)` sheet
-before calling it missing).
+registry row whose 備考 names this program with no spec sheet. A hidden or `削除)` sheet does not count as
+the spec: the registry row is still "no spec sheet", and the hidden sheet is named in the same line,
+【非表示】.
 
 **Tell a stale name from a collision — they are different severities.** Measured: all 58 sheets
 with a real file ID had a registry row, and 7 of those rows' 備考 disagreed with the program. Five

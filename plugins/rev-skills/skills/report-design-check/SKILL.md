@@ -15,7 +15,9 @@ It is also where the findings are. The project's 第3フェーズ基本設計 �
 ファイル出力 at 26% of one designer's findings and 18% of another's — and those two designers own the
 report-heavy programs.
 
-**A program with no `帳票設計書(*)` sheet is not in scope.** Say so in one line and stop — do not
+**A program with no visible `帳票設計書(*)` sheet is not in scope.** Say so in one line and stop — after handling each
+hidden 帳票設計書/ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ sheet it has (this check owns them: one 【非表示】 line for a leftover/withdrawn one, a
+normal review with 【非表示】 findings for any other) — do not
 substitute the `ﾌｧｲﾙ出力仕様書(F*)` sheet, which is a different document with a different shape and
 has its own check, `file-output-spec-check` (its own registry `06-04_ﾌｧｲﾙ一覧_*`, its own
 common-download conventions). The two share the Ⅲ．編集仕様 table shape, so do not "helpfully" review
@@ -71,9 +73,9 @@ Parsing rules that matter:
   (~211 columns) grid mock-ups of the printed page.
 - **`bk_`-prefixed and hidden sheets are not live reports** (`bk_帳票設計書(RSJC034)` etc.; `SXJCB147` hides
   eleven `bk_帳票設計書…`). A `bk_` sheet for a report with no live sheet is not a live report. Hidden ones
-  are still reported, one 【非表示】 要確認 line per sheet (`agent-guide.md`, "Hidden sheets, rows and
-  columns"); a hidden sheet that is not a `bk_`/`不要_`/`old_` leftover is checked like a visible one,
-  findings prefixed 【非表示】.
+  are still reported by this check, one 【非表示】 要確認 line per sheet, when `agent-guide.md` ("Hidden
+  sheets, rows and columns") classes them as leftover or withdrawn (its name and content lists, not only
+  `bk_`/`不要_`/`old_`); any other hidden 帳票設計書 is checked like a visible one, findings prefixed 【非表示】.
 - Struck-through content is already resolved out of the dump; don't pull it back from
   `_DELETED_DIGEST.txt`.
 

@@ -58,7 +58,8 @@ everything else left-aligned. **Fill only A-H and M — columns I-L (対応要�
 `5,8,15,8,30,34,66,44,11,39.83,10,11,26`. Thin borders (`LineStyle=1`, `Weight=2`) on every cell of
 `A4:M<last>`, `AutoFilter` over the same range, and freeze panes below row 4.
 
-`重要度` takes one of 高 / 中 / 低 / 要確認 and is coloured by **direct cell fill, not conditional
+`重要度` takes one of 高 / 中 / 低 / 要確認 (a check's 「要確認・中」/「要確認・低」 goes in as 要確認, with 「中相当」/「低相当」
+at the start of 備考) and is coloured by **direct cell fill, not conditional
 formatting** (the existing files have zero `FormatConditions`): 高 = `13421823` + bold, 中 =
 `13434879`, 要確認 = `16772300`, 低 = left white. `分類` names the check the finding came from
 (入出力定義 / 内部相互参照 / DBｶﾗﾑ / ID採番 / 更新条件表 / 帳票 / ﾌｧｲﾙ出力 / 記述ﾙｰﾙ / 誤字脱字 / 体裁), and `指摘ID` is

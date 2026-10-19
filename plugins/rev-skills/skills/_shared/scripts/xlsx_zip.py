@@ -2,7 +2,9 @@
 
 Same live rule as live_dump.py at cell level: a cell whose font is struck or gray (r = g = b, 80 < r < 220)
 is dead; inside rich text a run with its own rPr overrides the cell font (struck run dead), a bare run
-inherits it. Merged non-anchor cells are not read (Excel stores no value there that matters here).
+inherits it. Merged non-anchor cells are skipped, as in live_dump.py: Excel can keep a stale value there
+(SXJCB147 G704:P704 all hold YOTO; 8,211 such values across the 122 工程管理 books). Time-of-day cells come back
+as the stored day fraction (0.5), where live_dump prints 12:00:00 — no number formats are read.
 Used by build_param_index.py and build_zoom_list.py; sheet_fills.py carries its own copy (it also needs
 fills). Fast on sheets with a runaway used range (03.ｽﾞｰﾑ管理台帳_基準情報's 1,048,566 rows): only
 stored cells are visited.
@@ -85,6 +87,11 @@ def iter_sheets(path, name_filter=None, include_hidden=False, max_col=None):
         tg = rid[re.search(r'r:id="([^"]+)"', a).group(1)].lstrip("/")
         tg = tg if tg.startswith("xl/") else "xl/" + tg
         x = z.read(tg).decode("utf-8")
+        skip = set()
+        for mm in re.finditer(r'<mergeCell ref="([A-Z]+)(\d+):([A-Z]+)(\d+)"', x):
+            c1, r1, c2, r2 = _col(mm.group(1)), int(mm.group(2)), _col(mm.group(3)), int(mm.group(4))
+            if (r2 - r1 + 1) * (c2 - c1 + 1) <= 200000:
+                skip.update((r, c) for r in range(r1, r2 + 1) for c in range(c1, c2 + 1) if (r, c) != (r1, c1))
         rows = {}
         for c in re.finditer(r'<c r="([A-Z]+)(\d+)"([^>]*?)(?:/>|>(.*?)</c>)', x, re.S):
             body = c.group(4)
@@ -93,10 +100,12 @@ def iter_sheets(path, name_filter=None, include_hidden=False, max_col=None):
             col = _col(c.group(1))
             if max_col and col > max_col:
                 continue
+            if (int(c.group(2)), col) in skip:
+                continue
             sm = re.search(r's="(\d+)"', c.group(3))
             dead = bool(sm and int(sm.group(1)) < len(xs) and xs[int(sm.group(1))])
             t = (re.search(r't="(\w+)"', c.group(3)) or [None, "n"])[1]
-            v = re.search(r"<v>(.*?)</v>", body, re.S)
+            v = re.search(r"<v(?: [^>]*)?>(.*?)</v>", body, re.S)   # <v xml:space="preserve"> occurs
             if t == "s" and v:
                 txt = _live(ss[int(v.group(1))], dead)
             elif t == "inlineStr":

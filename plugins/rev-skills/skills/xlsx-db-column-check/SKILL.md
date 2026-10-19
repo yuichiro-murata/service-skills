@@ -467,7 +467,8 @@ A `NOT EXISTS` / `検索条件(NOT EXISTS)` sub-heading opens a correlated sub-q
 its rows are not WHERE predicates of the outer query. **The 更新条件表 side blocks use the other shape** — `取得ﾃｰﾌﾞﾙ名` /
 `参照ﾃｰﾌﾞﾙ名` (step 2): left side col 58, operator col 68, right side col 74, brackets 54/84 (full-width `（）`), AND/OR col
 86, one query per `No.k` — and are in scope too (most of `PSJCO306`'s S1 rows sit there). An operator cell holding `※n`
-(`PSJCO306` `GSJC306A` `[271,25]`) is read after resolving the note; AND/OR are case-insensitive (`GSJC306B` `[97,46]` `or`).
+(`PSJCO306` `GSJC306A` `[271,25]`) is read after resolving the note; AND/OR are case-insensitive
+(`ﾁｪｯｸ処理設計書(GSJC306B)` `[97,46]` `or`).
 S2 and S4 need the table's unique key: the `ﾃｰﾌﾞﾙﾚｲｱｳﾄ` I01..I08 flags (cols 28-35, ordinal = key order)
 of the index that `＜ｲﾝﾃﾞｯｸｽ情報＞` names on a `ﾕﾆｰｸｷｰ` / `ﾕﾆｰｸｲﾝﾃﾞｯｸｽ` / `PRIMARY KEY` line (full-width spaces allowed:
 `ﾕﾆｰｸｷｰ　I01` on TXJAM008; `PRIMARY KEY I01` on TXJCD404; `I01` on 298 of 480 layouts, `IO1` typo on 8). `ﾕﾆｰｸｷｰ 無し`
@@ -479,7 +480,8 @@ true; the form is `IS NULL`/`IS NOT NULL` (an `IS` or `IS NOT` operator cell fol
 40 rows). Flag a condition or join row whose operator is `=`/`<>`/`≠`/`!=` and whose other side is
 `NULL` (case-insensitive, trimmed — 更新条件表 blocks write `Null` 9 times on `PSJCO306`), on either side
 (`NULL = C.管理No`). Measured: 173 rows, 62 sheets, 34 programs — the
-停止日時 template `(A.停止日時 = NULL OR A.停止日時 => ｼｽﾃﾑ日時)` (25 rows; its `=>` half is W6e's),
+停止日時 template `(A.停止日時 = NULL OR A.停止日時 => ｼｽﾃﾑ日時)` (25 rows; S1 lists only the `= NULL` cells
+and notes that the `=>` beside them is writing-rules W6e's),
 `A.管理No = NULL` (53, 7 of them in joins), and others: `PXJCO124` `GXJC124B` `[82,28]`, `PXJCO131`
 `GXJC131A` `[307,28]`-`[309,28]` (`B.事業所ｺｰﾄﾞ/外注ｺｰﾄﾞ/分工場ｺｰﾄﾞ = NULL` on LEFT-joined 作業場ﾏｽﾀ),
 `PXJCO163` `GXJC163A` `[367,6]` (join `… OR NULL = C.管理No`), `PSJAO601` `GSJA601B` `[141,24]`
@@ -536,7 +538,7 @@ lot-level by design (`PXJCO125` ﾛｯﾄ取消 `[111]`/`[123]` — any 作業�
 `ﾁｪｯｸ処理設計書(GXJC124A)` `(3)②` `[258]`-`[269]` searches `TXJCD102` 個別作業実績 by 管理No+枝番 only for
 check No.14 「個別作業実績に存在する場合はｴﾗｰ」, while `PXJCO161` `GXJC161A` `(11)` `[516]`-`[522]` narrows the
 same table by 工程ｺｰﾄﾞ/作業者ｺｰﾄﾞ/資源ｺｰﾄﾞ — 要確認 「A.工程ｺｰﾄﾞ = B.仕掛工程ｺｰﾄﾞ が要るか」 (copied:
-`PXJCO152` `GXJC152A` `[753]`-`[764]`). An expression on the key (`A.工程ｺｰﾄﾞの先頭5桁 IN …`, `PXJCO161`
+`PXJCO152` `ﾁｪｯｸ処理設計書(GXJC152A)` `[753]`-`[764]`). An expression on the key (`A.工程ｺｰﾄﾞの先頭5桁 IN …`, `PXJCO161`
 `[1260]`) counts as narrowing.
 
 **S5 — one `=`/`<>` against a multi-valued 区分 — 中.** `07.共通項目取得.xlsx` sheet
@@ -551,7 +553,7 @@ hard-coded list where 07 has a group is 要確認 against 07: `PSJCB303` `機能
 消滅/廃棄 codes but not 完了-group 26/32/83/99 and keeps the old label `"82"(ﾛｯﾄ抹消)` (now 過剰在庫);
 `PXJCO131` `[273]` still files 62 積層 under (作業中) although 07 moved it to 作業前 on 2026/2/16. Not S5:
 a single state compared with one value (`≠"91"(流動停止)`, `="25"(加工終了)`). Validated 2026-10-17 on `PXJCO124` (S1-S5 reproduced) and `PSJCO306` (S1 only, none false). Other 区分 have no group
-master — read them, don't scan. Read 07 live (`live_dump.py <07.共通項目取得.xlsx> <out> --sheets
+master — read them, don't scan. Read 07 live (`live_dump.py <...\01_Doc\04_共通設計\07.共通項目取得.xlsx> <out> --sheets
 "^共通項目取得\(移動ﾛｯﾄ状態\)$"`).
 
 ### 8. Reporting

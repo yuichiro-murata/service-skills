@@ -61,7 +61,8 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    sample data and pasted legacy screens, not IDs this program defines. **Strip trailing spaces from a
    sheet name before parsing its `(<ID>)`** (`PXJCO161` `更新条件表(TSJCD330) `, `更新条件表(TXJCM057) `);
    a sheet name that changes when stripped is one 低 line per workbook. Use the dump
-   `rev-program-review` handed you; standalone, run `_shared/scripts/live_dump.py` on each workbook.
+   `rev-program-review` handed you; standalone, run `_shared/scripts/live_dump.py <workbook> <out> --hidden` on each
+   workbook (step 5 must see hidden sheets to judge them absent).
    The program registry is three sheets in two files (verified for 工程管理): in
    `06-01_機能一覧_工程管理.xlsx`, the WG sheet `工程管理` and `ｻﾌﾞﾌﾟﾛ一覧` (`--sheets "^(工程管理|ｻﾌﾞﾌﾟﾛ一覧)$"`);
    in `06-01_機能一覧_工程管理(付属機能).xlsx`, the sheet `付属機能` (`--sheets "^付属機能$"`), which also
@@ -172,8 +173,8 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    Developer marker (`●`/`-`) against whether a matching sheet genuinely exists in the workbook
    *and has real content* (not just an empty template). **A hidden sheet does not count as present**
    (the dump now includes hidden sheets — `_HIDDEN.txt` lists them): a doc type whose only sheet is
-   hidden is judged as absent, and the hidden sheet itself is one 【非表示】 要確認 line (`agent-guide.md`,
-   "Hidden sheets, rows and columns"). This has caught a real defect in every
+   hidden is judged as absent; the 【非表示】 line for that sheet belongs to its owning check, not here
+   (`agent-guide.md`, "Hidden sheets, rows and columns"). This has caught a real defect in every
    program reviewed with it so far that had extra doc types beyond the bare minimum: on
    `PXJCB134_流動停止(ﾊﾞｯﾁ).xlsx`, 表紙 marked both `ﾁｪｯｸ処理設計書`(No.4) and `詳細設計`(No.9) as
    `-`/`-` (not applicable) despite both `ﾁｪｯｸ処理設計書(PXJCB134)` (populated with real check

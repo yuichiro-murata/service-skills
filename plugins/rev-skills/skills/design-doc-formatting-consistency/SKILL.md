@@ -48,7 +48,8 @@ specifically asks about 詳細設計書 formatting, include it then.
 
 For every **template sheet** of the target workbook (表紙/機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/
 ﾌｧｲﾙ…仕様書/帳票設計書 — **not `詳細設計書`**, see above; mock-up, `(参考)`, `【JAGUR】` and scratch sheets
-such as `資料` are excluded and listed once, per the shared doc), iterate the **live
+such as `資料` are excluded and listed once, per the shared doc; a hidden sheet the agent guide classes as
+leftover/withdrawn is not scanned, any other hidden template sheet is, findings 【非表示】), iterate the **live
 dump's coordinates** (so struck/gray cells stay out — don't run your own strike scan) and skip
 non-anchor cells of merged ranges. Record each cell's font size and font name, and each rich-text
 run's size. Per sheet, take the mode of each and list every cell that differs — this raw list will be
