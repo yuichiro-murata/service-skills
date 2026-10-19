@@ -313,8 +313,8 @@ produced it**: the COM dump's grouped blocks (next paragraph, bare numbers omitt
 value`, numbers kept — a value may contain newlines, so a record can span lines: parse by the
 `<sheet> [r,c]` prefix, not line by line). With `--prefix` the digest is `_DELETED_DIGEST_<prefix>.txt`. A row that *looks* deleted in the digest may have been moved — confirm against
 the live dump before calling something removed. Never rely on a struck *number* being
-listed: to decide whether a gap in a numbered list is explained by a deletion, look for **any deleted
-content on the rows between** the two live numbers.
+listed: to decide whether a gap in a numbered list was left by a deleted row (which writing-rules W2 reports —
+the rows after it must be renumbered), look for **any deleted content on the rows between** the two live numbers.
 
 **COM digest only:** it holds what was removed, grouped into contiguous row blocks, with `DEL` (whole cell),
 `GRAY` (whole cell, gray) and `PART` (`raw=` vs `live=` for a partially-struck cell) entries. Only

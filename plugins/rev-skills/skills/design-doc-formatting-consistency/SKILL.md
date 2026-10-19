@@ -24,9 +24,10 @@ because no other REV skill needs it — don't merge it back.)
 
 **Left/right header copies** (`2C`/`3C` vs `2D`/`3D`, rows 1-4): read both copies and compare them
 label by label (pair each label cell with its value cell in the left copy, the same label in the right
-copy, and compare values). Report a sheet only when the two copies **contradict** — two different
+copy, and compare values). 作成日/更新日 are not compared (left to the designer, designers' answer 2026-10-02
+No.48/50/73-76/102). Report a sheet only when the two copies **contradict** — two different
 non-`-` values for the same label. A copy reading `-` (or empty) beside a filled one is template-level
-drift: on PHASE2, 209 of 424 sheets have differing C/D 更新日 and ~182 sheet pairs show the `-` pattern,
+drift (~182 PHASE2 sheet pairs show the `-` pattern; header dates are no longer compared),
 so summarise it as **one 低 line per workbook**, never per sheet (the orchestrator's Step 3.5 rule 2
 withdraws per-sheet `-` findings anyway). When `naming-standard-compliance` is in the same run, it owns
 both the value contradictions and that one drift line — report only formatting (font/merge)

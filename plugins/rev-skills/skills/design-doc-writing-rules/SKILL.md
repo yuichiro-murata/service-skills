@@ -1,6 +1,6 @@
 ---
 name: design-doc-writing-rules
-description: Check a design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules: Ⅴ per-item rules (upper-case note on code inputs, button IDs in the 9xxx band, 選択 = □, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea carry 桁数 and 入力可文字種, 入力可文字種 consistent across screens, zoom buttons 表示 Z + Ⅳ参照), 項番 gaps/duplicates, 取得件数 at the end of each 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, screen names followed by their 画面ID, and 画面表示仕様 search conditions (LIKE needs a match mode, 名称 searches 部分一致) and join order (INNER before LEFT). How a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name. Also W7 (zoom names/IDs vs 03.ｽﾞｰﾑ管理台帳) and W8 (other programs' names = their 機能定義書 file names).
+description: Check a design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules: Ⅴ per-item rules (upper-case note on code inputs, button IDs (共通 XJZ/SJZ 9xxx first, else the WG's 9xxx), 選択 = □, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea carry 桁数 and 入力可文字種, 入力可文字種 consistent across screens, zoom buttons 表示 Z + Ⅳ参照), 項番 gaps/duplicates, 取得件数 at the end of each 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, screen names followed by their 画面ID, and 画面表示仕様 search conditions (LIKE needs a match mode, 名称 searches 部分一致) and join order (INNER before LEFT). How a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name. Also W7 (zoom names/IDs vs 03.ｽﾞｰﾑ管理台帳) and W8 (other programs' names = their 機能定義書 file names).
 ---
 
 # design-doc-writing-rules
@@ -64,27 +64,76 @@ have one, else by name with a trailing `ｺｰﾄﾞ` removed. Confirmed on `PSJ
 has the note on `GSJC805A`/`E`/`F`, while the same input named `出庫先作業場` on `GSJC805B` `[123]`
 and `GSJC805C` `[385]` has none — the literal list cannot see it. Report these as 要確認.
 
-**W1b — ﾎﾞﾀﾝの画面項目ID (No.44).** The self-check says "共通のﾎﾞﾀﾝは9xxx番台" and a call-out says
-"ﾎﾞﾀﾝは全て共通のXJZ9xxx(SJZ9xxx)を利用/採番". **Check the `9xxx` band, not the `XJZ`/`SJZ` prefix.**
-Measured on non-zoom `Button` rows in `共通` areas: 721 use `XJZ9xxx`/`SJZ9xxx`, but 149 use a
-WG-prefixed `9xxx` (`SJA9018` 基本情報ﾎﾞﾀﾝ, `SJC9004` ﾜｰｸﾌﾛｰﾎﾞﾀﾝ) — program-specific buttons numbered
-in their own WG per the same workbook's other call-out "新規採番はSJC/SJAで採番する". Flagging
-those would be ~150 false findings. Flag, for a non-zoom Button in a `共通` area:
+**W1b — ﾎﾞﾀﾝの画面項目ID (No.44, No.35; rule fixed 2026-10-19).** The self-check says "共通のﾎﾞﾀﾝは9xxx番台" and
+a call-out says "ﾎﾞﾀﾝは全て共通のXJZ9xxx(SJZ9xxx)を利用/採番"; the designers' answer No.35 allows a WG-prefixed
+`9xxx`, and the user's decision of 2026-10-19 (my-review-skills 〔ユーザー指摘 20261006 PXJCO124 BB992〕〔回答 20261006〕)
+narrows it: **whatever the program's subsystem (`XJC`/`SJC`, `XJA`/`SJA`), a button first takes the `共通`
+(`XJZ`/`SJZ`) `9xxx` ID of the same name; only when `共通` has no button of that name does it take its own WG's
+`9xxx`** ("新規採番はSJC/SJAで採番する" — `SJA9018` 基本情報ﾎﾞﾀﾝ stays correct). So the band test (`9xxx`, not the
+prefix) is the first filter, and a `共通` lookup decides the rest.
+**The 共通 button list.** Use the `82.画面項目辞書_共通` index (`_shared/reference-index.md`; the orchestrator hands
+its path over — standalone, build it or read the file live with `scripts/xlsx_zip.py`). Keep the `XJZ9xxx`/
+`SJZ9xxx` rows whose name is non-empty: 221 IDs / 215 names on 2026-10-19 (`XJZ` 147 live — `XJZ9124`-`9135` are
+struck, retired; `SJZ` 74 — `SJZ9054`/`9055` and `9077`-`9147` are blank reserved rows). Six names occur twice:
+行削除 `XJZ9031`/`XJZ9142`, 一括承認 `XJZ9102`/`XJZ9159`, 検査表出力設定 `XJZ9055`/`XJZ9115`, 処理状況
+`XJZ9017`/`SJZ9052`, 反映 `XJZ9065`/`SJZ9075`, ｱｯﾌﾟﾛｰﾄﾞ `SJZ9032`/`XJZ9092`. Find duplicates yourself — the
+dictionary's own `重複` column (col 2, a `COUNTIF` over the name column) also marks clashes with non-button items
+(完了 `XJZ9139` × because of item `XJZ0033`) and never compares the `XJZ` sheet with the `SJZ` sheet.
+**Match on `表示`, not 画面項目名** — the dictionary holds the caption (as in internal-consistency check 3), and the
+corpus follows it: 帳票ﾃﾝﾌﾟﾚｰﾄ削除ﾎﾞﾀﾝ / 表示 `削除` is `XJZ9008` (20 rows, `PSJAO204` `GSJA204B`, `PSJAO705`
+`GSJA705B`), ﾌｧｲﾙ選択ﾎﾞﾀﾝ / `ﾌｧｲﾙの選択` is `XJZ9064`, 上移動ﾎﾞﾀﾝ / `▲` is `SJZ9062`. Fall back to 画面項目名 only
+when `表示` is `-`, blank or only `※n`; a glyph caption that is not in 共通 is not a fallback case (`PSJCO204`
+`GSJC204A` `[807]` 解除ﾎﾞﾀﾝ / `⊟` is not `SJZ9015` 解除). Normalise both sides: NFKC, drop all whitespace
+(`SJC9044` `実　行`), a trailing key hint `(ENT)`/`(R)`/`(F9)`…, `※n`, series markers `(1-N)`/`1～15`, and a
+trailing `ﾎﾞﾀﾝ` (the dictionary has `自動検索ONﾎﾞﾀﾝ`). **Exact match only** — 160 of the 311 own-band buttons with
+no 共通 match *contain* a 共通 name and are different buttons (`再印刷`, `一括更新`, `ｸﾞﾚｰ行削除`, `流動停止解除`,
+`ﾌｧｲﾙ選択` vs `ﾌｧｲﾙの選択` on the 名 side). **Never match a `表示` of `-`** to `SJZ9065` `-`: it means "no caption"
+(18 false hits — right-click 切り取り/貼り付け on `GSJA401B`/`E`/`F`, 連番1-4 on `GSJC309A`) unless the cell says
+so (`PSJAO702` `GSJA702A` `[215]` `-⏎※ﾏｲﾅｽﾎﾞﾀﾝ`). A nested 画面項目名 sits one or two columns right of the header
+(`GXJC161B` `[2446]` col 6, `GSJC308A` `[1488]` col 7): take the first non-empty cell between the 画面項目名 and
+表示 columns.
+**Judge each non-zoom Button, in any area** (measured 2026-10-19 on 1,472 such rows in 122 books / 215 sheets):
+- 共通 has the name and the ID is one of its IDs → pass (909 of the 921 rows citing `XJZ`/`SJZ`; a doc citing
+  the higher of a duplicated pair passes — 処理状況 `SJZ9052` ×2, ｱｯﾌﾟﾛｰﾄﾞ `XJZ9092` ×2).
+- **共通 has the name and the ID is an own-WG `9xxx` → finding, 低, 確定** (not 要確認): 「共通に同名のﾎﾞﾀﾝ
+  `<ID>` があるため共通の画面項目IDを使用」. The fix is the 共通 ID; for a duplicated name, the lower number
+  (numeric part, `XJZ` before `SJZ` on a tie) — still 確定. 15 rows on 11 sheets: 行削除 `XJC9083` →
+  `XJZ9031` (`PSJCO309` `GSJC309A` `[1324,54]`, `PSJCO308` `GSJC308A` `[1460,54]`), 行追加 `XJC9082` →
+  `XJZ9030` (same sheets `[1323,54]`, `[1459,54]`), ﾜｰｸﾌﾛｰ `SJC9004` → `SJZ9067` (`GSJA203A` `[415]`,
+  `GSJA241A` `[557]`, `GSJA401A` `[312]`, `GSJC402A` `[116]`, `GSJC402B` `[140]`), 実行 `SJC9044` → `XJZ9016`
+  (`GSJC509A` `[333]`), 電子配信 `XJC9027` → `XJZ9093` (`GXJC161B` `[2027]`), 設定 `XJC9009` → `XJZ9071`
+  (`GXJC906A` `[474]`), 完了 `XJC9042` → `XJZ9139` in 実績表項目領域 (`GXJC130C` `[303]`, `GXJC161B` `[2446]`,
+  `GSJC308A` `[1488]` — four other sheets' 実績表項目領域 already use `XJZ9139`).
+- 共通 has the name and the ID is a *different* `XJZ`/`SJZ` ID → 確定 too, naming the matching ID: `GSJC402A`
+  `[112]` / `GSJC402B` `[136]` 画面ｸﾘｱ `XJZ9030` (行追加) → `XJZ9003`; `GSJC604B` `[797]` 検索 `XJZ9007` →
+  `XJZ9002`; `GSJC606A` `[294]` 更新 `XJZ9013` → `XJZ9007`; `GSJA205D` `[86]` 処理状況 `XJZ9009` → `XJZ9017`.
+- 共通 has no button of that name → the WG's own `9xxx` is correct (No.35; 311 rows — `SJA9018` 基本情報,
+  `SJC9012` 再印刷, `SJA9023` 変更履歴). Only these buttons go through the most-used-ID comparison below.
+- ID blank, `-`, placeholder, malformed or outside `9xxx` → the bullets below; whenever 共通 has the name, the
+  fix is that 共通 ID (50 blank/placeholder and 24 non-`9xxx` rows have one).
+Glyph captions are real 共通 names (`+` `SJZ9064`, `-` `SJZ9065`, `▲`/`▼` `SJZ9062`/`9063`, `×` `SJZ9070`, `<`/`>`
+`XJZ9156`/`9157`) and are matched when the caption is that glyph; `Z` `SJZ9066` is the zoom button and stays out
+of W1b with the other zoom/calendar buttons, as below. Several buttons with the same caption on one sheet
+(`GSJC801B` ｶﾗｰ選択 ×8 → `SJZ9056`) share the ID legitimately — not a duplicate-ID finding.
+Flag, for a non-zoom Button in a `共通` area:
 - ID blank or `-` (59 blank — e.g. `PSJCO805` `GSJC805A` has no ID on any of its 12 共通 buttons);
 - the placeholder `XXXXXXX` (`PSJCO402`, `PSJCO403`);
 - a malformed prefix (`PSJAO704` `GSJA704I` 行削除ﾎﾞﾀﾝ `XZJ9031` — `XZJ` for `XJZ`);
-- an ID outside `9xxx` (14 — `XJC0323` 削除ﾎﾞﾀﾝ, `SJA0349` 削除ﾎﾞﾀﾝ, `XJZ0079` 返却ﾎﾞﾀﾝ). When a
-  standard button (検索/画面ｸﾘｱ/削除/戻る/更新…) has a non-`9xxx` ID, name the `XJZ9xxx` the other
-  sheets use for the same button as the fix. A cell holding two IDs (`SJA0873⏎SJA9048`) passes if
-  one of them is `9xxx`.
+- an ID outside `9xxx` (14 — `XJC0323` 削除ﾎﾞﾀﾝ, `SJA0349` 削除ﾎﾞﾀﾝ, `XJZ0079` 返却ﾎﾞﾀﾝ). Name the 共通 `9xxx` of
+  the same name as the fix (削除 `XJZ9008`); without one, the `9xxx` the other sheets use for that button. A
+  cell holding two IDs (`SJA0873⏎SJA9048`) passes if one of them is `9xxx`.
+When `表示` is `-` and the match came from 画面項目名 (`PSJCO308` `GSJC308A` 行追加 `[1459,54]` / 行削除 `[1460,54]`),
+the 共通 fix stays 確定, but tell the designer to confirm in Ⅰ/the 画面ｲﾒｰｼﾞ sheet that it is not an icon button
+(`+` `SJZ9064` / `-` `SJZ9065`), which would be the ID instead.
 Two checks the band test cannot catch, both worth a line:
 - **the same ID on two different buttons of one sheet** (not a button repeated on every detail row —
   a per-row `削除ﾎﾞﾀﾝ` sharing one ID is one control) — `PSJAO205` `GSJA205D` gives 処理状況ﾎﾞﾀﾝ
   `[86,54]` the ID `XJZ9009`, which is its own 戻るﾎﾞﾀﾝ's `[85,54]`; a duplicate ID means one label
   is wrong at runtime;
-- **a standard button whose ID differs from the one the rest of the corpus uses** for that button
-  name (処理状況 = `XJZ9017` on 5 other sheets). Build the name → most-used-ID table from the other
-  screens you have and report a deviation as 要確認, naming the usual ID.
+- **a button with no 共通 name whose ID differs from the one the rest of the corpus uses** for that
+  button name. Build the name → most-used-ID table from the other screens you have and report a
+  deviation as 要確認, naming the usual ID. (A button whose name *is* in 共通 is judged against the
+  dictionary above, 確定 — not here.)
 **When a sheet's whole 画面項目ID column is empty** (`PSJCO805`: all six screens, every row), do
 not list every button, No and input separately — report "画面項目ID 未採番" once per sheet, with the
 standard IDs you can already suggest (検索 `XJZ9002`, 画面ｸﾘｱ `XJZ9003`, ﾀﾞｳﾝﾛｰﾄﾞ `XJZ9004`, 新規登録
@@ -99,11 +148,13 @@ QA判定 `XJC0334` against 分割 `XJC9087` / 保留分割 `SJC9053` / 資源/�
 report them once per sheet as 要確認. A button whose ID is also a non-button item's ID on the same
 sheet is a **duplicate-ID finding** (中), not a band question: `GXJC161B` 不良項目ﾎﾞﾀﾝ `[2493,54]` and the
 Label 不良項目(1-N) `[2494,54]` are both `XJC0333` — the button needs its own number.
-"Most-used ID" comparisons: use a prebuilt button-ID table if your prompt names one; otherwise compare
-within the workbook and against the standard IDs listed here (検索 `XJZ9002`, 画面ｸﾘｱ `XJZ9003`, ﾀﾞｳﾝﾛｰﾄﾞ
-`XJZ9004`, 更新 `XJZ9007`, 削除 `XJZ9008`, 戻る `XJZ9009`, 実行 `XJZ9016`, 新規登録 `XJZ9028`, 処理状況
-`XJZ9017` — 実行 confirmed in `82.画面項目辞書_共通` `XJZ(共通_JAGUR)` and `PXJCO125` `GXJC125A` `[440,54]`), and
-leave other buttons' correct number to the designer.
+"Most-used ID" comparisons (buttons with no 共通 name only): use a prebuilt button-ID table if your prompt
+names one; otherwise compare within the workbook. For a button whose name is in 共通 the dictionary is the
+authority; if no 共通 index was handed over and you cannot read the file, fall back to the standard IDs
+listed here (検索 `XJZ9002`, 画面ｸﾘｱ `XJZ9003`, ﾀﾞｳﾝﾛｰﾄﾞ `XJZ9004`, 更新 `XJZ9007`, 削除 `XJZ9008`, 戻る
+`XJZ9009`, 実行 `XJZ9016`, 新規登録 `XJZ9028`, 処理状況 `XJZ9017`, 行追加 `XJZ9030`, 行削除 `XJZ9031` — all
+confirmed in `82.画面項目辞書_共通` `XJZ(共通_JAGUR)` on 2026-10-19), say the 共通 lookup was skipped, and leave
+other buttons' correct number to the designer.
 
 **W1c — 選択 (No.48).** ("明細-type area" below = any area of repeating rows — titles with
 `明細`/`一覧`/`履歴`/`通知先`…, or any area that has a `No` or `選択` item.) A `選択` item in a 明細-type area should be `表示` = `□` (`CheckBox`) with
@@ -228,8 +279,7 @@ of 8). When a zoom has no Ⅳ event at all, that is a cross-reference gap (`desi
 
 Every numbered list in 表紙 and the four sheet types (機能定義書, 画面設計書, ﾁｪｯｸ処理設計書, 更新条件表) — a
 column (≤ col 8) whose header cell is `No.`/`No`/`項番`, followed by integer cells — must run 1, 2, 3 … This
-includes 表紙 Ⅲ．改訂履歴 (`No.` at col 4), where a reused revision number is a real defect (`PXJCO125`
-`表紙(PXJCO125)` `[139,4]` and `[157,4]` both `36`, dated 46268/46280). Also the circled
+excludes 表紙 Ⅲ．改訂履歴, which is not reviewed (designers' answer 2026-10-02 No.48/50/73-76/102). Also the circled
 section numbers of 機能定義書 Ⅳ (`A-①`, `A-②` … per letter), and **a run of circled step numbers inside
 one cell** — split the cell on newlines and read the line-initial ①②③…; they must not repeat or skip
 (`PXJCO125` `画面設計書(GXJC125A)` `[416,24]` ①②**②**). A `※1` or a mid-line circled reference is not a step.
@@ -262,7 +312,7 @@ the list continues (`PXJCO161` `GXJC161F` `[58,5]` `【(3)で取得した内外�
 `層No` header in a worked example).
 **Judge the sequence on live numbers only**; a struck row that still shows its
 old number (`ﾁｪｯｸ処理設計書(GSJA704B)`: live 1, struck 2 and 3, live 2) is not part of the sequence and
-must not produce a "backwards" finding — consult the struck numbers only to explain a gap.
+must not produce a "backwards" finding — consult the struck numbers to classify a gap (below).
 **Also include the numbered sub-tables of 画面設計書 Ⅲ．画面表示仕様** (取得項目 / 検索条件 / 結合条件 / ｿｰﾄ順 /
 集約条件, no `No.` header): the number column is **the column of that table's own label**, so detect it
 per table — col 4 at top level, further right in a nested block (`PXJCO125` `GXJC125A` `[73,6]` 取得項目
@@ -274,12 +324,46 @@ label or block at that column or left of it. These were not part of the corpus c
 Normalise before flagging — measured, the naive check fires ~150 times on 94,445 numbered cells and
 most of it is structure:
 - **A drop back to 1 is a new list**, not an error (ﾁｪｯｸ処理 restarts per `【…押下時】` event; 39 such).
-- **A gap explained by a struck row is the project's convention** — deleted rows keep their number in
-  strikethrough (26 gaps, e.g. `PSJAO241` `更新条件表(TXJAM002)` 45→47 with a struck `46`). Before
-  reporting a gap, look in `_DELETED_DIGEST.txt` for **deleted content on the rows between** the two
-  live numbers — the COM dump's digest omits a bare struck number as filler, so don't wait for the
-  number itself to appear. A row whose content is struck but whose number is **not** (`GSJA704B`
-  【引戻ﾎﾞﾀﾝ押下時】 `[26,1]`-`[28,1]` live 2/3/4 over struck checks) is an empty live item — 要確認.
+- **A gap left by a struck row is a finding — the rows after it must be renumbered** (user decision
+  2026-10-19, my-review チェック観点 〔課題152-1085〕: 取り消し線で行を削除したら、その後ろの項番を振り直して
+  いるか). A deleted row stays in place in strikethrough; the live rows below it must still run 1, 2, 3 ….
+  Measured 2026-10-19 on the 122 工程管理 `PHASE1`-`PHASE3` books: of the struck runs between two live numbers,
+  667 were followed by renumbered live rows (575 No. columns, 92 Ⅲ sub-tables; also 22 of 22 `A-①` sections
+  and 30 in-cell ①② runs renumbered in place) and 61 were not (29 + 32, in 40 lists, 19 sheets, 16 books) —
+  renumbering is the norm, the gap is the defect. Examples: `PSJAO241` `更新条件表(TXJAM002)` `[60,2]` struck
+  `46` 代表製品ｺｰﾄﾞ, live 45→47 in all four update blocks (`TXJAM002WF` 47→49 likewise; ﾃｰﾌﾞﾙﾚｲｱｳﾄ itself was
+  renumbered — 社内管理番号 is its No.46); `PSJCO308` `GSJC308A` Ⅴ `[1188,3]` struck 26 (col 59 note
+  `No26の行を削除`) and `[1194,3]`-`[1195,3]` struck 32/33, live 25→27, 31→34; `PXJCO161` `機能定義書(PXJCO161)`
+  `[443,7]`/`[451,7]` 20→22, 28→30; `PSJCO404` `GSJC404A` G2) `[1723,3]` 1→3; `PSJCO803` `GSJC803A` 検索条件
+  `[91,4]`-`[93,4]` 13→17; `PSJAO204` `GSJA204B` 取得項目 `[106,4]`-`[124,4]` every even number struck.
+  **How to decide**: read the list with its struck numbers in sheet order — `live_dump.py`'s digest keeps
+  them; the COM digest drops a bare struck number as filler, so there look for **deleted content on the rows
+  between** the two live numbers. Report when live `a` is followed by live `b > a+1` and the missing numbers
+  belong to struck rows between them — or when a list's first live number is `k+1` with struck `1`..`k` above it
+  (`PSJCO308` `ﾁｪｯｸ処理設計書(GSJC308A)` 【実行ﾎﾞﾀﾝ押下時】 `[107,1]`/`[108,1]` struck 1/2, live 3-47 →
+  「No.3以降を2つ繰り上げ」). Numbers quoted inside revision memos (col 59, col ≥ 100) are not citations. Not a finding:
+  - struck `k` followed by live `k` (renumbered, or the row replaced in place), or a struck row still showing
+    its pre-renumbering number (`PSJAO203` `GSJA203B` `[1285,3]` struck 21 between live 19 and 20; 271 such) —
+    the live sequence is continuous, never call it backwards;
+  - a struck run at the end of a list (273), a struck header (the whole table is deleted), a superseded sheet;
+  - in-place renumbering in a heading — old number struck, new one typed beside it (`PXJAO243` `[128,3]`
+    `B-②③` live `B-③`; `PXJCO152` `[84,3]` live `A- ③`): take the number from the live text, allow
+    whitespace after `A-`, and fold ➀-➉ (`PSJAO401` `[312,3]` `F-➅`) into ①-⑩;
+  - in-cell ①② where the strike also removed a line break, so the next step now sits mid-line
+    (`PSJAO241` `GSJA241B-規格情報` `[1105,20]` `…戻る。⑤…`, `PSJCO501` `GSJC501B` `[790,24]`) — read a circled
+    step after `。` too; the corpus has no real in-cell strike gap;
+  - a struck row whose only live text is a `-` placeholder anywhere, or text in col ≥ 54 only (画面項目ID / SQL)
+    or in the revision memos (col 59, col ≥ 100) — the row is still deleted (`PSJCO308` `[1188,54]` `-`).
+  Reported differently: the number struck but the row content live (`GSJA704B` 検索条件 `[224,4]` struck `4`
+  over a live `B.承認状態 NOT IN …`) — the deletion is unfinished, 要確認; the content struck but the number
+  live (`GSJA704B` 【引戻ﾎﾞﾀﾝ押下時】 `[26,1]`-`[28,1]` live 2/3/4 over struck checks) is an empty live item —
+  要確認; a struck row whose content reappears live elsewhere in the list (`PXJCO130` `GXJC130B` `[905,5]`-
+  `[909,5]`: 1, 2 製伝No, 2 出荷ﾛｯﾄNo, struck 3 製伝No, 4) is one 「行移動後の振り直し漏れ」, not a duplicate plus a gap.
+  Severity 低, one line per list naming the first live number to change (`No.47以降を1つ繰り上げ`); the same gap
+  in repeated blocks of one sheet (TXJAM002 ×4) is one line. 中 when the numbers are cited elsewhere
+  (`No.5`, `(n).`, `A-⑥ 参照`) — say that the citations must be renumbered with the list. The Ⅲ block headings
+  `(n)` are not part of W2 (their gaps — 29 left, 29 renumbered in the corpus — are cited by number all over the
+  doc; check 12 resolves those citations).
 - **Numbers that were never written up** — pre-numbered rows with every other column empty
   (`PSJCO403` `ﾁｪｯｸ処理設計書(GSJC403A)` `[12,1]`-`[39,1]`: all 13 events from 【検索ﾎﾞﾀﾝ押下時】 to
   【単価変更時】) — are not a numbering defect. They are a finding of their own: one line per sheet, 中,
@@ -291,7 +375,7 @@ What survives is real: **duplicate** (16 — `PSJAO704` `GSJA704J` `[255,3]` 9�
 `GSJCA09C` four `3`s in a row), **gap** (33 — `PSJAO704` `GSJA704F` `[174,3]` 4→6), **typo / backwards**
 (16 — `PXJAO701` `GXJA701A` `[625,3]` 11→**123**→13, i.e. `12` mistyped; `GSJA704F` is in Ⅳ．画面項目ｲﾍﾞﾝﾄ詳細,
 not Ⅴ — say which section), **list not starting at 1** (4),
-and in 機能処理概要 (11 lists) — a skipped circled number (`PXJCO152` `A`: ①②⑥⑦⑧), a duplicate
+and in 機能処理概要 (11 lists) — a skipped circled number (read from the live text — `PXJCO152` `A`, once cited here as ①②⑥⑦⑧, is ①-⑧ live after in-place renumbering), a duplicate
 (`PSJCO402` `A`/`B`: ④④), and a section filed under the wrong letter (`PSJAO704`: inside the `E` block,
 `[143,3]` reads `F-⑥.戻る処理`, so E jumps ⑤→⑦ — the `E-⑥` was written as `F-⑥`; F itself is fine). Severity 低, except a duplicate/misfiled
 circled section that another doc cites by number (`A-⑥ 参照`), which is 中 — the citation now points at

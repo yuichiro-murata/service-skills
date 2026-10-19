@@ -229,8 +229,8 @@ lines — to be absent: report them as one 要確認 group, not item by item. Co
 **names**, not positions, and keep this check's confidence honest — a chart cell can legitimately
 carry a caption that is not a print item. Report a missing item as "帳票設計書にあるがﾚｲｱｳﾄにない"
 (and the reverse) rather than asserting a defect. A report whose chart sheet is missing entirely,
-while its siblings all have one, is worth a line on its own, and so is a chart whose 更新日 is `-`
-while the design sheet was revised later (the chart was probably never updated).
+while its siblings all have one, is worth a line on its own. (A chart's header 更新日 is not compared with
+the design sheet's — header dates are left to the designer, designers' answer 2026-10-02 No.48/50/73-76/102.)
 
 **C7 — 処理の流れの参照先.** Ⅲ．編集仕様's `1.処理の流れ` cites blocks by number (`①(2).ﾌｧｲﾙﾃﾞｰﾀ①を
 取得する`) and cites the 機能定義書 (`※機能定義書(SXJCB147).Ⅳ．機能処理概要.A-②を参照`). Check those

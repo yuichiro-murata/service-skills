@@ -16,7 +16,7 @@ Grounded in:
   source of truth and this skill's job is to catch drift from it).
 - `01_Doc/99.共通資料/設計書記述ルール/05.設計書記述ルール_チェックリスト.xlsx`, sheet
   **"ﾁｪｯｸﾘｽﾄ"** — items 1-x/2-x (general/表紙 formatting rules) plus the header-info check (1-6:
-  機能ID・システムID・作成日 etc. must be correct and consistent across every sheet of one
+  機能ID・システムID etc. must be correct and consistent across every sheet of one
   workbook).
 
 ## Environment
@@ -102,7 +102,7 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    `11_工程管理WG\07_データベース・ファイル設計書(仮)` (`TXJCM007_B` in `PH2`). Flag a suffixed ID only
    when no layout or registry entry exists for it.
 4. Header-info check (checklist 1-6): within one workbook, confirm the **workbook-level** header
-   values (システムID, 計画書No, 機能ID, ﾌﾟﾛｸﾞﾗﾑID and its name, 作成日) are identical across every sheet's
+   values (システムID, 計画書No, 機能ID, ﾌﾟﾛｸﾞﾗﾑID and its name) are identical across every sheet's
    header block (機能定義書, 画面設計書, ﾁｪｯｸ処理設計書, 更新条件表, ﾌｧｲﾙ出力/入出力仕様書 all repeat this
    header). **Label sets differ by template**: 機能定義書/更新条件表 carry 機能ID (row 3) and ﾌﾟﾛｸﾞﾗﾑID
    (row 4); 画面設計書/ﾁｪｯｸ処理設計書 carry ﾌﾟﾛｸﾞﾗﾑID (row 3) and 画面ID (row 4), no 機能ID (verified on
@@ -116,15 +116,9 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    run found only one other of PHASE3's 104 画面設計書 sheets with this, in PSJCO309). Report them as one
    finding grouped by pattern. A row-4 **label** that differs between the left and right copies belongs
    in the same finding (FSJC018: `[4,5]`=`画面ID`, `[4,57]`=`ﾌｧｲﾙID`). Flag any sheet whose workbook-level header
-   contradicts the others in the same file. Exceptions: **作成日 may legitimately be
-   later on a sheet added in a later revision** (check 表紙 Ⅲ．改訂履歴 for that sheet's addition
-   before reporting); **表紙 has no header block** (its IDs sit in the body); a template with a
-   single header copy (e.g. `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ`) skips the left/right comparison below. An **更新日 older
-   than a dated revision note inside the same sheet** (`2026/6/10 福浦 修正` on a sheet whose header
-   更新日 is earlier) is a 低 finding (header bookkeeping — 更新日 diverges in 43 of 99 sibling
-   workbooks). Ignore notes dated on or before the header 作成日: those are the creation memos, and
-   a `-` 更新日 is then correct (11 false positives on PXJCO125, e.g. 更新条件表(TXJCD203), whose notes
-   are all 2025/7/2 = 作成日 45840). **Deliberately skip `詳細設計書` sheets
+   contradicts the others in the same file. Exceptions: **表紙 has no header block** (its IDs sit in the
+   body); a template with a single header copy (e.g. `ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ`) skips the left/right comparison below.
+   **Not reviewed (designers' answer 2026-10-02 No.48/50/73-76/102, adopted 2026-10-19):** 表紙 Ⅲ．改訂履歴, the revision memos right of the form (wording and dates), and every sheet header's 作成日/更新日 are left to the designer's own check — do not report their values, their left/right copies, their order, or rows left incomplete. (A struck row with no revision memo at all is a different matter, not covered by this skill yet.) **Deliberately skip `詳細設計書` sheets
    here** beyond their header rows (`[1-4,*]`) —  across every program reviewed with this skill's sibling
    `design-doc-internal-consistency` so far, 詳細設計書 has turned out to be a near-empty
    header-only sheet, so checking its header costs a full-sheet dump for essentially no chance of
@@ -144,34 +138,53 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    with the header starting around column 5, and a second `2D`-labeled copy of the same header
    starting around column 57 — the same pairing exists for `3C`/`3D` on 画面設計書/ﾁｪｯｸ処理設計書/
    更新条件表/etc.). These two copies are meant to be identical but can drift independently of the
-   cross-sheet check above. Example of the shape (a `-` copy, so it now counts as drift — see the next
-   paragraph) from `PXJCB102_製造ｵｰﾀﾞｰ完了処理.xlsx`: both
-   `機能定義書(PXJCB102)` and `更新条件表(TXJCM003)` showed 作成日=`46197` in the left (`2C`/`3C`)
-   copy but 作成日=`-` (blank) in the right (`2D`/`3D`) copy of the very same header row — while a
-   third sheet in the same workbook, `ﾁｪｯｸ処理設計書(PXJCB102)`, correctly showed `46197` on both
-   sides. A cross-sheet-only check would have missed this, since it only compares one canonical
-   value per sheet and never looks at whether a sheet agrees with itself. Extract both copies from
+   cross-sheet check above (the IDs and names only — 作成日/更新日 are not reviewed, see above). Extract both copies from
    every sheet's header rows (1-4; left labels at columns 5/29/41, right at 57/81/93, each value five
    columns to the right of its label), pair them label by label, and diff them in addition to the
    cross-sheet diff.
 
    **Report a left/right difference only when the copies contradict** — two different non-`-`
    values for one label. A `-` (or empty) copy beside a filled one is template-level drift, not a
-   per-sheet defect: on PHASE2, 209 of 424 sheets have differing C/D 更新日 and ~182 sheet pairs show
-   the `-` pattern, and the orchestrator's Step 3.5 rule 2 withdraws such findings. Summarise it as
-   **one 低 line per workbook** (PSJCO403: FSJC019/020 right-copy 作成日/作成者 `-`). List the
+   per-sheet defect (~182 PHASE2 sheet pairs show the `-` pattern — counted while header dates were still
+   compared; re-count 作成者/更新者 before quoting a figure), and the orchestrator's Step 3.5 rule 2 withdraws such findings. Summarise it as
+   **one 低 line per workbook** (PSJCO403: FSJC019/020 right-copy 作成者 `-`). List the
    contradicting sheets of one workbook in a single finding grouped by pattern, not one per sheet.
    This check owns both the contradictions and the drift line; `design-doc-formatting-consistency`
-   reports them only when this check is not in the run. A contradiction in **更新日** (or 更新者) is 低
-   bookkeeping; say which copy is authoritative by comparing both dates with 表紙 Ⅲ．改訂履歴 and the
-   sheet's own dated notes — it is not always the right copy that lags (`PXJCO161` `更新条件表(TXJCD104)`:
-   left `[3,46]` 46227, right `[3,98]` 46239 — the left is stale). Contradictions in 機能ID, ﾌﾟﾛｸﾞﾗﾑID or
-   画面ID keep the severity given above.
+   reports them only when this check is not in the run. A contradiction in 作成者/更新者 is 低 bookkeeping;
+   作成日/更新日 are not compared at all. Contradictions in 機能ID, ﾌﾟﾛｸﾞﾗﾑID or 画面ID keep the severity given
+   above.
 
 5. **表紙's "Ⅱ．設計書構成" list vs the sheets actually present** (checklist item near 2-1) — run
-   this as a **standard, always-on check**, not an optional one: compare every row's Customer/
-   Developer marker (`●`/`-`) against whether a matching sheet genuinely exists in the workbook
-   *and has real content* (not just an empty template). **A hidden sheet does not count as present**
+   this as a **standard, always-on check**, not an optional one: compare every row's **Customer** marker (`●`/`-`) against whether a matching sheet genuinely
+   exists in the workbook *and has real content* (not just an empty template), and every row's
+   **Developer** marker against whether those sheets carry **developer-side content** (designers'
+   answer 2026-10-10 No.92, adopted 2026-10-19):
+   - **Developer-side area** = columns BA-CZ (53-104), rows 5 down, on each sheet whose `BA1` holds
+     the `nD` marker (`2D` on 機能定義書, `3D` elsewhere). Rows 1-4 there are the developer copy of the
+     header and never count; column DA (105) onward is the revision-memo margin, not this area.
+   - **Not developer content:** the 画面項目ID column (BB, col 54, on 画面設計書 Ⅳ/Ⅴ, ﾌｧｲﾙ出力/入力仕様書
+     and 帳票設計書 Ⅱ — its header, `-`, IDs, placeholders `XXXXXXX`/`SJC9xxxx`, and cells holding only
+     labels (half- or full-width colon) and IDs separated by line breaks or `/`, such as `処理前：⏎XJZ7006⏎処理後：⏎XJC7009`); the column headers the template pre-prints (ﾁｪｯｸ処理設計書 row 8
+     `ｴﾗｰｺｰﾄﾞ`/`ﾁｪｯｸ詳細`/`ﾁｪｯｸ補足`); a copied section title (`Ⅰ．画面ﾚｲｱｳﾄ`); dated change notes
+     (`2025/2/3 藤崎 開発指摘対応：…`).
+   - **Developer content:** anything else live there — 画面設計書 Ⅴ physical names in BF/BG
+     (`sagyobaCd`, `gxjco164aList1G1`; the developer's area, answer 2026-10-02 No.6・7), 更新条件表
+     取得ﾃｰﾌﾞﾙ名/取得条件 blocks (they always sit in BA-CZ), ﾁｪｯｸ処理設計書 ｴﾗｰｺｰﾄﾞ/ﾁｪｯｸ詳細/ﾁｪｯｸ補足 values,
+     帳票設計書 横幅超過/水平揃え/垂直揃え values, SQL, notes.
+   - **Expected** (per doc type — `●` when **any** sheet of that type has content: `PSJCO203` has 10 of 17
+     更新条件表 with a 取得 block): content → `●`; no content, including a sheet whose BA-CZ holds only 画面項目IDs →
+     `-`. Report `●` without content as 低 「Developer を「-」に」 (更新条件表 with no 取得 block,
+     機能定義書, ID-only 画面設計書/ﾌｧｲﾙ出力仕様書, `PSJCO403` ﾁｪｯｸ処理設計書 with only the row-8 headers), and
+     `-` with content as 低 「Developer を「●」に」, citing up to three cells (`PXJCO131`
+     `画面設計書(GXJC131A)` `[1636,58]` `sagyobaCd`; `PSJCO203` `更新条件表(TXJCA003)` `[8,54]` 取得ﾃｰﾌﾞﾙ名).
+     When the only content is one to three stray memo cells (`固定で大丈夫`, `ﾎﾞﾀﾝは9000番台`, an image
+     caption), report 要確認: move the memo out of BA-CZ or set `●`.
+   - **Not a finding:** Developer `-` on a sheet whose BA-CZ holds only 画面項目IDs (ﾌｧｲﾙ出力仕様書 BB,
+     画面設計書 Ⅳ/Ⅴ BB) — No.92.
+   - Measured 2026-10-19 over PHASE1-3 (121 表紙): 349 rows agree, 59 `●` without content (38 of them
+     ID-only), 54 `-` with content (11 of them memo-only). 詳細設計, 画面遷移図 and ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ follow the
+     convention bullets below, not this test.
+   **A hidden sheet does not count as present**
    (the dump now includes hidden sheets — `_HIDDEN.txt` lists them): a doc type whose only sheet is
    hidden is judged as absent; the 【非表示】 line for that sheet belongs to its owning check, not here
    (`agent-guide.md`, "Hidden sheets, rows and columns"). This has caught a real defect in every
@@ -179,8 +192,8 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    `PXJCB134_流動停止(ﾊﾞｯﾁ).xlsx`, 表紙 marked both `ﾁｪｯｸ処理設計書`(No.4) and `詳細設計`(No.9) as
    `-`/`-` (not applicable) despite both `ﾁｪｯｸ処理設計書(PXJCB134)` (populated with real check
    items) and two detail-design sheets existing — and 表紙's own 改訂履歴 No.4 even said "詳細設計書
-   を作成" (created the detail-design doc), directly contradicting the `-` marker. On
-   `PXJCB102_製造ｵｰﾀﾞｰ完了処理.xlsx`, the same thing happened for `詳細設計`(No.9) alone. Given this
+   を作成" (created the detail-design doc), directly contradicting the `-` marker (改訂履歴 used here only as
+   evidence — it is never itself reviewed). Given this
    hit rate, don't treat this as a "only if asked for a full pass" item — check it every time, the
    same as the header-info check above.
 
@@ -193,18 +206,23 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
      pre-numbered 1-10. It is an unused template column, so "sheet X appears nowhere in the
      構成表" is not a defect just because X is only explainable by that column. The Customer/
      Developer marker check in the paragraph above is the real check here; the その他 column is not.
-   - **A trailing 改訂履歴 row carrying only the next sequence number, with 改訂日/改訂者/計画書No/
-     改訂内容 all blank, is the project's convention** — 27 of 28 workbooks had one (the lone
-     exception was `PSJCO205_返品処置指示発行`). Rows are pre-numbered for the next revision. Only
-     report a 改訂履歴 row as incomplete when a row **other than the last** is partially filled.
+   - **表紙 Ⅲ．改訂履歴 is not reviewed at all** (no incomplete rows, no numbering, no 新規作成 entry) — see the
+     rule in step 4.
 
-   Two Customer/Developer markers are convention too (all 61 PHASE3 workbooks, measured 2026-10-06):
+   Three Customer/Developer markers are convention too (61 PHASE3 workbooks, 2026-10-06; ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ over
+   PHASE1-3, 2026-10-19):
    - **`画面遷移図` `-`/`-`** in 61 of 61, and none has a 画面遷移図 sheet (`ﾀﾌﾞ遷移説明`,
      `《参考》画面項目遷移` are reference sheets, not one). Not a finding.
    - **`詳細設計` Developer `●` with a header-only `詳細設計書(<ID>)` sheet** — 56 of 61 mark Developer
      `●`; in 25 of them the sheet is empty below row 4 (PSJCO403 among them) and most others hold only an
      API list or `drawio参照`. Read this `●` as "the doc type applies", not "already written" — "has real
      content" does not apply to this row. The real defect stays the reverse one above: a populated sheet marked `-`.
+     The BA-CZ test above does not apply: 詳細設計書 is `3D` on both halves (116 of 124 sheets), i.e.
+     wholly the developer's document. PHASE1-3: 115 `●` (24 header-only); the two populated sheets
+     marked `-`/`-` are `PXJCO130` and `SXJCB178`.
+   - **`ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ` Developer `-`** — 121 of 121 (PHASE1-3, 2026-10-19). The sheet is one wide
+     customer page (`3C` only, 計画書No at col 82/108) with no `nD` developer half, so columns 53-104
+     are the chart itself; never apply the BA-CZ test to it.
 
    When a 表紙 observation looks like an omission, measure it across the sibling workbooks in the
    same PHASE folder before reporting it. Both false positives above would have been caught by one
@@ -237,9 +255,7 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    the next row with a PGMID (付属機能: PSJCO403 on row 14, GSJC403B/C and FSJC018-020 on rows 15-19, and
    FSJC091 on row 20; row numbers are one snapshot). Strip the area prefix (`^[A-Z]\.`,
    e.g. `A.ﾛｯﾄ取消`; 受注出荷 uses `【…】`) before comparing; a trailing `画面` on the design-doc side (`ﾛｯﾄ取消画面`, 15 of 159
-   XJC/SJC screens) is 要確認 at most. Also (still in this lighter
-   category): new files have a 改訂履歴 entry marked 新規作成 (and 流用新規 files cite their 流用元
-   計画書No + 改訂履歴 No).
+   XJC/SJC screens) is 要確認 at most.
 
 7. **(moved)** The self-check writing rules (取得件数, ﾚｽﾎﾟﾝｽ表記, 画面名＋画面ID) are now
    `design-doc-writing-rules` W3-W5.

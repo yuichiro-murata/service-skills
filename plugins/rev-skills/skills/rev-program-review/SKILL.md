@@ -23,7 +23,7 @@ wanted two wastes a lot of time and tokens. Ask first, then run only what was se
 | 7 | `design-doc-formatting-consistency` | ﾌｫﾝﾄｻｲｽﾞ/ｾﾙ結合のブレ（体裁の衛生） |
 | 8 | `design-doc-typo-check` | 日本語の誤字脱字・変換ミス |
 | 9 | `file-output-spec-check` | ﾌｧｲﾙ出力仕様書（ﾌｧｲﾙID一貫性、ﾌｧｲﾙ一覧登録、Ⅱ．ﾌｧｲﾙ出力仕様の記入漏れ、共通ﾀﾞｳﾝﾛｰﾄﾞ注釈、画面項目ID番台/登録、ﾍｯﾀﾞｰ⇔明細、明細の参照先、編集方法、ﾌｧｲﾙﾚｲｱｳﾄ一致） |
-| 10 | `design-doc-writing-rules` | ｾﾙﾌﾁｪｯｸ記述ﾙｰﾙ（Ⅴ項目定義：大文字変換/ﾎﾞﾀﾝID 9xxx/選択□/No/TextBox桁数・文字種、項番の飛び・重複、取得件数の末行記載、ﾚｽﾎﾟﾝｽ表記、画面名＋画面ID、ｽﾞｰﾑ名・IDと台帳、他機能名とﾌｧｲﾙ名） |
+| 10 | `design-doc-writing-rules` | ｾﾙﾌﾁｪｯｸ記述ﾙｰﾙ（Ⅴ項目定義：大文字変換/ﾎﾞﾀﾝIDは共通XJZ/SJZ優先/選択□/No/TextBox桁数・文字種、項番の飛び・重複、取得件数の末行記載、ﾚｽﾎﾟﾝｽ表記、画面名＋画面ID、ｽﾞｰﾑ名・IDと台帳、他機能名とﾌｧｲﾙ名） |
 
 Checks 5, 6 and 9 are narrower than the rest in one specific sense: each applies only when the
 workbook has the sheets it reads. A program with no `更新条件表(*)` sheet (a pure 照会 screen), no
@@ -125,8 +125,8 @@ to the next one unless the user says "同じ観点で" or similar.
    every cached copy stale **forever** — the loader sees a version it already has and never re-copies.
    Bump the version in the same commit as any skill-content change.
 2. **Build the reference-master index in the same pre-launch step, if a selected check needs it** —
-   see `_shared/reference-index.md`. Three checks do: `design-doc-internal-consistency` (screen-item
-   IDs), `report-design-check` (the `画面項目ID` column on print items) and `file-output-spec-check`
+   see `_shared/reference-index.md`. Four checks do: `design-doc-internal-consistency` (screen-item
+   IDs), `design-doc-writing-rules` (W1b: the `_共通` index — its 9xxx buttons decide a button's ID), `report-design-check` (the `画面項目ID` column on print items) and `file-output-spec-check`
    (the `画面項目ID` column on a ﾌｧｲﾙ出力仕様書's ﾍｯﾀﾞｰ items) — all want the 画面項目辞書 index, so
    build it once when any of them is selected. That doc instructs the *agent* to
    stop rather than build it, so skipping this

@@ -43,7 +43,8 @@ an **obvious** misspelling (`ﾛｸﾞｲﾝ画面.` with a stray period, `作�
 `層No`) — skip only style and abbreviation questions there. Otherwise only free-running Japanese
 sentences and phrases are in scope. In a typical program workbook, that means:
 
-- **表紙**: Ⅲ．改訂履歴 の 改訂内容 column (what each revision actually changed).
+- **表紙**: not Ⅲ．改訂履歴 — the revision history and the revision memos right of the form are left to the
+  designer's own check (designers' answer 2026-10-02 No.48/50/73-76/102).
 - **機能定義書**: Ⅰ．機能概要 (prose bullets), Ⅲ．入出力定義 の 用途 column (short prose),
   Ⅳ．機能処理概要 (the main narrative — numbered steps, ※ footnotes, sub-program 設定値/戻り値 notes,
   pattern captions, and any prose woven into 検索条件/取得内容 descriptions), Ⅴ．ﾌﾟﾛｸﾞﾗﾑ構成 (ｴﾗｰ時処理),
@@ -140,9 +141,9 @@ which is change history.
    - **Terse noun phrases are not 脱字.** `明細ﾍｯﾀﾞｰをﾁｪｯｸ時`, `検索・実行時`, `〜を<名詞>時` are the
      project's compressed style for event/condition labels (PSJCO204 9/30 6-2, 6-6, both rejected).
      Report a 脱字 only when the sentence becomes unreadable or loses its object/verb.
-   - **表紙 Ⅲ．改訂履歴 is a historical record.** Proofread its 改訂内容 for obvious misspellings only;
-     never compare it with today's 項番, names or IDs (a revision note naming a since-renamed item is
-     correct as history — PSJCO304 9/28 6-3, rejected).
+   - **表紙 Ⅲ．改訂履歴 is not proofread** (see the scope above); never compare it with today's 項番, names or
+     IDs either (a revision note naming a since-renamed item is correct as history — PSJCO304 9/28 6-3,
+     rejected).
    - Does a near-identical sentence exist elsewhere in the same doc (a sibling row in a repeating
      list, a parallel branch for a different condition)? Diffing against that twin is often the
      fastest way to confirm a real error versus a deliberate variation.
