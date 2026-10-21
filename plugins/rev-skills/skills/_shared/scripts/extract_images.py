@@ -10,14 +10,16 @@ as PSJAO401; never saves anything). For every picture anchored on a visible shee
                 the revision margin (col >= --margin-col, default 105 = DA列) is left out.
                 Needs --dump: the folder of the live text dump (live_dump.py or the COM dump,
                 <prefix>_<sheet>.txt files of [r,c]=text tokens); without it covered is "-".
-kind = 画面ﾚｲｱｳﾄ for a 画面設計書 picture anchored above the sheet's 「Ⅱ．」 heading (found in the dump),
-else その他. note = icon (long side < 100 px, a button glyph — don't read), same as <png> (identical
+kind = 画面ﾚｲｱｳﾄ for a 画面設計書 picture anchored above the sheet's 「Ⅱ．」 heading (found in the dump, or
+read from the zip with xlsx_zip.py when there is none), else その他. note = icon (long side < 100 px, a button glyph — don't read), same as <png> (identical
 bytes, already listed), unreadable (…), or empty. est_tokens ~ px area / 750 after scaling the long
 side to <= 1568 px.
 
 usage: python extract_images.py <workbook.xlsx> <out_dir> [--dump DIR] [--sheets REGEX] [--hidden] [--margin-col N]
 """
 import argparse, glob, hashlib, html, io, os, posixpath, re, sys, zipfile
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from xlsx_zip import iter_sheets   # live text from the zip, used for the 「Ⅱ．」 heading when there is no dump
 
 EMU_PX = 9525
 
@@ -112,8 +114,12 @@ def main():
         cells = load_dump(a.dump, name) if a.dump else None
         if a.dump and cells is None: missing_dump.append(name)
         sec2 = None
-        if cells is not None and "画面設計書" in name:
-            hs = [r for (r, c), v in cells.items() if c <= 6 and re.match(r"\s*Ⅱ[．.]", v)]
+        if "画面設計書" in name:
+            if cells is not None:
+                hs = [r for (r, c), v in cells.items() if c <= 6 and re.match(r"\s*Ⅱ[．.]", v)]
+            else:                                   # no dump: read the heading columns from the zip
+                hs = [r for _, _, rows in iter_sheets(a.workbook, name_filter=re.compile("^" + re.escape(name) + "$"), max_col=6)
+                      for r, cs in rows.items() for v in cs.values() if re.match(r"\s*Ⅱ[．.]", v)]
             sec2 = min(hs) if hs else None
         for dp in drawings:
             drels = rels(z, dp)
@@ -156,6 +162,11 @@ def main():
                 index.append("\t".join(map(str, [name, kind, f"[{fr[0]},{fr[1]}]", f"[{to[0]},{to[1]}]",
                                                  posixpath.basename(media), posixpath.splitext(media)[1].lstrip(".").lower(),
                                                  size, "-" if note else png, est, note, ncov])))
+    def key(line):                                  # sheet order as in the workbook, then anchor row/col
+        f = line.split("\t"); r, c = map(int, f[2].strip("[]").split(","))
+        return order.index(f[0]), r, c
+    order = list(dict.fromkeys(l.split("\t")[0] for l in index[1:]))
+    index = index[:1] + sorted(index[1:], key=key)
     open(os.path.join(a.out_dir, "index.tsv"), "w", encoding="utf-8").write("\n".join(index) + "\n")
     open(os.path.join(a.out_dir, "covered.txt"), "w", encoding="utf-8").write("\n".join(covered_lines) + ("\n" if covered_lines else ""))
     print(f"{len(index) - 1} pictures, {len(seen)} written, est_tokens={total_tokens}, "

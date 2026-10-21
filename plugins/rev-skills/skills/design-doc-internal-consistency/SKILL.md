@@ -321,6 +321,45 @@ exact sheet/cell for every finding so it's actionable.
    findings. Drop `※n` before matching: `PXJCO122` `GXJC122A` Ⅴ `[955]` `処置指示No※1` is Ⅵ `[1137,5]` `処置指示No`
    (非表示) — present.
 
+   **Reading the Ⅰ picture itself (my-review-skills 〔目視〕, adopted 2026-10-21).** Get the pictures with
+   `_shared/scripts/extract_images.py <workbook> <scratch>/img --sheets ^画面設計書` (kind `画面ﾚｲｱｳﾄ`; a
+   list too wide for one picture continues in strips — read them in anchor-row order, `PXJCO128`
+   `GXJC128A` `[7,3]` → `[31,3]` → `[44,2]`). When one sheet draws two screens (`PSJCO201` `GSJC201A`:
+   ﾒﾆｭｰﾊﾟﾗﾒｰﾀ="1" at `[9,3]`, ="2" at `[39,3]`), each strip continues the screen whose title cell
+   (`[8,3]`/`[38,3]`) precedes it and whose list header it carries on — `[30,4]` belongs to the first,
+   `[66,3]` to the second; do not chain strips across screens. Besides the item sets above, compare:
+   - **List columns in Ⅴ's order — 低.** The column headers of each drawn list, left to right across the
+     strips, against the area's Ⅴ items top to bottom (Hidden and struck rows left out; a header is
+     Ⅴ's 表示 or the 画面項目名 without `(1-N)`/`ﾘﾝｸ`/`ﾎﾞﾀﾝ`). One line per area naming the items that
+     moved. `GXJC128A` G3 (選択 … 解除理由, 24 columns over three pictures) agrees. Columns drawn as an
+     ordered subset of Ⅴ agree when the missing items are shown only in another state (Ⅵ, ※n:
+     `GSJC201A` ｼｰﾄ数/作業基板数 switched by 発行単位; one Ⅴ table shared by two drawn screens,
+     `GSJC201B` 前工程/後工程) — compare each drawing with the rows visible in its own state. A header
+     cut off at the column edge (`識別ｶｰﾄﾞ(共通` for `識別ｶｰﾄﾞ(共通)`) still matches (No.47), and a legend
+     drawn above the list (`○：発行済 -：未発行`) is not a column.
+   - **Buttons by name and position — 低.** The 共通 buttons drawn (by their caption, `検索(ENT)`) in
+     reading order, left to right then top to bottom, against Ⅴ 共通's Button rows by 表示; leave
+     閉じる/戻る out as check 9 does. A caption that differs from Ⅴ 表示 is 低 too. Only 共通 buttons are
+     ordered here; buttons inside an area (ズーム `Z`, ｶﾚﾝﾀﾞｰ) are covered by the item-set comparison above.
+     A button Ⅵ shows in one state only is absent from the other state's drawing by design
+     (`GSJC201B` 検査表発行, Ⅵ `[629]` ※6 後工程のみ). Check 9 compares processing order with Ⅴ as a stand-in for the layout; when the picture
+     and Ⅴ disagree, say which order the picture shows so the designer fixes the right side.
+   - **No column — 要確認, only when the program is inconsistent.** Self-check 観点12 asks for a 明細 No,
+     but 41 of the 61 `(1-N)` list areas measured in the 工程管理 Ⅴ tables (2026-10-21) have none, so a
+     list without one is not a finding by itself. Report it when another list anywhere in the same
+     workbook (any screen, child screens included) draws a No column, naming both: `PXJCO128` `GXJC128A`
+     G3 starts with 選択/詳細/対象 while `GXJC128C` G1 `[274]` has No (XJZ0425) — one 要確認 line.
+   - **Pagination — 低.** The current page is drawn as `❶` (the self-check workbook
+     `XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx`, call-out on its 画面設計書 sample, 列37/行25), followed by plain page
+     numbers (`< ❶ 2 3 4 5 >`); a plain `1`, or no page control on a list that Ⅳ pages, is a finding —
+     one line per list area, naming every picture it appears in (`PSJCO201` `GSJC201B` G3 `[9,3]` and
+     `[45,3]`: `< 1 2 3 … 5 >`, Ⅳ `[492]`-`[495]` pages). The control has to appear once per list — a
+     continuation strip without it is fine (`GXJC128C` `[22,3]`).
+   **Not from the picture:** field colours, `*` and pink required fields, and `XXXXX` lengths are judged
+   on the 画面ｲﾒｰｼﾞ sheet by check 14 (EMF rendering shifts colours, designers' answer 2026-10-10 No.15);
+   a value cut off at a field's edge is never reported (No.47). Text too small to read is 未確認.
+   Budget as in check 13: `PXJCO128` has 9 layout pictures, 11,606 est_tokens.
+
    **Ⅵ usage conditions (`※n`) against Ⅳ.** A Ⅵ cell holding `※n` instead of `○`/`×` makes the item's
    usability conditional; read the footnote and confirm Ⅳ's event for that item agrees (`PSJCO403`
    `GSJC403A` `[1510]` 自動ｾｯﾄ / `[1512]` 削除ﾎﾞﾀﾝ, `※1` = usable only when the search returns 0 rows —
