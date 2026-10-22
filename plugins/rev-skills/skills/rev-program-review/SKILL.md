@@ -1,6 +1,6 @@
 ---
 name: rev-program-review
-description: Entry point for a full REV of ONE program's design-doc workbook (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/帳票設計書/ﾌｧｲﾙ出力仕様書). Instead of unconditionally running every check, it first presents the 10 single-program check skills as a checkbox list (AskUserQuestion, multiSelect) so the user picks which checks to run BEFORE any dumping or analysis starts, then runs only the selected ones as one combined pass and reports their findings as a single merged report. Use whenever the user asks to REV/レビュー a design-doc workbook without naming the specific checks they want — in that case do NOT launch the individual check skills directly. Skip the checkbox prompt only when the user already named the checks, or explicitly asked for 全部/all/フルREV.
+description: Entry point for a full REV of ONE program's design-doc workbook (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表/帳票設計書/ﾌｧｲﾙ出力仕様書). Instead of unconditionally running every check, it first presents the 10 single-program check skills as a checkbox list (AskUserQuestion, multiSelect) so the user picks which checks to run BEFORE any dumping or analysis starts, then runs only the selected ones — each as two independent passes whose findings are cross-checked — and reports their findings as a single merged report. Use whenever the user asks to REV/レビュー a design-doc workbook without naming the specific checks they want — in that case do NOT launch the individual check skills directly. Skip the checkbox prompt only when the user already named the checks, or explicitly asked for 全部/all/フルREV.
 ---
 
 # rev-program-review
@@ -176,7 +176,7 @@ to the next one unless the user says "同じ観点で" or similar.
    naming the HEADER-MISMATCH / NON-SCREEN-ID lines) when the build finishes, instead of letting an agent
    start against a missing file.
 3. Run the selected checks as one combined pass — in parallel background agents when there are
-   several. Follow each selected skill's own SKILL.md as the authority for how that check is done;
+   several, **twice over** (Step 3.2 below: two independent passes per check by default). Follow each selected skill's own SKILL.md as the authority for how that check is done;
    this skill only decides *which* checks run. **Each agent's prompt must say**: read
    `_shared/agent-guide.md` (not the whole of `xlsx-excel-com-dump.md`), the dump directory and
    digest path (`_DELETED_DIGEST.txt`, or `_DELETED_DIGEST_<prefix>.txt` from a `--prefix` live dump), the
@@ -188,12 +188,48 @@ to the next one unless the user says "同じ観点で" or similar.
 4. Do **not** post a status update as each agent finishes. Wait until every check in the batch has
    completed, then compose and post **one** merged report.
 
+## Step 3.2 — 2回レビュー（既定）
+
+One run of a check does not find everything the same rules can find: the reviewer has seen a second
+REV of an unchanged workbook raise findings the first missed, and my-review-skills measured only
+6–7 割 overlap between two runs (PXJCO124, 206 findings in the union). So every selected check runs
+as **two independent passes** (組1 / 組2), and the overlap doubles as a credibility signal for
+Step 3.5.
+
+- **Independent.** Both passes get the same dump, digest, `_HIDDEN.txt` and index paths (the
+  pre-launch work in steps 1–2 is done **once**), but neither sees the other's result: separate
+  agents, separate result files (`<check>_pass1.md` / `_pass2.md`), and the pass-2 prompt never
+  quotes pass 1. Launch both passes together; when the batch would be too large to run at once,
+  launch every pass 1, then every pass 2 — still without handing pass 1's output on.
+- **Different reading order.** Pass 1 reads the workbook front to back as the check's SKILL.md
+  describes. Pass 2's prompt adds one instruction: work through the sheets (and, inside a long
+  sheet such as Ⅴ/Ⅵ or 処理概要, the 大項目) **from the last to the first**, so attention runs out
+  in a different place. Same rules, same output format — nothing else changes.
+- **One pass is enough for** `design-doc-formatting-consistency` (its scan is a script; a second
+  run returns the same list). Every other check runs twice.
+- **Single pass on request.** Run once only when the user asks for it in words (「1回で」「急ぎで」
+  「2回はいらない」), and say 「1回のみ実施」 at the top of the report.
+- **Merge before verifying.** Pool the two passes per check and pair up findings that cite the same
+  cell (or, for a finding without a cell, the same item/table/ID) and make the same claim. Keep one
+  line per pair — the clearer wording, every cell either pass cited — and tag each line
+  **両方** (both passes) or **片方** (one pass). Two findings on the same cell that make *different*
+  claims are not a pair: keep both, each 片方. Findings of different checks are merged as before
+  (Step 4), after this per-check merge.
+
 ## Step 3.5 — 報告前の裏取り（orchestrator が自分でやる）
 
 The agents hand back findings; the orchestrating session is what stands behind them. Before writing
 the merged report, re-verify every finding **against the original workbook**, in the orchestrator's
-own turn. Two failure modes recur, and the reviewer will ask about both — on the `PXJCO124` REV the
-user's very next message after the report was 「取り消し線加味して誤指摘ないか確認して」:
+own turn. Start with the 2回レビュー tag, then three failure modes recur, and the reviewer will ask
+about them — on the `PXJCO124` REV the user's very next message after the report was
+「取り消し線加味して誤指摘ないか確認して」:
+
+0. **片方 findings.** A finding only one pass raised is either a real one the other pass missed or a
+   misreading. Settle each one: read the cited cells (and the comparison basis) in the original, and
+   check the claim against the rule in that check's SKILL.md as if you were a third reviewer. Keep it
+   if the cells and the rule bear it out; withdraw it otherwise, with the reason in one line. Do not
+   withdraw a finding *because* the other pass missed it — missing is exactly what the second pass
+   is for. A 両方 finding still goes through 1–3 below (both passes can read the same struck cell).
 
 1. **Strikethrough / gray-out.** For every cell a finding cites — the cited cell **and the cells
    used as the comparison basis** — re-read the original with openpyxl and classify it
@@ -222,7 +258,10 @@ user's very next message after the report was 「取り消し線加味して誤�
    sheets, rows and columns"). Fix the label or the verdict here rather than sending it back.
 
 State the outcome of this pass in the report. "取り消し線を加味した結果、誤指摘は0件" is itself
-information the reviewer wants, and it is what lets them trust the rest of the list.
+information the reviewer wants, and it is what lets them trust the rest of the list. Report the
+2回レビュー numbers in the same place, per check and in total: 両方 n件 / 片方 n件（裏取りで採用 n・撤回 n）
+— e.g. 「2回レビュー: 両方 14件、片方 9件（採用 6・撤回 3）」 — and list the withdrawn 片方 findings
+with their reasons, so the reviewer can see what the second pass added and what it cost.
 
 ## Step 4 — 報告
 
@@ -233,6 +272,7 @@ reader knows what was and wasn't looked at — e.g.:
 ## REV結果: PXJCO201_処置指示登録
 実施チェック: Ⅲ．入出力定義(CRUD)網羅 / 設計書内部の相互参照 / 更新条件表の網羅 / 誤字脱字
 未実施: DBカラム実在 / ID採番・記述ルール / 帳票設計書 / フォントサイズ・セル結合
+実施回数: 2回（独立に実施し突合）
 ```
 
 Never imply the workbook passed checks that weren't run.
