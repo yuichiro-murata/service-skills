@@ -418,7 +418,13 @@ exact sheet/cell for every finding so it's actionable.
    fully propagated to both places. Flag any pair of items whose relative order differs between the
    two sections (item X appears before item Y in one section but after Y in the other). Exclude
    hidden items from this order comparison (Ⅳ seldom mentions them; their presence in Ⅵ is check 5's
-   business). When you can't tell which of the two orderings is authoritative (neither section
+   business). **Ⅳ `選択(ﾍｯﾀﾞｰ)` is Ⅴ `選択`** when the same area of Ⅴ has no `選択(ﾍｯﾀﾞｰ)` row of its
+   own: Ⅳ may carry a header select event (marked `(ﾍｯﾀﾞｰ)`), a row select event, or both, while Ⅴ may
+   define a single 選択 row (`PSJCO315` `GSJC315A` Ⅳ `[293,5]` `選択(ﾍｯﾀﾞｰ)` only, Ⅴ `[320,5]` `選択` only).
+   Match them for the order comparison — when Ⅳ has both, use the position of the first one — and never
+   report the name difference or a "Ⅳ item missing from Ⅴ" (user instruction on `PSJCO315`, 2026-10-19,
+   via my-review-skills; adopted 2026-10-27). Other findings on those rows are unaffected.
+   When you can't tell which of the two orderings is authoritative (neither section
    carries an explicit "this is the source of truth" marker), report the finding as a plain "order
    mismatch" between the two locations without asserting which side is wrong, and let the designer
    decide which one to resequence.

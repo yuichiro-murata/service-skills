@@ -58,8 +58,9 @@ writes `SJCD401:社内加工予定金額` — TSJCD401 without its leading `T`, 
    `TXJCD404` through `参照ﾃｰﾌﾞﾙ名` (`[39,54]`/`[54,54]`/`[113,54]`) and the `TXJCA404` history INSERT's
    `取得ﾃｰﾌﾞﾙ名` (`更新条件表(TXJCA404)` `[8,54]`/`[21,54]`).
 3. Follow every `※<共通設計書名>.<項目> 参照` delegation line to its actual target sheet (check both
-   the WG-specific sheet and the shared sheet in the common-design workbook) — but a table reached
-   **only** through a delegated block is 要確認, never 高 (see "Delegation depth").
+   the WG-specific sheet and the shared sheet in the common-design workbook). A table reached through
+   `07.共通項目取得` belongs in Ⅲ like any other; one reached only through `XJC_ｼｽﾃﾑ共通設計書` or only
+   inside a View's definition does not; `05.ｼｽﾃﾑ共通設計書` stays 要確認 (see "Delegation depth").
 4. Deprecated blocks are already gone from the shared live dump — **do not run your own
    struck-through/grayed-out scan.** A 参照ｴﾝﾃｨﾃｨ block visible in the dump is live evidence; a
    deprecated one is simply absent, in both diff directions.
@@ -153,17 +154,32 @@ not have (`着手完了判断`, `実績表項目設定`, `QA判定`, `ﾛｯﾄ�
 - **Level 1** is the named section itself **plus its in-section sub-blocks** (`(17-1)`, `(17-2)` under
   `(17)移動ﾛｯﾄ(最新)`) — those are the section's own usage. A further `共通項目取得.X 参照` / `工程管理共通ﾙｰﾙ.X
   参照` written inside the section is level 2: note it, don't chase it.
-- **A table read only at level 1 — never in the program's own blocks — is reported as 要確認, never
-  高**, with the delegation path cited (`TSJCD504` via `工程管理共通ﾙｰﾙ.製品輸送中ﾁｪｯｸ`, `TSJAM999` via
-  `(17-1)実績管理部門GRP取得`, `TXJCA003`'s R via `製造ｵｰﾀﾞｰ今回減算数取得`). Whether such tables belong in
-  Ⅲ．入出力定義 at all is an **open decision for the user** — do not decide it either way, and do not
-  report a delegated-only table as "declared but unused" either.
+- **Which delegated tables belong in Ⅲ** (self-check call-out 機能定義書 列12/行40: 「「07.共通項目取得.xlsx」に
+  記載しているﾃｰﾌﾞﾙも記載する。Viewの中身のﾃｰﾌﾞﾙは記載しなくてよい。「XJC_ｼｽﾃﾑ共通設計書.xlsx」に記載している
+  ﾃｰﾌﾞﾙは記載不要。」; adopted from my-review-skills 2026-10-27 — earlier versions left all three to the user):
+  - **`07.共通項目取得` — required.** A table read at level 1 of a `共通項目取得.<項目>` section is graded
+    exactly like one read in the program's own blocks (a missing R is 高, a wrong letter as usual), with
+    the delegation path cited (`PXJCO125`: `TSJAM999` via `(17)移動ﾛｯﾄ(最新)` → `(17-1)実績管理部門GRP取得`,
+    joined unconditionally, so 高 — validated 2026-10-27; `TSJAM726` via `(37)ｸﾞﾙｰﾌﾟ名`). The one exception
+    stays: when the program's arguments may not reach the branch that reads it, 要確認. A delegation is
+    any cell naming the section, not only `※共通項目取得.<項目> 参照`: also `共通項目取得(工程管理).<項目>` in a
+    取得ﾃｰﾌﾞﾙ名 cell and `共通項目取得：<項目>` as a 参照ｴﾝﾃｨﾃｨ alias.
+  - **A View's own tables — not required.** Ⅲ declares the View (`V…`); the tables inside the View's
+    definition are never "used but not declared", and you do not open the View layout to look for them.
+  - **`XJC_ｼｽﾃﾑ共通設計書` — not required.** A table reached only through a sheet of
+    `01_Doc\08_機能定義書\11_工程管理\XJC_ｼｽﾃﾑ共通設計書.xlsx` (the third target above) is not reported
+    missing; if Ⅲ declares it anyway, it is not "declared but unused" either — say nothing.
+  - **`05.ｼｽﾃﾑ共通設計書` `工程管理共通ﾙｰﾙ` — still 要確認.** The call-out names only 07 and the XJC_
+    workbook, so a table — or a single letter — backed only through `工程管理共通ﾙｰﾙ.<rule>` stays 要確認,
+    never 高, and is never "declared but unused" (`PXJCO125`: `TSJCD504` via `製品輸送中ﾁｪｯｸ`, and
+    `TXJCA003`'s R via `製造ｵｰﾀﾞｰ今回減算数取得` while Ⅲ gives it C only). The delegation is often written
+    without `参照` (`※1 ｼｽﾃﾑ共通設計書.工程管理共通ﾙｰﾙ.…(引数：…)`).
 - **Declared ID ≠ the table the delegated block reads** — Ⅲ declares `VXJAM005` 加工GRPﾏｽﾀ (`PXJCO161`
   `[85,5]`) but the `共通項目取得.加工GRP` block it stands for reads `VSJAM003` (`(21)加工GRP`, changed by 改訂履歴No.61;
 read the target live — the old VXJAM005 block sits just above it): 中/要確認, "declared ID differs
   from the delegated table", not a pair of unused/undeclared findings.
-- The `TSJAM726` miss above is why the delegation is still followed: the finding exists, only its
-  grade waits on that decision.
+- The `TSJAM726` miss above is why the delegation is followed at all: without it the 07 finding is
+  invisible from the program's own workbook.
 
 **A 参照ｴﾝﾃｨﾃｨ block that is present in the live dump is, by construction, live evidence — the dump
 script already dropped the deprecated ones.** This replaces what used to be a mandatory per-block

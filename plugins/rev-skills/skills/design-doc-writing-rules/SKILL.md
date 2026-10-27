@@ -163,7 +163,10 @@ other buttons' correct number to the designer.
 画面項目ID on 選択 (10 — 6 of them `XJC8032`, so the designer may say it is a deliberate convention;
 report it low and let them decide). A `RadioButton` 選択 (single
 selection, `表示` `○` or `-`) is a different control: don't apply the `□` rule to it. A
-`選択(ﾍｯﾀﾞｰ)` (the select-all checkbox in the list header) follows the same rule as `選択`.
+A Ⅴ `選択(ﾍｯﾀﾞｰ)` row (the select-all checkbox in the list header) follows the same rule as `選択`. The
+name difference between a Ⅳ `選択(ﾍｯﾀﾞｰ)` event and the area's Ⅴ `選択` row (when that Ⅴ area has no
+`選択(ﾍｯﾀﾞｰ)` row) is the intended way to tell the header event from the row event — never report the
+name difference or the Ⅳ name as absent from Ⅴ (`design-doc-internal-consistency` check 6).
 
 **W1d — No (No.49).** A `No` / `No.` item in a 明細 area should be `Label`, 表示形式 `ZZ9`, 初期値
 `1から連番`, 画面項目ID `XJZ0425`. Measured over 159 No rows: 51 fully comply, and the literal rule
