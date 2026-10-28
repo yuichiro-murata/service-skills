@@ -162,7 +162,7 @@ other buttons' correct number to the designer.
 `PSJCO302` `GSJC302A` `[567]`; `PSJCO502` `GSJC502B` has two with every column blank), and a
 画面項目ID on 選択 (10 — 6 of them `XJC8032`, so the designer may say it is a deliberate convention;
 report it low and let them decide). A `RadioButton` 選択 (single
-selection, `表示` `○` or `-`) is a different control: don't apply the `□` rule to it. A
+selection, `表示` `○` or `-`) is a different control: don't apply the `□` rule to it.
 A Ⅴ `選択(ﾍｯﾀﾞｰ)` row (the select-all checkbox in the list header) follows the same rule as `選択`. The
 name difference between a Ⅳ `選択(ﾍｯﾀﾞｰ)` event and the area's Ⅴ `選択` row (when that Ⅴ area has no
 `選択(ﾍｯﾀﾞｰ)` row) is the intended way to tell the header event from the row event — never report the

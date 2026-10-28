@@ -150,7 +150,10 @@ it as a judgment call for the designer rather than asserting it either way.
 `PXJCO125` the latter appears in ﾁｪｯｸ処理設計書 `[35,59]`/`[37,59]`, `更新条件表(TXJCM003)` `[136,2]` and
 `(TSJCD302)` `[9,16]`. A third: `ｼｽﾃﾑ共通設計書(<sheet>)` / `XJC_ｼｽﾃﾑ共通設計書「<sheet>」` naming a sheet 05 does
 not have (`着手完了判断`, `実績表項目設定`, `QA判定`, `ﾛｯﾄ停止ﾁｪｯｸ`, `加工期限ﾁｪｯｸ`) →
-`01_Doc\08_機能定義書\11_工程管理\XJC_ｼｽﾃﾑ共通設計書.xlsx`, same level-1 rule below.
+`01_Doc\08_機能定義書\11_工程管理\XJC_ｼｽﾃﾑ共通設計書.xlsx`. Compare sheet names after NFKC with every
+long-vowel/hyphen mark (`ｰ` `ー` `-` `－`) treated as one character — `ｼｽﾃﾑ共通設計書「共通ﾕｰｻﾞｰ」ｼｰﾄ` (`PXJCO125`
+`[551,3]`) is 05's `共通ﾕｰｻﾞ-`, not an XJC_ sheet. Route to XJC_ only when that sheet is really there; a name
+found in neither workbook is 05-side (要確認), since the XJC_ rule below drops findings silently.
 - **Level 1** is the named section itself **plus its in-section sub-blocks** (`(17-1)`, `(17-2)` under
   `(17)移動ﾛｯﾄ(最新)`) — those are the section's own usage. A further `共通項目取得.X 参照` / `工程管理共通ﾙｰﾙ.X
   参照` written inside the section is level 2: note it, don't chase it.
@@ -163,12 +166,15 @@ not have (`着手完了判断`, `実績表項目設定`, `QA判定`, `ﾛｯﾄ�
     joined unconditionally, so 高 — validated 2026-10-27; `TSJAM726` via `(37)ｸﾞﾙｰﾌﾟ名`). The one exception
     stays: when the program's arguments may not reach the branch that reads it, 要確認. A delegation is
     any cell naming the section, not only `※共通項目取得.<項目> 参照`: also `共通項目取得(工程管理).<項目>` in a
-    取得ﾃｰﾌﾞﾙ名 cell and `共通項目取得：<項目>` as a 参照ｴﾝﾃｨﾃｨ alias.
+    取得ﾃｰﾌﾞﾙ名 cell and `共通項目取得：<項目>` as a 参照ｴﾝﾃｨﾃｨ alias. When the named section is live in more
+    than one place (07's `(12)作業場` at rows 309 and 410; the WG sheet and the shared sheet) and the copies
+    read different tables, report a table missing from Ⅲ as 要確認 naming both copies, not 高.
   - **A View's own tables — not required.** Ⅲ declares the View (`V…`); the tables inside the View's
     definition are never "used but not declared", and you do not open the View layout to look for them.
   - **`XJC_ｼｽﾃﾑ共通設計書` — not required.** A table reached only through a sheet of
     `01_Doc\08_機能定義書\11_工程管理\XJC_ｼｽﾃﾑ共通設計書.xlsx` (the third target above) is not reported
-    missing; if Ⅲ declares it anyway, it is not "declared but unused" either — say nothing.
+    missing; if Ⅲ declares it anyway, it is not "declared but unused" either — say nothing. There is
+    no need to open XJC_ for this check at all.
   - **`05.ｼｽﾃﾑ共通設計書` `工程管理共通ﾙｰﾙ` — still 要確認.** The call-out names only 07 and the XJC_
     workbook, so a table — or a single letter — backed only through `工程管理共通ﾙｰﾙ.<rule>` stays 要確認,
     never 高, and is never "declared but unused" (`PXJCO125`: `TSJCD504` via `製品輸送中ﾁｪｯｸ`, and
