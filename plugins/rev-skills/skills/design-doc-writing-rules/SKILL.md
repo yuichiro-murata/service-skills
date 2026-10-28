@@ -744,7 +744,7 @@ conditions (検索条件 tables) are out of scope** even though designers do ord
 **a. 数量 — 低.** Classify a name by `作業基板…数` > `基板…数` > `ｼｰﾄ…数` > `個数`/`個片…数` (`作業基板処理数`, `子ｼｰﾄ数`,
 `処理数(基板数)`, `仕掛数(個片)` all count; `…取数` and a slash/もしくは-joined series naming several units —
 `不良数(ｼｰﾄ数/作業基板数/基板数/個数)`, 604 cells — are one item of no kind; `処理数`, `子数`, `作業数` carry no unit word and
-are not classified — read them by hand when the list has them: `GXJC161B` Ⅴ `[2078]`-`[2081]` 処理数→基板処理数→
+are not classified — read them by hand when the list has them: `PXJCO161` `GXJC161B` Ⅴ `[2078]`-`[2081]` 処理数→基板処理数→
 作業基板処理数→ｼｰﾄ処理数, ﾁｪｯｸ `[46,3]` `処理数(作業数)` = 作業基板). Take the kinds in order of first occurrence and require
 ｼｰﾄ→作業基板→基板→個数; a list with one kind is skipped. Measured: Ⅴ 52 of 70 areas comply, **18 do not (11 books)** — the
 DB column order 個数→基板数→作業基板数→ｼｰﾄ数 (8: `PSJCO201` `GSJC201A` `[940,3]`, `PXJCO121` `GXJC121A` `[841,3]`, `PXJCO122`
@@ -759,7 +759,7 @@ switched ones follow (`GXJC122A` G3 `[845]` 分割前個数 then ※8 基板数/
 one-row 移動ﾛｯﾄ fetch (`PXJCO125` `GXJC125A` `[134,4]`/`[178,4]`/`[221,4]`/`[268,4]`, `PXJCO161` `GXJC161A` `[149,5]`/`[212,5]`/
 `[291,5]`, `PXJCO129` `GXJC129B` `[108,4]`), others `PSJCO509` `GSJC509B` `[61,4]`/`[124,4]` ｼｰﾄ→基板→個数→作業基板, `PXJCO163`
 `GXJC163A` `[68,4]` 個数→ｼｰﾄ→作業基板→基板, `PXJCO124` `GXJC124A` `[588,4]`/`[666,4]`/`[740,4]`; ﾁｪｯｸ処理設計書 2 of 4
-(`PSJCO305` `GSJC305A` `[57,4]`, `GXJC161B` `[999,4]`). **The 明細 exception** ("明細 area" here = an area of repeating rows, `(1-N)` items — not W1c's wider
+(`PSJCO305` `GSJC305A` `[57,4]`, `PXJCO161` `GXJC161B` `[999,4]`). **The 明細 exception** ("明細 area" here = an area of repeating rows, `(1-N)` items — not W1c's wider
 title-based class; `GXJC122A` G3 明細表示領域 shows one lot and is not one): find which Ⅴ area the block feeds by its
 `(n)`/`(n)①` references in the area's **初期値 and 説明 columns** (`(13).ｼｰﾄ数` `[825,36]`; `実行ﾎﾞﾀﾝ押下時：(22).ｼｰﾄ数`
 `[943,43]`; `検索時：(6)③.ｼｰﾄ処理数` on `PSJCO311` — a UNION/合成 block such as `(6)③` has no table of its own, so expand it to
@@ -767,7 +767,7 @@ its child blocks `(6)①`/`(6)②`), or a `※n` beside the area; only when no r
 area of the same sheet. If the 取得項目 kinds equal the fed area's kinds, do not report (6 lists: `PXJCO122` `GXJC122A`
 `[331,4]`/`[387,4]` = G2 `[819]`, `[567,4]` = G4 `[938]`, `PSJCO204` `GSJC204A` `[238,4]`/`[395,4]`/`[510,4]`; `PSJCO311`
 `[156,4]`/`[226,4]`/`[365,4]` = G2 `[628]`); if they differ from the fed area (or from every repeating area when none
-resolves), report once naming the Ⅴ order (`PXJCO904` `GXJC904A` `[107,5]` 個数→基板→作業基板→ｼｰﾄ against G1 `[643]`; `GXJC161B`
+resolves), report once naming the Ⅴ order (`PXJCO904` `GXJC904A` `[107,5]` 個数→基板→作業基板→ｼｰﾄ against G1 `[643]`; `PXJCO161` `GXJC161B`
 `[820,4]` 子数→子作業基板数→子基板数→子ｼｰﾄ数). ﾌｧｲﾙ出力仕様書: 37 of 43 ﾍｯﾀﾞｰ/明細 tables comply, **0 findings** — the 2
 out-of-rule tables equal a 明細 area of the book's 画面設計書 (`PSJCO311` `FSJC015` `[32,5]`/`[70,5]` = `GSJC311A` `[628]`; the
 area is found by the file table's `※n` pointing at a screen item, `FSJC015` `[100,5]` → G2 No.23, or by item names equal to
@@ -832,7 +832,7 @@ Re-derive every verdict; the cells below are the calibration.
   参照ｴﾝﾃｨﾃｨ cell (`TSJCDXXX:社内加工(出荷)` — `PSJCO404` `GSJC404A` `[1219,14]`, in a hidden old copy, so there it is the
   Hidden-leftovers line, not W10a).
 - **Not findings:** the 画面項目ID column (col 54 `XXXXXXX`, 624 cells — the house placeholder for an ID not yet issued; naming step 5
-  only treats it as not-developer content, and no check reports it); the 表示形式 column
+  only treats it as not-developer content; W1b reports it on a 共通 button, no other check does); the 表示形式 column
   (col 25 `XXX`/`ZZ9`, a 桁見本); an `X`-run inside quotes in SQL (`NVL(A1.事業所ｺｰﾄﾞ,'XXXXXXXXXX')` `PSJCO504`); a
   substitution explanation (`画面のﾀｲﾄﾙの(XXXX)になる` `PSJCO403` `[80,3]`); `ｼｽﾃﾑ共通設計書.区分名称.XXXX 参照`; a
   帳票ｲﾒｰｼﾞ table of `XXXXXX` (`PXJCO122` `GXJC122A` `[757-779]`); `XXXXｽﾞｰﾑ(XXXXXXX)` (W7d); `xx` as a variable in
@@ -879,10 +879,10 @@ cells in 87 books): never report `ﾛｸﾞｲﾝ情報.作業者ｺｰﾄﾞ` i
 
 **W10e — 列見出し「ﾘｿｰｽID」 — 低.** Header rows only (the row holding `属性`/`画面項目名`/`画面項目ID` labels): a 画面設計書
 Ⅳ/Ⅴ header row whose col 54 label is `ﾘｿｰｽID` or `画面ID` instead of `画面項目ID`, or an extra `ﾘｿｰｽID` label in col 58
-beside col 54's `画面項目ID`, is a copy-source template leftover (W10 owns it; internal-consistency's leftover rules are
-about content, not labels). `画面ID` as a *value* (an argument name, a 更新ﾌﾟﾛｸﾞﾗﾑID value, `(2)画面表示件数`'s parameter —
-`PSJCO404` 更新条件表 `[21,18]`, 機能定義書 `[114,7]`, `GSJC404A` `[69,6]`) is never this
-(〔PH2-879〕): `PXJCO123` `GXJC123A` `[486,58]`/`[507,58]`/`[532,58]` — the only screen-design hits; one line per sheet.
+beside col 54's `画面項目ID`, is a copy-source template leftover (〔PH2-879〕; W10 owns it — internal-consistency's leftover rules are about content,
+not labels): `PXJCO123` `GXJC123A` `[486,58]`/`[507,58]`/`[532,58]` — the only screen-design hits; one line per sheet.
+`画面ID` as a *value* (an argument name, a 更新ﾌﾟﾛｸﾞﾗﾑID value, `(2)画面表示件数`'s parameter — `PSJCO404` 更新条件表 `[21,18]`,
+機能定義書 `[114,7]`, `GSJC404A` `[69,6]`) is never this.
 A 帳票設計書 Ⅱ header row reading `ﾘｿｰｽID` at col 54 (`PXJCO164` `RXJC011A` `[155,54]`…, 8 cells) is the report
 template's own heading — not this rule. 更新条件表: 0, and the Ⅵ 区分表's `ﾘｿｰｽID` (col 57) is its proper heading.
 
@@ -898,6 +898,6 @@ that cell anyway.
 
 Group by check (W1-W10), then by sheet. Every rule here is low severity on its own unless the check
 says otherwise (a duplicate/misfiled circled section that another doc cites by number is 中; a
-placeholder ID such as `XXXXXXX` is 中). When one deviation repeats across a whole sheet, report it
+placeholder ID such as `XXXXｽﾞｰﾑ(XXXXXXX)` is 中 (W7d) — a bare col-54 `XXXXXXX` is not reported, W10a). When one deviation repeats across a whole sheet, report it
 once per sheet with the cells listed, as each section says — these rules fire widely and a row-by-row
 list buries the useful findings.

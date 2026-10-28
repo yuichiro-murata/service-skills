@@ -167,9 +167,11 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
      `[4,10]`/`[4,62]` 画面ID `GXJA253B` (copied from PXJAO253); a typo of the own ID (`PSJC207` on `PSJCO207`'s
      画面/ﾁｪｯｸ `[3,10]`/`[3,62]`); `#REF!` (`PSJCO606` `ﾁｪｯｸ処理設計書(GSJC606A)` `[3,10]`/`[3,62]`/`[4,10]`/`[4,62]`, the
      names `[3,15]`/`[4,15]` too).
-   - **低 — the wrong kind of ID under the label** (row/label drift): the 機能ID `SJC060` under ﾌﾟﾛｸﾞﾗﾑID (`PSJCO602`
-     six 更新条件表 `[3,62]`, `SSJCB605` `[3,10]`/`[3,62]`, `PSJCO803` `FSJC080` `SJC080`, `PSJCO403` `FSJC018-020` `[3,62]`
-     `SJC040`), the table ID (`PSJAO704` twelve 更新条件表 `[4,10]`/`[4,62]`), a screen ID (`PSJCO206` `[4,62]` `GSJC206A`).
+   - **低 — the wrong kind of ID under the label**: a table ID under ﾌﾟﾛｸﾞﾗﾑID in both copies (`PSJAO704` twelve 更新条件表
+     `[4,10]`/`[4,62]` `TSJAM721`…), a screen ID (`PSJCO206` `[4,62]` `GSJC206A`), a 機能ID where the sheet's own label says
+     ﾌﾟﾛｸﾞﾗﾑID (`SSJCB605` `[3,10]`/`[3,62]` `SJC060`, `PSJCO803` `FSJC080` `SJC080`, `PSJCO403` `FSJC018-020` `[3,62]` `SJC040`).
+     When only the **right copy's labels** have drifted (`PSJCO602` six 更新条件表: `[3,5]`=機能ID/`[3,10]`=`SJC060` is right,
+     `[3,57]`=ﾌﾟﾛｸﾞﾗﾑID/`[4,57]`=画面ID are the wrong labels), that is the left/right label mismatch above, not a wrong ID.
    - **低 — a 更新条件表 更新概要 `①画面(<ID>)` naming a screen or file the workbook has no sheet for** (a copy-source
      leftover; 8 cells). Not this bullet: an ID whose number *is* the PID's (`GSJC404D` above — evidence for the 中 line,
      the sheet name being wrong), and an ID of the wrong shape (`GSJCO404B`, 9 characters, `PSJCO404` `更新条件表(TSJCD401)`

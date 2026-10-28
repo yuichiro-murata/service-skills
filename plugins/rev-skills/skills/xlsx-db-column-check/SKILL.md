@@ -603,7 +603,7 @@ a 結合条件; a query declared 1件 with a key column still free can return se
 と書き、先頭1件を使うならｿｰﾄ順と `※.先頭ﾚｺｰﾄﾞ1件を取得する。` を添える. Measured: 1,735 1件 queries, 1,157 fully fixed,
 225 all-aggregate (MAX/COUNT), 46 reported in 26 programs plus 50 in 更新条件表 side blocks: `PSJAO241`
 `画面設計書(GSJA241B-基本情報)` `[350,9]` (5)加工部門ｺｰﾄﾞ (VSJAM003, 加工GRP free), `PSJCO502` `画面設計書(GSJC502B)`
-`[355,9]` (7)送品案内情報取得 (TSJCD212, SEQ free), `PSJAO501` `ﾁｪｯｸ処理設計書(GSJA501B)` `[212,8]` (7)ｺﾋﾟｰ元排他ﾌﾗｸﾞ取得
+`[355,9]` (7)送品案内情報取得 (TSJCD212, SEQ free — graded 要確認, see the I02 rule below), `PSJAO501` `ﾁｪｯｸ処理設計書(GSJA501B)` `[212,8]` (7)ｺﾋﾟｰ元排他ﾌﾗｸﾞ取得
 (TXJAM060, 改訂No free), `PSJCO201` `画面設計書(GSJC201A)` `[255,9]` (7)先頭工程取得 (TXJCM004, 工程ｺｰﾄﾞ free — the title
 says 先頭, so 複数件 + ｿｰﾄ順 + the sentence), `PXJCO125` `更新条件表(TSJCD101)` `[18,59]` ﾛｯﾄ作成履歴 by 管理No/枝番 without
 作成日時 (its sibling `(TSJCD302)` `[17,59]` sorts by 作成日時 and says `※先頭1件のみ取得`). **The 先頭 sentence** (call-out
@@ -629,7 +629,7 @@ not cover the **joined** table's unique key (the B of `A INNER JOIN B`) multipli
 is existence; `= n`, `≠ 件数` is a quantity). Measured: 49 such joins,
 33 on the full key, 16 reported in 10 programs: `PSJAO502` `画面設計書(GSJA502C)` `[143,4]` `結合条件(A INNER JOIN B)`
 ②実績表項目ﾌｪｰｽﾞ項目ﾏｽﾀWF存在ﾁｪｯｸ (B's 実績表項目ID/改訂No/ﾌｪｰｽﾞID free), `PSJCO502` `ﾁｪｯｸ処理設計書(GSJC502B)` `[124,4]`
-(1).移動ﾛｯﾄ構成変更ﾁｪｯｸ (案内書No/SEQ), `PSJCO501` `ﾁｪｯｸ処理設計書(GSJC501C)` `[104,4]` (3).加工手順構成存在ﾁｪｯｸ (工程ｺｰﾄﾞ),
+(1).移動ﾛｯﾄ構成変更ﾁｪｯｸ (案内書No/SEQ free on I01 — but covered by I02, so 低 at most; see Not S9), `PSJCO501` `ﾁｪｯｸ処理設計書(GSJC501C)` `[104,4]` (3).加工手順構成存在ﾁｪｯｸ (工程ｺｰﾄﾞ),
 `PXJCO101` `画面設計書(GXJC101C)` `[519,4]` (12)枠貼り実施工程件数 (層No — the fan-out changes the 件数: read with S2). A
 joined view with no key (`PXJCO130` `画面設計書(GXJC130B)` `[226,4]`, 3 cases) is 要確認, not a hit. Not S9: an INNER JOIN
 on the whole key (33), or on a secondary index that the fixed columns cover (`PSJCO502` ﾁｪｯｸ `GSJC502B` `[124]`/`[150]`
