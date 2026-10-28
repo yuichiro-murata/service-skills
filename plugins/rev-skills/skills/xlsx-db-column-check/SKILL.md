@@ -1,6 +1,6 @@
 ---
 name: xlsx-db-column-check
-description: Check whether a design doc (機能定義書/画面設計書/更新条件表) references DB columns that do not exist in the table's ﾃｰﾌﾞﾙﾚｲｱｳﾄ, and whether each screen item's 桁数 matches the column's length (e.g. a 工程名 TextBox of 30 against NVARCHAR2(60)). For 検索条件保存ﾏｽﾀ (TXJAM100) it also flags a saved master-derived name shown as a Label (only the code should be stored) and a typed search condition that is not saved (self-check No.47). It also reads each 参照ｴﾝﾃｨﾃｨ block as SQL (step 7): NULL compared with =/<>, COUNT counting the wrong unit, a LEFT-joined column in WHERE, existence checks not narrowed to the business unit, and one =/<> against a multi-valued 移動ﾛｯﾄ状態 group. Distinct from design-doc-io-table-check, which asks whether a table is declared at all. Use when the user asks to verify a program's design doc against the DB design files, e.g. 「使っているカラムがDB設計書に存在するか確認して」「存在しないカラムを使っていたら教えて」. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Check whether a design doc (機能定義書/画面設計書/更新条件表) references DB columns that do not exist in the table's ﾃｰﾌﾞﾙﾚｲｱｳﾄ, and whether each screen item's 桁数 matches the column's length (e.g. a 工程名 TextBox of 30 against NVARCHAR2(60)). For 検索条件保存ﾏｽﾀ (TXJAM100) it also flags a saved master-derived name shown as a Label (only the code should be stored) and a typed search condition that is not saved (self-check No.47). It also reads each 参照ｴﾝﾃｨﾃｨ block as SQL (step 7): NULL compared with =/<>, COUNT counting the wrong unit, a LEFT-joined column in WHERE, existence checks not narrowed to the business unit, one =/<> against a multi-valued 移動ﾛｯﾄ状態 group, 共通ｺｰﾄﾞﾏｽﾀ read without excluding the $$ row, 停止日時 masters read without excluding stopped rows, 取得件数 1件 not guaranteed by the key, existence checks as INNER JOIN, TIMESTAMP ranges without 00:00:00/23:59:59, GROUP BY vs 取得項目, and ｿｰﾄ順 that leaves the order non-unique. Distinct from design-doc-io-table-check, which asks whether a table is declared at all. Use when the user asks to verify a program's design doc against the DB design files, e.g. 「使っているカラムがDB設計書に存在するか確認して」「存在しないカラムを使っていたら教えて」. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # xlsx-db-column-check
@@ -448,13 +448,23 @@ no 更新条件表 sheet at all), there is nothing to run 6/6b against: say in o
 checks could not run and why, mark it 要確認, and leave the missing-sheet finding itself to
 `design-doc-io-table-check` step 6 when it is in the run (report it here only without it).
 
-### 7. SQL semantics of the 参照ｴﾝﾃｨﾃｨ blocks (S1-S5)
+### 7. SQL semantics of the 参照ｴﾝﾃｨﾃｨ blocks (S1-S12)
 
 Steps 2-5 ask whether a column exists and fits; this step asks whether the query, read as SQL, returns
 what the block's title and its users (Ⅰ checks, Ⅴ 説明) say it does. Scope: every live 参照ｴﾝﾃｨﾃｨ block step 2
 harvests (画面設計書 Ⅲ, ﾁｪｯｸ処理設計書 Ⅱ, 帳票設計書, 機能定義書, ﾌｧｲﾙ出力仕様書, 更新条件表 side blocks). Pasted SQL
 from col 54 on is out of scope. Calibrated 2026-10-17 on the 122 工程管理 PHASE1-3 books (2,468 blocks).
 Origin: my-review-skills' PXJCO124 baseline comparison (2026-10-11/12; adopted 2026-10-17) — the cells below.
+S6-S12 (adopted 2026-10-28) come from its チェック観点 SQL rules (`$$`, 停止日時, 1件, EXISTS, TIMESTAMP, GROUP BY, ｿｰﾄ一意),
+measured 2026-10-28 over the same books (3,042 blocks, 3,123 queries after the 取得件数 split). They need the layout's
+属性 column (col 19 — not 14) for S10 and the unique key (above) for S8/S9/S12 — find `＜ｲﾝﾃﾞｯｸｽ情報＞` in col 1 only (a 備考
+cell mentioning ｲﾝﾃﾞｯｸｽ, `TSJCA311` `[8,105]`, is not the marker). Validated 2026-10-28 on `PSJCO502` (S1, S8, S9, S12
+reproduced; the exclusions below come from that run). "Main table" throughout = the first alias of the query's
+参照ｴﾝﾃｨﾃｨ that is a real table; when it is a block reference (`A=①`, `A=(19)` 共通項目取得) the key-based rules S8/S9/S12
+are skipped for that query and said so in one line. A `=` on the other side of a block-reference alias
+(`A.案内書No = D.送品案内書No`, D = a 1件 block) fixes the column only when that block is 1件. The 更新条件表 side blocks
+come in both shapes: 取得ﾃｰﾌﾞﾙ名/参照ﾃｰﾌﾞﾙ名 (coordinates below) and 参照ｴﾝﾃｨﾃｨ (label col 55, operator 75, right side 79 —
+`PSJCO502` `更新条件表(TSJCA311)`); step 2 tells them apart.
 
 **Parse per query, not per block.** A condition row is No. (label col L), left side (L+2), operator (the
 cell holding `=`/`<>`/`LIKE`/`IN`/`IS`…, ~L+20 — find it by token, as in writing-rules W6), right side
@@ -556,6 +566,125 @@ a single state compared with one value (`≠"91"(流動停止)`, `="25"(加工�
 master — read them, don't scan. Read 07 live (`live_dump.py <...\01_Doc\04_共通設計\07.共通項目取得.xlsx> <out> --sheets
 "^共通項目取得\(移動ﾛｯﾄ状態\)$"`).
 
+**S6 — 共通ｺｰﾄﾞﾏｽﾀ read without the `$$` definition row excluded — 低; 中 when 取得件数 is 1件.** TXJAM008 keeps one
+項目定義 row per JOB/ｷｰ1/ｷｰ2 with `ｷｰ3 = "$$"`; a query that fixes JOBｺｰﾄﾞ/ｷｰ1/ｷｰ2 but leaves ｷｰ3 free returns it with
+the data rows (my-review-skills pattern_check「共通ｺｰﾄﾞﾏｽﾀの$$除外なし」). For each TXJAM008 alias a query uses, pass when
+a 検索条件 or 結合条件 row fixes `X.ｷｰ3` with `=` on either side (`A.便 = F.ｷｰ3` counts; 642 + 137; normalise the cell —
+`A. ｷｰ2　(送付元作業場ｺｰﾄﾞ)` is `A.ｷｰ2`), narrows it with LIKE/IN/`<>`/`<` (39 — the 前方一致 and
+range lookups), or carries `X.ｷｰ3 <> "$$"` (105 — the house form, `PXJCO124` `画面設計書(GXJC124A)` `[494]`
+(15)保留区分ﾘｽﾄ取得); otherwise report. Measured: 1,024 alias-query pairs, 41 hits in 19 programs, 39 of them with
+ｷｰ1/ｷｰ2 fixed: `PSJAO401` `画面設計書(GSJA401B)` `[552,4]` (11)集計GRP名取得 (`[565]` ｷｰ1="51", `[566]` ｷｰ2="00",
+`[567]` ﾎﾞﾃﾞｨ1 = Y.…, `[570,9]` 1件), `PSJAO241` `画面設計書(GSJA241B-規格情報)` `[892,4]` (34)事業部取得, `PSJCO309`
+`画面設計書(GSJC309A)` `[291,4]` (8)焼成条件(条件炉)ﾘｽﾄ取得, `SXJCB147` `帳票設計書(RSJC033)` `[533,4]`. 19 of the 41
+declare 1件 with ｷｰ3 the only free key column — there the definition row makes the fetch ambiguous: one 中 line,
+written under S6 (S8 leaves them out). Not S6: an alias listed in the block but unused by the query after the 取得件数 split (59),
+`TXJAM008_B`/`TXJAM008_IN` (other tables), a ｷｰ3 fixed through a resolved `※n`.
+
+**S7 — a 停止日時 master read without excluding stopped rows — 要確認.** Masters moved from JAGUR (品目 TXJAM002,
+取引先 TXJAM007, 工程 TXJAM023, 加工手順 TXJAM025, 資源 TXJAM601, 加工GRP VSJAM003 — an open list: the rule is driven by
+every layout step 3 dumped that has a 停止日時 column) are logically deleted through 停止日時; a query that lists, joins or validates against them carries the house template `(X.停止日時 = NULL OR
+X.停止日時 => ｼｽﾃﾑ日時)` (29 queries, `PSJAO401` `画面設計書(GSJA401B)` `[428]` (5)工程ﾏｽﾀ — its `= NULL`/`=>` halves are
+S1/W6e) or another row on a column starting `停止日` (`X.停止日時`, `X.停止日`; 6; 15 more in a sibling query of the same block). A
+delegation to 共通項目取得 with `有効期限ﾌﾗｸﾞ="1"` is outside S7 (the stop-date filter lives in 07). Flag an alias whose layout has
+停止日時 and whose query reads it in 取得項目 as the main table or through an INNER JOIN with no `X.停止日` condition
+anywhere in the block, worded 「ﾚｲｱｳﾄに停止日時があるが条件にない。停止済みを含める意図か確認」 (PH2-444・548・549・554:
+JAGUR processes assumed physical deletion). Measured: 452 alias-query pairs, 56 reported in 21 programs: `PSJAO404`
+`画面設計書(GSJA404B)` `[142,4]` (6)工程一覧検索 (TXJAM023 listed), `PSJCO304` `画面設計書(GSJC304A)` `[257,4]`
+③品目ﾘｽﾄ取得 (TXJAM002 → ComboBox), `PSJCO501` `画面設計書(GSJC501C)` `[53,4]` (3)加工手順情報(最新)取得 (TXJAM025),
+`PSJAO601` `画面設計書(GSJA601A)` `[219,4]` (7)取引先ﾏｽﾀ取得(更新用). Not S7: name-display-only lookups (取得項目 all
+名/名称/略/ﾎﾞﾃﾞｨ — 180) and LEFT-joined attribute reads (39); the ﾛｯﾄ停止 programs `PXJCO128`/`PXJCO134` (10 — designers'
+answer 2026-10-06 No.8/21/57/58: they ignore 加工手順/品目/工程 stop dates, and then the 共通項目取得 argument 有効期限ﾌﾗｸﾞ
+is not needed either); the master's own ﾒﾝﾃﾅﾝｽ program (27 — stopped rows are what it edits); aliases used only in
+WHERE (45 — existence checks, read with S4); 更新条件表 side blocks (13).
+
+**S8 — 取得件数「1件」 that the conditions cannot guarantee — 中; 低 when a ｿｰﾄ順 or a 先頭 note already exists.**
+Take the main table's unique key (the same I01 reading as S2/S4) and remove every column fixed by `=` in 検索条件 or
+a 結合条件; a query declared 1件 with a key column still free can return several rows (課題152-1055). The fix: 「複数件」
+と書き、先頭1件を使うならｿｰﾄ順と `※.先頭ﾚｺｰﾄﾞ1件を取得する。` を添える. Measured: 1,735 1件 queries, 1,157 fully fixed,
+225 all-aggregate (MAX/COUNT), 46 reported in 26 programs plus 50 in 更新条件表 side blocks: `PSJAO241`
+`画面設計書(GSJA241B-基本情報)` `[350,9]` (5)加工部門ｺｰﾄﾞ (VSJAM003, 加工GRP free), `PSJCO502` `画面設計書(GSJC502B)`
+`[355,9]` (7)送品案内情報取得 (TSJCD212, SEQ free), `PSJAO501` `ﾁｪｯｸ処理設計書(GSJA501B)` `[212,8]` (7)ｺﾋﾟｰ元排他ﾌﾗｸﾞ取得
+(TXJAM060, 改訂No free), `PSJCO201` `画面設計書(GSJC201A)` `[255,9]` (7)先頭工程取得 (TXJCM004, 工程ｺｰﾄﾞ free — the title
+says 先頭, so 複数件 + ｿｰﾄ順 + the sentence), `PXJCO125` `更新条件表(TSJCD101)` `[18,59]` ﾛｯﾄ作成履歴 by 管理No/枝番 without
+作成日時 (its sibling `(TSJCD302)` `[17,59]` sorts by 作成日時 and says `※先頭1件のみ取得`). **The 先頭 sentence** (call-out
+画面設計書 列38/行272: exactly `※.先頭ﾚｺｰﾄﾞ1件を取得する。`) — 低, once per sheet: 「先頭1件」 appears in 35 取得件数 cells
+(`PXJCO161` 12, `PSJCO307` 11, `PSJCO308` 5, `PSJCO306` 4, `PXJCO904` 2, `PSJCO309` 1) and none carries the sentence;
+across the books it is exact 5 times (`SXJCB147` `帳票設計書(RSJC033)` `[81,4]`), without the dot 17 (`PXJCO122`
+`画面設計書(GXJC122A)` `[422,4]`), `※.先頭ﾚｺｰﾄﾞのみ取得` 5 (`PSJCO204` `GSJC204A` `[385,4]`), `※先頭ﾚｺｰﾄﾞを取得する。` 4
+(`PXJCO123` `GXJC123A` `[145,4]`). The 先頭-sentence line is a separate 低 from the S8 finding (the call-out is in `XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx`'s 画面設計書
+sample). **要確認 instead of 中** when a secondary index (I02…) covers exactly the fixed columns and the design plainly
+relies on it: `PSJCO502` `GSJC502B` `[355,9]` (7)送品案内情報取得 fixes 会社/部門GRP/案内書No/管理No/枝番 = TSJCD212's I02 while
+I01 ends in SEQ — ask for I02 to be made unique, or 複数件 + ｿｰﾄ順; and when the layout's own ﾕﾆｰｸｷｰ is only
+会社ｺｰﾄﾞ/部門GRP (VSJCM024) — the key is the layout's problem, say so once. Not S8: a hierarchical query (`START WITH` /
+`結合条件(CONNECT BY)`, `GSJC502B` `[369]`-`[380]` (7)-①移動ﾛｯﾄ構成展開 — it returns the chain by design); a missing column
+fixed by IN/LIKE (7); a title saying 存在/ﾁｪｯｸ/件数 (16 — S4); 最新/最大 with a MAX sub-query (7); TXJAM008 with only ｷｰ3
+free (19 — S6 reports them); only 会社ｺｰﾄﾞ/部門GRP free (9 — a dropped `Z.` row, 要確認); tables with no usable key (77 —
+no ﾕﾆｰｸｷｰ/PK line, or a block reference as main table); the KC品名→品目→層No chain (designers' answer 2026-10-02 No.1:
+the previous process has one 品目, so IN + 先頭1件 is correct there).
+
+**S9 — existence check written as INNER JOIN on a non-unique key — 低 (performance); 要確認 when the count is a
+quantity.** For a query whose title or 取得項目 says 存在/有無, or whose item is a COUNT, an INNER JOIN whose `=` rows (結合条件 and 検索条件 together) do
+not cover the **joined** table's unique key (the B of `A INNER JOIN B`) multiplies rows where EXISTS would not
+(課題192-439). Whether the count is used as a quantity is read from the ﾁｪｯｸ処理設計書 Ⅰ row that uses the block (`> 0`
+is existence; `= n`, `≠ 件数` is a quantity). Measured: 49 such joins,
+33 on the full key, 16 reported in 10 programs: `PSJAO502` `画面設計書(GSJA502C)` `[143,4]` `結合条件(A INNER JOIN B)`
+②実績表項目ﾌｪｰｽﾞ項目ﾏｽﾀWF存在ﾁｪｯｸ (B's 実績表項目ID/改訂No/ﾌｪｰｽﾞID free), `PSJCO502` `ﾁｪｯｸ処理設計書(GSJC502B)` `[124,4]`
+(1).移動ﾛｯﾄ構成変更ﾁｪｯｸ (案内書No/SEQ), `PSJCO501` `ﾁｪｯｸ処理設計書(GSJC501C)` `[104,4]` (3).加工手順構成存在ﾁｪｯｸ (工程ｺｰﾄﾞ),
+`PXJCO101` `画面設計書(GXJC101C)` `[519,4]` (12)枠貼り実施工程件数 (層No — the fan-out changes the 件数: read with S2). A
+joined view with no key (`PXJCO130` `画面設計書(GXJC130B)` `[226,4]`, 3 cases) is 要確認, not a hit. Not S9: an INNER JOIN
+on the whole key (33), or on a secondary index that the fixed columns cover (`PSJCO502` ﾁｪｯｸ `GSJC502B` `[124]`/`[150]`
+fix TSJCD212's I02 — at most 低, and say the index is not declared unique); joins in a listing query; NOT EXISTS
+sub-queries.
+
+**S10 — TIMESTAMP range against a screen date without the time suffix — 中 on the TO side, 低 on the FROM side.** A
+`>=`/`<=`/BETWEEN on a column whose layout 属性 is `TIMESTAMP WITH TIME ZONE`, compared with a `Y.…日` item, reads
+`Y.…日(FROM)+" 00:00:00"` / `Y.…日(TO)+" 23:59:59"` (call-outs 画面設計書 列53/行81・87; 58 rows written so, `PSJAO241`
+`画面設計書(GSJA241A)` `[287,6]`-`[291,6]`); a bare TO date is midnight, so the last day drops out. Measured: 167 range
+predicates on TIMESTAMP columns, 10 reported in 2 programs: `PSJCO504` `画面設計書(GSJC504B)` `[223,6]` `A.移動日時 >=
+Y.移動日(FROM)` / `[224,6]` `<= Y.移動日(TO)` (※2/※3 only make the rows optional), `PSJCO309` `画面設計書(GSJC309B)`
+`[140,6]`/`[141,6]` `A.入炉日時 >= Y.入炉日(開始)` / `<= Y.入炉日(終了)` ※1 (repeated at `[284,7]`/`[285,7]` and on
+`GSJC309C` `[139,6]`/`[140,6]`/`[283,7]`/`[284,7]`). Not S10: comparisons with ｼｽﾃﾑ日時 (40, the 停止日時 template among
+them) or ｼｽﾃﾑ日付±n日 (12), column-to-column (16), date+time concatenations and arithmetic (`Y.最終更新日(FROM)+" "+
+Y.最終更新時刻(FROM)+":00"`, 17), screen 日時 items (8), and the half-open form `>= 月初 … < 翌月月初` (6, `PSJCO604`
+`GSJC604A` `[245]`/`[246]`), which is correct. my-review-skills' 基準情報 停止日時 FROM-only exception did not occur (0).
+
+**S11 — a 取得項目 that is neither in 集約条件 nor aggregated — 中.** With a 集約条件/集計条件 row, every 取得項目 must be a
+grouped column or sit inside MAX/MIN/SUM/COUNT/AVG (PH2-425・744・859・1224・1336・1347); written as is the SQL does not
+run (ORA-00979), and the designer's fix (add to GROUP BY, or wrap in MAX) decides the row unit. Compare alias+column, or
+the column alone when the group row has no alias (`SXJCB178` `[361]` `管理No`). Measured: 193 grouped queries, 14
+reported in 9 programs: `PSJCO604` `画面設計書(GSJC604A)` `[79,17]` `C.加工部門名` against group `[98]`-`[100]`
+会社ｺｰﾄﾞ/部門GRP/加工部門ｺｰﾄﾞ (also `[142]` ②), `PSJCO505` `画面設計書(GSJC505A)` `[249,17]` `A.便` / `[250]` `H2.ﾎﾞﾃﾞｨ1` /
+`[251]` `A.送品区分` against `[366]` (②③④ repeat it at `[582]`/`[776]`/`[966]`), `PXJCO131` `画面設計書(GXJC131A)` `[146]`
+`B.作業場名` / `[149]` `A.管理No` against `[416]`, `PSJAO502` `画面設計書(GSJA502C)` `[91,17]` `A.排他ﾌﾗｸﾞ` with group
+A.選択肢ｺｰﾄﾞ. A name column functionally dependent on a grouped code (加工部門名 on 加工部門ｺｰﾄﾞ) is still reported, with
+`MAX(C.加工部門名)` as the suggestion. Not S11: an item a `※n` explains (`PSJCB303` `[216]` `A.工程ｺｰﾄﾞ ※1` = the MIN row's
+value, 3 cases), an expression over grouped columns, Y./Z./P. values, a 更新条件表 side block of the 取得ﾃｰﾌﾞﾙ名 shape (no
+取得項目 list to compare — `TSJCV311` No.2 `[142]`-`[145]`).
+
+**S12 — 複数件 whose ｿｰﾄ順 does not make the order unique — 低; 要確認 when a query that fills a repeating area
+(明細/一覧, `(1-N)` items) has no ｿｰﾄ順 at all.** Only queries whose rows are displayed, printed or written to a file
+are in scope: a 複数件 fetched for an update loop (`PSJCO502` `GSJC502A` `[303,9]` (6)移動ﾛｯﾄ情報取得, 製品輸送状況更新用)
+has no order to report. For a 複数件 query take the main table's unique key, drop the columns fixed by `=`, and check that the rest
+appear in ｿｰﾄ順 (PH2-412・419・420・620・787・872・988: end the sort with the key). Per designers' answer 2026-10-06 No.6
+name the missing **display** items first (製造ﾛｯﾄNo, 枝番 …) and propose the key column only when they cannot fix the
+order: `PXJCO128` `画面設計書(GXJC128A)` `[176]`-`[187]` sorts 12 display columns and lacks only ﾛｯﾄ停止ｷｰ — 低 at most.
+Measured: 1,092 複数件 queries, 310 complete, 141 incomplete in 50 programs, 153 with no ｿｰﾄ順 and a free key in 55
+programs (画面設計書 63, ﾁｪｯｸ処理設計書 35, others 55). Incomplete: `PXJCO192` `画面設計書(GXJC192C)` `[134,9]`
+(1)全在庫一覧取得 (TXJCM006 sorted 処置指示No/仕掛工程ｺｰﾄﾞ/管理No, 枝番 missing), `PSJCO902` `画面設計書(GSJC902A)` `[124,9]`
+(2)明細ﾃﾞｰﾀ取得 (枝番 missing; `[121]`/`[122]` sort by the fixed 会社ｺｰﾄﾞ/部門GRP — 7 queries do, a 低 note), `PXJAO701`
+`画面設計書(GXJA701B)` `[148,9]` (2)資源状態 (TXJAM008 by ﾎﾞﾃﾞｨ2 only — 51 display-order masters like it; tie-break with
+ｷｰ2/ｷｰ3). No ｿｰﾄ順: `PXJCO164` `画面設計書(GXJC164A)` `[257,9]` (4)明細ﾃﾞｰﾀ取得 (TXJCM008), `PXJCO122` `画面設計書(GXJC122A)`
+`[203,9]` (6)ｵｰﾀﾞｰ工程属性取得. Not S12: the 65 複数件 whose key is fully fixed (one row by condition, answer No.80),
+aggregates/GROUP BY (109), 更新条件表 side blocks (156, no display order), ｿｰﾄ順 by another alias only (50 — read, don't
+scan), a sort by 管理No alone (answer 2026-10-10 No.76: 工程管理 lists sorted by 管理No only are accepted), tables without
+a usable key (43), a query whose main table is a block reference (`FSJC032` (2) `A=①`), and a ﾌｧｲﾙ出力仕様書 whose `※n`
+hands the sort to the ﾀﾞｳﾝﾛｰﾄﾞ画面's arguments (`PSJCO502` `FSJC032` `[23,4]` ※1). A query with no display items and a
+free key column: name the key column directly.
+
+**Limits of the 2026-10-28 measurement, to keep in mind when re-deriving:** "fixed by `=`" was taken from both sides
+of 検索条件 and 結合条件 without checking that the joined side is unique, so S8/S12 under-count; the S7 classes
+(name-only / LEFT-joined / main) are mechanical. Re-read the block before reporting.
+
 ### 8. Reporting
 
 **Every cell coordinate quoted in this file is from one dated snapshot of a live workbook and drifts
@@ -576,8 +705,9 @@ being persisted when only the code should be). Order by confidence — exact mis
 suspicious cross-references, and redundant code+name pairs first, likely-renames after, clearly
 labeled as lower-confidence judgment calls rather than confirmed defects.
 
-An S-finding (step 7) carries its evidence: the unique key and the fixed columns for S2/S4, the join label
-for S3, the resolved footnote and the 07 group for S5. S1 is one line per sheet listing every cell.
+An S-finding (step 7) carries its evidence: the unique key and the fixed columns for S2/S4/S8/S9/S12, the join label
+for S3/S9, the resolved footnote and the 07 group for S5, the layout's 停止日時/TIMESTAMP column for S7/S10, the group row
+for S11. S1, S6 and the 先頭 sentence (S8) are one line per sheet listing every cell.
 
 A 桁数 finding carries its own evidence: give both numbers and both sources (`画面桁数=30` /
 `TXJAM023 工程名 NVARCHAR2(60)`), say which way it fails (truncation on entry/display, or overflow at

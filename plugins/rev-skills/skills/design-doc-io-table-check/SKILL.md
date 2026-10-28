@@ -187,6 +187,16 @@ read the target live — the old VXJAM005 block sits just above it): 中/要確�
 - The `TSJAM726` miss above is why the delegation is followed at all: without it the 07 finding is
   invisible from the program's own workbook.
 
+**TXJZD003 (ﾒｰﾙ自動送信ﾃﾞｰﾀ) is never declared in Ⅲ** (self-check call-out 機能定義書 列25/行32 「ｼｽﾃﾑ共通設計書.
+ﾒｰﾙ自動送信ﾃﾞｰﾀ を使う場合、TXJZD003 を CRUD 表に書かない」; adopted 2026-10-28). A program that sends mail writes
+through `05.ｼｽﾃﾑ共通設計書` `ﾒｰﾙ自動送信ﾃﾞｰﾀ登録`, so the INSERT is the common design's, not the program's. The correct
+form is `PXJCB134` 機能定義書 `[47,27]` 「ｼｽﾃﾑ共通設計書.ﾒｰﾙ自動送信ﾃﾞｰﾀ 参照」 with no TXJZD003 row. **中** — a
+`TXJZD003` row in Ⅲ: `PXJCO101` 機能定義書 `[39,5]` (`[39,27]` 「ﾒｰﾙ自動送信ﾃﾞｰﾀを登録する。」, with its own
+`更新条件表(TXJZD003)` — say that sheet goes too, as 要確認); `PSJAO704` `[48,5]` the same (a 基準情報 ﾜｰｸﾌﾛｰ program —
+要確認 whether the 工程管理 call-out binds it). Measured 2026-10-28: 3 of 121 books mention ﾒｰﾙ自動送信 at all. Do not
+report the TXJZD003 row as "declared but unused" or the 更新条件表 sheet as missing a declaration — this one line is
+the whole finding, and a `更新条件表(TXJZD003)` alone (no Ⅲ row) is not reported here.
+
 **A 参照ｴﾝﾃｨﾃｨ block that is present in the live dump is, by construction, live evidence — the dump
 script already dropped the deprecated ones.** This replaces what used to be a mandatory per-block
 formatting scan, and it removes the failure mode that made that scan mandatory in the first place:

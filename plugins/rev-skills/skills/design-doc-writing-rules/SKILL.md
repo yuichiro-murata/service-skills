@@ -1,6 +1,6 @@
 ---
 name: design-doc-writing-rules
-description: Check a design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules: Ⅴ per-item rules (upper-case note on code inputs, button IDs (共通 XJZ/SJZ 9xxx first, else the WG's 9xxx), 選択 = □, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea carry 桁数 and 入力可文字種, 入力可文字種 consistent across screens, zoom buttons 表示 Z + Ⅳ参照), 項番 gaps/duplicates, 取得件数 at the end of each 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, screen names followed by their 画面ID, and 画面表示仕様 search conditions (LIKE needs a match mode, 名称 searches 部分一致) and join order (INNER before LEFT). How a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name. Also W7 (zoom names/IDs vs 03.ｽﾞｰﾑ管理台帳) and W8 (other programs' names = their 機能定義書 file names).
+description: Check a design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules: Ⅴ per-item rules (upper-case note on code inputs, button IDs (共通 XJZ/SJZ 9xxx first, else the WG's 9xxx), 選択 = □, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea carry 桁数 and 入力可文字種, 入力可文字種 consistent across screens, zoom buttons 表示 Z + Ⅳ参照), 項番 gaps/duplicates, 取得件数 at the end of each 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, screen names followed by their 画面ID, and 画面表示仕様 search conditions (LIKE needs a match mode, 名称 searches 部分一致) and join order (INNER before LEFT), zoom names/IDs vs the ledger, other programs' names vs their file names, the 工程管理 order of quantity/lot/sort items, and leftover placeholders (`？`, `XXX` IDs), renamed terms and ﾕｰｻﾞｰID→作業者ｺｰﾄﾞ. How a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name. Also W7 (zoom names/IDs vs 03.ｽﾞｰﾑ管理台帳) and W8 (other programs' names = their 機能定義書 file names).
 ---
 
 # design-doc-writing-rules
@@ -722,9 +722,181 @@ not this rule (`naming-standard-compliance`); its own Ⅴ．ﾌﾟﾛｸﾞﾗ�
   `PSJAO405`, `PXJCB131` `[145,5]` `PXJBO131`, `SXJCB123` `[161,5]` `SXJCO123`, `PSJCB807` sheet `機能定義書(PSJCB802)`
   `[139,5]`.
 
+### W9 — 工程管理の並び順 (数量・ﾛｯﾄ・ｿｰﾄ) (my-review-skills チェック観点 「工程管理で決まっている並び順か」; 回答 20261006 No.85/98/99, 20261010 No.76; adopted 2026-10-28)
+
+Source: 「数量は ｼｰﾄ数→作業基板数→基板数→個数、ﾛｯﾄは ﾃｰﾌﾟﾛｯﾄNo→製造ﾛｯﾄNo→管理No、ｿｰﾄは大きい単位から KC品名→品目ｺｰﾄﾞ→ﾃｰﾌﾟﾛｯﾄNo→
+製造ﾛｯﾄNo→管理No」, applied to Ⅴ, Ⅲ 取得項目, ﾁｪｯｸ, ﾌｧｲﾙ出力, 帳票 and ｻﾌﾞﾌﾟﾛ引数 — except that a ﾌｧｲﾙ出力仕様書 table and a
+取得項目 list that feeds a 明細 area follow that area's Ⅴ order (No.85/98/99), and a ｿｰﾄ順 of 管理No alone is never a
+finding (No.76). Calibrated 2026-10-28 on the 121 工程管理 PHASE1-3 workbooks (live text); re-derive every verdict.
+
+**What is a list.** A Ⅴ area (each `属性` header row; items = numeric No. in col 3; name = the 画面項目名 column, W1's
+parse); a 取得項目 table (No. in the label column, name two columns right — 画面設計書 Ⅲ, ﾁｪｯｸ処理設計書 Ⅱ, 機能定義書,
+帳票設計書 Ⅰ, ﾌｧｲﾙ出力仕様書 Ⅰ; some books put a `No.` header row above it, `PSJCO311` `[157,4]` — it is not the end of the
+table); a ﾌｧｲﾙ出力仕様書/帳票設計書 table under a `No.`/`出力項目名` header; a 機能定義書 table whose
+header has `名前` and `引数名`; a `ｿｰﾄ順` list. **Not a list for W9: 更新条件表 項目名** — it copies the ﾃｰﾌﾞﾙﾚｲｱｳﾄ column
+order (286 of 319 lists read 個数→基板数→作業基板数→ｼｰﾄ数 and 管理No→ﾃｰﾌﾟﾛｯﾄNo→製造ﾛｯﾄNo; the complying and the deviating
+lists never share a table ID), so it is judged against the layout (`update-condition-completeness` C1), never here.
+A Ⅵ area is not judged by W9 at all: it repeats its Ⅴ area, and a Ⅵ order that differs from Ⅴ is
+`design-doc-internal-consistency` check 5's item-set/order comparison (2 in the corpus — `PXJCO122` `GXJC122A` Ⅵ G4 `[1120]`
+against Ⅴ G4 `[938]`; `PXJCO904` `GXJC904A` G1 `[643]`). W9's fix on a Ⅴ area carries the Ⅵ area with it. **Search
+conditions (検索条件 tables) are out of scope** even though designers do order them (`PSJCO311` `GSJC311A` `[196]`-`[201]`).
+
+**a. 数量 — 低.** Classify a name by `作業基板…数` > `基板…数` > `ｼｰﾄ…数` > `個数`/`個片…数` (`作業基板処理数`, `子ｼｰﾄ数`,
+`処理数(基板数)`, `仕掛数(個片)` all count; `…取数` and a slash/もしくは-joined series naming several units —
+`不良数(ｼｰﾄ数/作業基板数/基板数/個数)`, 604 cells — are one item of no kind; `処理数`, `子数`, `作業数` carry no unit word and
+are not classified — read them by hand when the list has them: `GXJC161B` Ⅴ `[2078]`-`[2081]` 処理数→基板処理数→
+作業基板処理数→ｼｰﾄ処理数, ﾁｪｯｸ `[46,3]` `処理数(作業数)` = 作業基板). Take the kinds in order of first occurrence and require
+ｼｰﾄ→作業基板→基板→個数; a list with one kind is skipped. Measured: Ⅴ 52 of 70 areas comply, **18 do not (11 books)** — the
+DB column order 個数→基板数→作業基板数→ｼｰﾄ数 (8: `PSJCO201` `GSJC201A` `[940,3]`, `PXJCO121` `GXJC121A` `[841,3]`, `PXJCO122`
+`GXJC122A` `[845,3]`, `PXJCO123` `GXJC123A` `[580,3]`/`[688,3]`, `PXJCO130` `GXJC130C` `[236,3]`, `PSJCO204` `GSJC204A` `[835,3]`),
+作業基板数 appended after the switched 基板数/ｼｰﾄ数 (`PXJCO152` `GXJC152A` `[609,3]`/`[677,3]`/`[723,3]` 個数→基板数※1→ｼｰﾄ数※1→
+作業基板数※1), 基板/作業基板 swapped (`PXJCO122` `[819,3]` G2, `PSJCO311` `GSJC311A` `[628,3]`), `PSJCO204` `[778,3]`/`[806,3]`
+作業基板→基板→個片→ｼｰﾄ, `PXJCO125` `GXJC125A` `[466,3]` 個数→ｼｰﾄ数→作業基板数→基板数. The switched-display items
+(課題152-1065: one of 個数/基板数/ｼｰﾄ数/作業基板数 shown at a time, `※n` note) are judged like any other row — in the corpus
+they are where the order breaks, not a reason to skip; when the always-shown unit is deliberately placed first and the
+switched ones follow (`GXJC122A` G3 `[845]` 分割前個数 then ※8 基板数/作業基板数/ｼｰﾄ数), say so and grade 要確認. A sequence of Hidden rows only (`PXJCO161` `GXJC161B` G1
+`[2073]`-`[2076]`) is 要確認. 取得項目: 57 of 96 comply; **33 do not (12 books)**, 21 of them the same DB order from a
+one-row 移動ﾛｯﾄ fetch (`PXJCO125` `GXJC125A` `[134,4]`/`[178,4]`/`[221,4]`/`[268,4]`, `PXJCO161` `GXJC161A` `[149,5]`/`[212,5]`/
+`[291,5]`, `PXJCO129` `GXJC129B` `[108,4]`), others `PSJCO509` `GSJC509B` `[61,4]`/`[124,4]` ｼｰﾄ→基板→個数→作業基板, `PXJCO163`
+`GXJC163A` `[68,4]` 個数→ｼｰﾄ→作業基板→基板, `PXJCO124` `GXJC124A` `[588,4]`/`[666,4]`/`[740,4]`; ﾁｪｯｸ処理設計書 2 of 4
+(`PSJCO305` `GSJC305A` `[57,4]`, `GXJC161B` `[999,4]`). **The 明細 exception** ("明細 area" here = an area of repeating rows, `(1-N)` items — not W1c's wider
+title-based class; `GXJC122A` G3 明細表示領域 shows one lot and is not one): find which Ⅴ area the block feeds by its
+`(n)`/`(n)①` references in the area's **初期値 and 説明 columns** (`(13).ｼｰﾄ数` `[825,36]`; `実行ﾎﾞﾀﾝ押下時：(22).ｼｰﾄ数`
+`[943,43]`; `検索時：(6)③.ｼｰﾄ処理数` on `PSJCO311` — a UNION/合成 block such as `(6)③` has no table of its own, so expand it to
+its child blocks `(6)①`/`(6)②`), or a `※n` beside the area; only when no reference resolves, compare with every repeating
+area of the same sheet. If the 取得項目 kinds equal the fed area's kinds, do not report (6 lists: `PXJCO122` `GXJC122A`
+`[331,4]`/`[387,4]` = G2 `[819]`, `[567,4]` = G4 `[938]`, `PSJCO204` `GSJC204A` `[238,4]`/`[395,4]`/`[510,4]`; `PSJCO311`
+`[156,4]`/`[226,4]`/`[365,4]` = G2 `[628]`); if they differ from the fed area (or from every repeating area when none
+resolves), report once naming the Ⅴ order (`PXJCO904` `GXJC904A` `[107,5]` 個数→基板→作業基板→ｼｰﾄ against G1 `[643]`; `GXJC161B`
+`[820,4]` 子数→子作業基板数→子基板数→子ｼｰﾄ数). ﾌｧｲﾙ出力仕様書: 37 of 43 ﾍｯﾀﾞｰ/明細 tables comply, **0 findings** — the 2
+out-of-rule tables equal a 明細 area of the book's 画面設計書 (`PSJCO311` `FSJC015` `[32,5]`/`[70,5]` = `GSJC311A` `[628]`; the
+area is found by the file table's `※n` pointing at a screen item, `FSJC015` `[100,5]` → G2 No.23, or by item names equal to
+the area's).
+帳票設計書 (no exception): 19 of 24 print tables comply; `PXJCO164` `RXJC011A` `[201,5]`/`RXJC011B` `[210,5]` 工程別小計 in DB
+order while the same report's 明細 and the screen are in rule order — **中** (the sub-total columns will not line up with
+the detail); `SSJCB507` `RSJC006` `[85,5]`, `SXJCB147` `RXJC042` `[163,5]`/`[183,5]` (Excel template cell order) 低; 帳票
+取得項目 12 of 19 (`SXJCB141` `RXJC029` `[80,4]` … all DB order). ｻﾌﾞﾌﾟﾛ引数: 11 of 18 comply; the 7 in DB order are one
+signature — `SXJCB121` 機能定義書 `[69,5]` 個数(1-N)→基板数→作業基板数→ｼｰﾄ数, copied by its callers `PSJCO201` `[95,5]`,
+`PSJCO203` `[86,5]`, `PXJCO121` `[84,5]`, `PXJCO123` `[211,5]`, `PXJCO152` `[197,5]` — report once per program as 要確認 and
+say the callers move together.
+
+**b. 作業基板数の漏れ — 要確認.** ｼｰﾄ and 基板 present, 作業基板 absent: 0 Ⅴ areas; `PSJCB303` 機能定義書 `[174,4]` ｼｰﾄ数→基板数;
+`PSJCO604` `FSJC045` `[32,5]`/`[74,5]` ｼｰﾄ数→基板数→個数 while its screen `GSJC604B` `[128]`-`[131]` fetches all four. 基板数
+written for 作業基板数 (取り違え) cannot be measured by name — read the 取得内容/初期値 beside a swapped pair.
+
+**c. ﾛｯﾄ — 低.** The literal order is not what the books do: 管理No is the key and comes first in 57 Ⅴ areas, 55 取得項目
+lists and 38 ﾌｧｲﾙ出力 tables (管理No→ﾃｰﾌﾟﾛｯﾄNo→製造ﾛｯﾄNo) — never report its position. Judge only **ﾃｰﾌﾟﾛｯﾄNo before
+製造ﾛｯﾄNo, and 製造ﾛｯﾄNo2 right after 製造ﾛｯﾄNo** (adjacent in every Ⅴ/取得項目/ﾌｧｲﾙ出力 list where both occur; only
+更新条件表 appends it after 管理No, a layout matter). Exact names after stripping `(1-N)`/`(FROM)`/`※n` — `前工程管理No`,
+`子管理No`, `親管理No`, `投入ﾛｯﾄNo` are other entities. Measured: 518 of 537 lists comply, 13 do not outside 更新条件表 (7
+books): `PSJCB315` writes 製造ﾛｯﾄNo→ﾃｰﾌﾟﾛｯﾄNo→管理No throughout (機能定義書 `[117,4]`/`[279,4]`/`[344,4]`, `FSJC062`
+`[68,5]`/`[105,5]`, its own table `TSJCV502`) — one 要確認 line; `PXJCO124` `GXJC124A` `[211,4]`/`[588,4]`/`[666,4]`/`[740,4]`,
+`PXJCO163` `GXJC163B` `[947,3]`/`[90,4]`, `PSJCO302` `GSJC302A` `[564,3]`, `PSJCO307` `GSJC307B` `[739,3]`, `SXJCB141`
+`RXJC033_確認用` `[107,5]`.
+
+**d. ｿｰﾄ順 — 低.** Keys read from `alias.name` (a function around it is fine); require a non-decreasing unit over
+KC品名 < 品目ｺｰﾄﾞ < ﾃｰﾌﾟﾛｯﾄNo < 製造ﾛｯﾄNo (= 製造ﾛｯﾄNo2) < 管理No; every other column (dates, 作業場ｺｰﾄﾞ, 層No, 枝番, SEQ,
+工程No) is ignored — they are not key kinds. Skip a list
+with one key kind — 27 of the 46 keyed 画面設計書 lists are 管理No alone (No.76), 15 more are one key. Measured: 14 of 19
+comply; findings `PSJCO504` `GSJC504B` `[269,4]` 品目ｺｰﾄﾞ→KC品名→製造ﾛｯﾄNo→ﾃｰﾌﾟﾛｯﾄNo→管理No (two inversions), `PXJCO101`
+`GXJC101A` `[274,4]` 品目ｺｰﾄﾞ→KC品名. 要確認, not 低: a sub-query that groups by one lot key (`PSJCO303` `GSJC303A` `[450,4]`
+ﾃｰﾌﾟﾛｯﾄNo→品目ｺｰﾄﾞ, `[503,4]` 製造ﾛｯﾄNo→品目ｺｰﾄﾞ) and a list that enumerates user-selectable keys (`PXJCO121` `GXJC121B`
+`[105,4]` `画面.並び替え=…の場合はｿｰﾄ順先頭にする`). 帳票 ｿｰﾄ順: 8 of 8 comply. Whether a ｿｰﾄ順 makes the order unique is
+`xlsx-db-column-check` S12, not this.
+
+**Report** one line per list (sheet, the header/label cell, the observed order, the expected one); a DB-order sequence
+repeated in several blocks of one sheet is one line listing the cells. Severity: 低 unless a sub-case above says
+otherwise — 中 only for the 帳票 sub-total case, 要確認 for Hidden-only sequences, the ｻﾌﾞﾌﾟﾛ signature, the deliberate
+always-shown-first layout, and anything judged against the designer's intent rather than the text.
+
+### W10 — 書きかけ・旧用語・用語の統一 (my-review-skills 〔項目3〕〔汎用〕, call-outs 機能定義書 列35/行57, 画面設計書 列81/行209, ﾁｪｯｸ処理設計書 列13/行28; adopted 2026-10-28)
+
+Measured 2026-10-28 over the 121 工程管理 PHASE1-3 books (1,571 live sheets; 詳細設計*/画面ｲﾒｰｼﾞ/参考 sheets and
+the revision margin from col 105 left out — a memo there is never a finding). Scope: every live cell of a design
+sheet; 表紙 is naming's. Hidden rows follow `agent-guide.md`: a hidden block that is an old copy of a whole section is
+`design-doc-internal-consistency`'s one 「Hidden leftovers」 line and W10 does not repeat its cells (`PSJCO404` `GSJC404A`
+rows 711-1288 and 1625-1634 are such copies); a placeholder in a hidden row of a live section is reported with 【非表示】.
+Re-derive every verdict; the cells below are the calibration.
+
+**W10a — 書きかけの記号 — 中.** A placeholder left in a design cell:
+- **A cell that is only `？`/`?`** — 69 cells in 8 books, every one real; 64 are Ⅴ 桁数 (col 23) beside a
+  `XXXXXXX` 画面項目ID: `PSJCO801` `GSJC801B` `[222,23]`-`[271,23]` (31), `PSJCOA09` `GSJCA09A/C/D/F` (12), `PSJCOA06`
+  (9), `PSJCO805` (6), `PSJCO802` (4), `PSJAO202` `GXJA202B` `[130,23]`/`[139,23]`; `PSJCOB07` 機能定義書 `[38,5]`/`[38,11]`
+  `？？？` in Ⅲ; `SSJCBA06` 帳票設計書 `RSJC017/018/019` `[51,18]`. One line per sheet listing the cells.
+- **An `X`-run standing for an ID or a reference** — `画面(XXX)に遷移する` (`PSJCO805` `GSJC805A` `[162,24]`),
+  `【更新条件表(XXXXXXXX)】参照` and the untouched batch template `(2)XXXXXX`/`①XXXXX`/`1)XXXXXX`/`(XX).(XX)で取得した
+  ﾃﾞｰﾀをXXXXXXXに更新する。` (`PSJCB802`, `PSJCB807`, `PSJCBA07`, `PSJCBB05`, `PSJCBB08` 機能定義書 `[93-95]`/`[114-115]`),
+  `(XX).XXXX` / `検索時：(XX).XXXX` in Ⅴ 説明 (`PSJCO802` `GSJC802A` `[174,43]`-`[232,43]`, 15 cells), `【更新条件表(XXXXXXX)】`
+  (`PSJCO404` `GSJC404A` `[1629,24]`), `"XXXXXXXX"` as a 利用機能ID (`PSJCO607` `GSJC607A` `[137,5]`/`[157,24]`, ﾁｪｯｸ
+  `[25,59]`), `XXX-999999` in an ｴﾗｰｺｰﾄﾞ column (`PSJCOB07` ﾁｪｯｸ `[19,53]`/`[57,53]`), a table ID with `XXX` for its number in a
+  参照ｴﾝﾃｨﾃｨ cell (`TSJCDXXX:社内加工(出荷)` — `PSJCO404` `GSJC404A` `[1219,14]`, in a hidden old copy, so there it is the
+  Hidden-leftovers line, not W10a).
+- **Not findings:** the 画面項目ID column (col 54 `XXXXXXX`, 624 cells — the house placeholder for an ID not yet issued; naming step 5
+  only treats it as not-developer content, and no check reports it); the 表示形式 column
+  (col 25 `XXX`/`ZZ9`, a 桁見本); an `X`-run inside quotes in SQL (`NVL(A1.事業所ｺｰﾄﾞ,'XXXXXXXXXX')` `PSJCO504`); a
+  substitution explanation (`画面のﾀｲﾄﾙの(XXXX)になる` `PSJCO403` `[80,3]`); `ｼｽﾃﾑ共通設計書.区分名称.XXXX 参照`; a
+  帳票ｲﾒｰｼﾞ table of `XXXXXX` (`PXJCO122` `GXJC122A` `[757-779]`); `XXXXｽﾞｰﾑ(XXXXXXX)` (W7d); `xx` as a variable in
+  prose (`PSJCO308` `[1581,4]` `完了後xxで検索`).
+- **A question left in a design cell — 要確認.** A `？`-ending sentence that is not a confirm message (exclude
+  `か？`/`ですか？`/`ますか？` — 805 of the 825 `?`+Japanese hits are message texts): `PSJCOA09` `GSJCA09D` `[167,11]`
+  `親 or 空白？` is the only one on a design sheet; the other 19 sit on memo sheets (`(補足)…`, `QA188-No.2`,
+  `step1step2`, `帳票ｲﾒｰｼﾞ_…`), which are not reviewed.
+- **Not scanned:** `TBD` (0 hits), `未定` (2, both the business word `客先未定`), `PH\d で/以降` (0 in the body, 257
+  margin memos), `(導入|削除|対応|実装|検討)予定` / `保留(中|とする|にする|します|とします)` (1 each, both legitimate: `全数保留とする場合`
+  `PXJCO161` `GXJC161B` `[144,40]`; a bare `予定` matches 予定金額/予定日 ~60 times on `PSJCO404` alone — never grep it).
+  my-review-skills' 未決の記載 pattern fires only on revision memos and the business word 保留 here; if one of
+  these does appear in a design cell as a note to self (`PH3で削除予定`), it is 要確認.
+
+**W10b — 旧用語の残存 — 低.** A term the corpus's own 改訂履歴 shows renamed and that is still live in a design
+cell. One line per sheet, the fix being the new term:
+- `製品輸送中ﾃｰﾌﾞﾙ` → `製品輸送状況` — 28 cells in 17 books, all the ﾁｪｯｸ処理設計書 col 14 note 「…製品輸送中ﾃｰﾌﾞﾙにて
+  ﾃﾞｰﾀが取得…」 (`PXJCO121` `GXJC121A` `[124,14]`, `PXJCO125` `GXJC125A` `[37,14]`, `PSJCO201` `GSJC201A` `[39,14]`).
+  Evidence: `PXJCO121` 表紙 `[86,25]` 「ﾃｰﾌﾞﾙ名変更：TSJCD504_製品輸送中→製品輸送状況」, and Ⅲ names TSJCD504
+  `製品輸送状況` in all 10 books that list it. `製品輸送中ﾁｪｯｸ` (the 工程管理共通ﾙｰﾙ check name) is not this.
+- `ﾛｸﾞｲﾝ画面.<項目>` → `ﾛｸﾞｲﾝ情報.<項目>` — 16 cells in 6 books (`PXJCO101` ﾁｪｯｸ `GXJC101C` `[22,59]`, `PSJCO201`
+  `GSJC201B` `[41,59]`, `PSJCO803` `[30,59]`; `PSJAO203` 表紙 `[120,25]` 「誤記修正：ﾛｸﾞｲﾝ画面→ﾛｸﾞｲﾝ情報」); `ﾛｸﾞｲﾝ.<項目>`
+  in prose (11, `PSJAO401`/`PSJAO241` col 59 — never the ﾁｪｯｸ項目 column, col 3, where it is the house form, W10d) is the same line — `ﾛｸﾞｲﾝ情報.` is the house form in prose (2,491
+  cells). The ﾁｪｯｸ項目 column is the one exception (W10d).
+- `停止単位` → `停止区分` — 0 live (the 15 margin memos `PXJCO128` `GXJC128B` `[570-583,106]` record the fix); keep it
+  in the list, expect no hits. Other renames the 改訂履歴 record (`廃棄→破棄` `PXJCO101` `[128,25]`, `枝番手入力ﾌﾗｸﾞ→
+  枝番採番区分` `PSJCO201` `[373,25]`, `承認状態→承認区分` `PXJCB101` `[51,25]`) were not measured — report one only with
+  the 改訂履歴 line that proves the rename.
+
+**W10c — ﾕｰｻﾞｰID は 作業者ｺｰﾄﾞ — 低 (中 when it is a 検索条件 or an update value).** `ﾛｸﾞｲﾝ情報.ﾕｰｻﾞｰID` /
+`ﾛｸﾞｲﾝ.ﾕｰｻﾞｰID` as the operator's identity (evidence `PXJAO233` 表紙 `[71,27]` 「ﾛｸﾞｲﾝ情報.ﾕｰｻﾞｰID→ﾛｸﾞｲﾝ情報.作業者ｺｰﾄﾞに
+変更」): 10 cells in 9 books — 画面設計書 Ⅲ 検索条件 col 15 `PSJAO241` `GSJA241A` `[136,15]`, `PSJCO303` `GSJC303A`
+`[167,15]`, `PXJCO131` `GXJC131A` `[90,15]`, `PXJCO164` `GXJC164A` `[81,15]`, `PSJCO204` `GSJC204A` `[123,15]`, `PSJCO208`
+`GSJC208A` `[50,15]`, `PSJCO601` `GSJC601A` `[40,14]`, `PXJCO165` `GXJC165A` `[67,15]`; `PSJCO302` 機能定義書 `[73,21]`.
+**Not findings** (405 cells): `ﾕｰｻﾞｰID` as a table column or an argument — TXJAM100 更新条件表 `[26,4]`, `A.ﾕｰｻﾞｰID`
+取得項目, the ﾜｰｸﾌﾛｰ programs (`PSJAO704`/`702`/`241`), ｻﾌﾞﾌﾟﾛ 引数 (`PXJCB101` `[80,21]`), `受注残登録ﾕｰｻﾞｰID`; and the
+fallback note 「作業者ｺｰﾄﾞがNULLの場合はﾕｰｻﾞID」 (33 cells, `PSJCO201` TXJAM100 `[16,36]` — at most a 低 spelling line
+for `ﾕｰｻﾞID`). Match `ﾛｸﾞｲﾝ(情報)?\.ﾕｰｻﾞｰID` only; a bare `ﾕｰｻﾞｰID` is not scanned.
+
+**W10d — ﾁｪｯｸ処理設計書のﾁｪｯｸ項目列は「ﾛｸﾞｲﾝ.作業者ｺｰﾄﾞ」 — 低.** In the ﾁｪｯｸ項目 column (col 3) the house form is
+`ﾛｸﾞｲﾝ.作業者ｺｰﾄﾞ` (216 cells, 43 books); `ﾛｸﾞｲﾝ情報.作業者ｺｰﾄﾞ` there is the finding — `PSJCO203` `GSJC203A` `[18,3]`/
+`[75,3]`, the only two. In prose (col 14/59/86) and on every other sheet the form is the reverse (`ﾛｸﾞｲﾝ情報.`, 330
+cells in 87 books): never report `ﾛｸﾞｲﾝ情報.作業者ｺｰﾄﾞ` in a sentence.
+
+**W10e — 列見出し「ﾘｿｰｽID」 — 低.** Header rows only (the row holding `属性`/`画面項目名`/`画面項目ID` labels): a 画面設計書
+Ⅳ/Ⅴ header row whose col 54 label is `ﾘｿｰｽID` or `画面ID` instead of `画面項目ID`, or an extra `ﾘｿｰｽID` label in col 58
+beside col 54's `画面項目ID`, is a copy-source template leftover (W10 owns it; internal-consistency's leftover rules are
+about content, not labels). `画面ID` as a *value* (an argument name, a 更新ﾌﾟﾛｸﾞﾗﾑID value, `(2)画面表示件数`'s parameter —
+`PSJCO404` 更新条件表 `[21,18]`, 機能定義書 `[114,7]`, `GSJC404A` `[69,6]`) is never this
+(〔PH2-879〕): `PXJCO123` `GXJC123A` `[486,58]`/`[507,58]`/`[532,58]` — the only screen-design hits; one line per sheet.
+A 帳票設計書 Ⅱ header row reading `ﾘｿｰｽID` at col 54 (`PXJCO164` `RXJC011A` `[155,54]`…, 8 cells) is the report
+template's own heading — not this rule. 更新条件表: 0, and the Ⅵ 区分表's `ﾘｿｰｽID` (col 57) is its proper heading.
+
+**Not ported (measured, left out):** 「かつ」「または」 without brackets (call-out 画面設計書 列43/行384) — 122 cells in 25
+books, and ≥90% read one way (a value list `＝0または未入力、かつ…` 33, numbered `1)かつ3)または` 10, split across lines
+or brackets 47; designers' answer 2026-10-06 No.61). The ≈8 genuinely ambiguous ones (`PSJAO401` `GSJA401B` `[1660,3]`,
+ﾁｪｯｸ `[20,14]`/`[224,14]`, `GSJA401F` `[21,14]`/`[118,14]`; `PSJAO241` `GSJA241A` `[8,3]`, ﾁｪｯｸ `[64,14]`; `PSJAO704`
+`GSJA704B` `[395,4]`) are 要確認 only when both operators share one line outside brackets with three or more
+operands and the または does not join two values of the same item — report such a line only when you are reading
+that cell anyway.
+
 ## Reporting
 
-Group by check (W1-W8), then by sheet. Every rule here is low severity on its own unless the check
+Group by check (W1-W10), then by sheet. Every rule here is low severity on its own unless the check
 says otherwise (a duplicate/misfiled circled section that another doc cites by number is 中; a
 placeholder ID such as `XXXXXXX` is 中). When one deviation repeats across a whole sheet, report it
 once per sheet with the cells listed, as each section says — these rules fire widely and a row-by-row

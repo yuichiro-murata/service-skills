@@ -16,14 +16,14 @@ wanted two wastes a lot of time and tokens. Ask first, then run only what was se
 |---|-------|----------------|
 | 1 | `design-doc-internal-consistency` | 内部相互参照（ｲﾍﾞﾝﾄ⇔処理概要、ﾚｽﾎﾟﾝｽ/画面項目ID/ﾁｪｯｸID登録、他ｻﾌﾞｼｽﾃﾑのﾒｯｾｰｼﾞID、画面3点一致（Hidden項目のⅥ記載を含む）、排他制御）＋処理/ﾁｪｯｸ順⇔ﾎﾞﾀﾝ順、区分名称の09.区分名称突合、画面ｲﾒｰｼﾞ・《参考》画面項目遷移ｼｰﾄ⇔画面設計書、本文中の参照・※n、複製の片側修正、必須/文字種ﾁｪｯｸ⇔Ⅴ、ｻﾌﾞﾌﾟﾛ引数・遷移ﾊﾟﾗﾒｰﾀ |
 | 2 | `design-doc-io-table-check` | Ⅲ．入出力定義（CRUD一覧）の双方向網羅性 — 最重量・最高収穫のチェック |
-| 3 | `xlsx-db-column-check` | 参照ｶﾗﾑがﾃｰﾌﾞﾙﾚｲｱｳﾄに実在するか＋**画面の桁数とﾃｰﾌﾞﾙﾚｲｱｳﾄの桁数の整合**＋ｺｰﾄﾞ/名称の二重保持ｱﾝﾁﾊﾟﾀｰﾝ(名称がLabelの場合のみ指摘)＋検索条件のTXJAM100保存漏れ＋SQLの意味（NULL比較・COUNT・LEFT JOIN・存在ﾁｪｯｸ・状態ｸﾞﾙｰﾌﾟ） |
+| 3 | `xlsx-db-column-check` | 参照ｶﾗﾑがﾃｰﾌﾞﾙﾚｲｱｳﾄに実在するか＋**画面の桁数とﾃｰﾌﾞﾙﾚｲｱｳﾄの桁数の整合**＋ｺｰﾄﾞ/名称の二重保持ｱﾝﾁﾊﾟﾀｰﾝ(名称がLabelの場合のみ指摘)＋検索条件のTXJAM100保存漏れ＋SQLの意味（NULL比較・COUNT・LEFT JOIN・存在ﾁｪｯｸ・状態ｸﾞﾙｰﾌﾟ・$$除外・停止日時・1件と主ｷｰ・EXISTS・TIMESTAMP範囲・GROUP BY・ｿｰﾄ一意） |
 | 4 | `naming-standard-compliance` | 各ID採番規則・ﾍｯﾀﾞｰ情報・表紙 |
 | 5 | `update-condition-completeness` | 更新条件表の網羅性（NOT NULL/主キー/共通項目の設定漏れ、登録日時のUPDATE上書き、更新概要の書式） |
 | 6 | `report-design-check` | 帳票設計書（帳票一覧登録、Ⅱ．帳票仕様の記入漏れ、参照先ｴｲﾘｱｽ、取得項目⇔印字項目） |
 | 7 | `design-doc-formatting-consistency` | ﾌｫﾝﾄｻｲｽﾞ/ｾﾙ結合のブレ（体裁の衛生） |
 | 8 | `design-doc-typo-check` | 日本語の誤字脱字・変換ミス |
 | 9 | `file-output-spec-check` | ﾌｧｲﾙ出力仕様書（ﾌｧｲﾙID一貫性、ﾌｧｲﾙ一覧登録、Ⅱ．ﾌｧｲﾙ出力仕様の記入漏れ、共通ﾀﾞｳﾝﾛｰﾄﾞ注釈、画面項目ID番台/登録、ﾍｯﾀﾞｰ⇔明細、明細の参照先、編集方法、ﾌｧｲﾙﾚｲｱｳﾄ一致） |
-| 10 | `design-doc-writing-rules` | ｾﾙﾌﾁｪｯｸ記述ﾙｰﾙ（Ⅴ項目定義：大文字変換/ﾎﾞﾀﾝIDは共通XJZ/SJZ優先/選択□/No/TextBox桁数・文字種、項番の飛び・重複、取得件数の末行記載、ﾚｽﾎﾟﾝｽ表記、画面名＋画面ID、ｽﾞｰﾑ名・IDと台帳、他機能名とﾌｧｲﾙ名） |
+| 10 | `design-doc-writing-rules` | ｾﾙﾌﾁｪｯｸ記述ﾙｰﾙ（Ⅴ項目定義：大文字変換/ﾎﾞﾀﾝIDは共通XJZ/SJZ優先/選択□/No/TextBox桁数・文字種、項番の飛び・重複、取得件数の末行記載、ﾚｽﾎﾟﾝｽ表記、画面名＋画面ID、ｽﾞｰﾑ名・IDと台帳、他機能名とﾌｧｲﾙ名、工程管理の並び順（数量・ﾛｯﾄ・ｿｰﾄ）、書きかけ記号・旧用語・ﾕｰｻﾞｰID→作業者ｺｰﾄﾞ） |
 
 Checks 5, 6 and 9 are narrower than the rest in one specific sense: each applies only when the
 workbook has the sheets it reads. A program with no `更新条件表(*)` sheet (a pure 照会 screen), no

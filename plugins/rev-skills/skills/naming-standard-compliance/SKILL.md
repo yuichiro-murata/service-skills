@@ -154,6 +154,36 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    作成日/更新日 are not compared at all. Contradictions in 機能ID, ﾌﾟﾛｸﾞﾗﾑID or 画面ID keep the severity given
    above.
 
+   **Header IDs against the workbook itself** (my-review-skills 〔PH2-49・82・101・423・467・741・870・953〕, adopted
+   2026-10-28; measured over the 121 工程管理 books: 95 cells in 16 books). The cross-sheet diff above cannot see a
+   value copied to *every* sheet, so also compare each sheet's ﾌﾟﾛｸﾞﾗﾑID (`[3,10]`/`[3,62]`; row 4 on
+   機能定義書/更新条件表) with the PID in the workbook's file name, and the three-digit number in a
+   画面設計書/ﾁｪｯｸ処理設計書 sheet name's `(G…)` with the PID's. One finding per workbook grouped by pattern; when the cross-sheet diff above fires on the same cells (half the sheets
+   copied, half correct — `PSJCO404`), this paragraph's line absorbs it, not two findings:
+   - **中 — another program's ID**: `PSJCO404` carries `PSJCO403` (and its name `社内加工ﾃﾞｰﾀ作成(めっきIS以外)`) in `[3,10]`/`[3,62]` of 12 of its 24
+     sheets (the `NEW_…` sheets, 画面/ﾁｪｯｸ `(GSJC403C/D)`, `ﾌｧｲﾙ入出力仕様書(FSJC018)`) and names six sheets `GSJC403A-D`
+     while its `更新条件表(TSJCD400)` `[9,16]` says `①画面(GSJC404D)` — the number says which side is wrong; the sheet's
+     letter (`(GSJC403C)` holding the D screen) is `design-doc-internal-consistency`'s; `PXJCO129` `更新条件表(TSJCA006)` `[4,62]` `PXJCB101`; `PSJCO604` `ﾁｪｯｸ処理設計書(GSJC604D)`
+     `[4,10]`/`[4,62]` 画面ID `GXJA253B` (copied from PXJAO253); a typo of the own ID (`PSJC207` on `PSJCO207`'s
+     画面/ﾁｪｯｸ `[3,10]`/`[3,62]`); `#REF!` (`PSJCO606` `ﾁｪｯｸ処理設計書(GSJC606A)` `[3,10]`/`[3,62]`/`[4,10]`/`[4,62]`, the
+     names `[3,15]`/`[4,15]` too).
+   - **低 — the wrong kind of ID under the label** (row/label drift): the 機能ID `SJC060` under ﾌﾟﾛｸﾞﾗﾑID (`PSJCO602`
+     six 更新条件表 `[3,62]`, `SSJCB605` `[3,10]`/`[3,62]`, `PSJCO803` `FSJC080` `SJC080`, `PSJCO403` `FSJC018-020` `[3,62]`
+     `SJC040`), the table ID (`PSJAO704` twelve 更新条件表 `[4,10]`/`[4,62]`), a screen ID (`PSJCO206` `[4,62]` `GSJC206A`).
+   - **低 — a 更新条件表 更新概要 `①画面(<ID>)` naming a screen or file the workbook has no sheet for** (a copy-source
+     leftover; 8 cells). Not this bullet: an ID whose number *is* the PID's (`GSJC404D` above — evidence for the 中 line,
+     the sheet name being wrong), and an ID of the wrong shape (`GSJCO404B`, 9 characters, `PSJCO404` `更新条件表(TSJCD401)`
+     `[41,16]`/`[44,16]` — step 3's malformed-ID finding). Examples: `PXJCO125` `TSJCD101`/`TSJCD014`/`TXJAM068` `[9,16]` (`[71,16]`) `GSJC201B`, `PSJAO401` `TSJAA025`
+     `[52,16]` `GSJA241B,GSJA241F`, `PSJCO403` `TSJCD401` `[9,16]` `FSJC025`. `update-condition-completeness` C9 checks
+     the 更新概要's shape, not this.
+   - **Not findings:** a ﾌｧｲﾙ出力仕様書's ﾌﾟﾛｸﾞﾗﾑID that is the sub-system's ID rather than the program's (my-review-skills
+     excludes it too); a PID missing from the 機能一覧 registry is step 6's 未登録 line, not this paragraph's; other programs'
+     G/F IDs in the body (679 cells in 71 books) — 遷移/起動/参照 (322), ﾜｰｸﾌﾛｰ screen IDs set as values in 更新条件表
+     (`"GSJA704B"`, ~60), `①GSJA702A_ﾀﾞｳﾝﾛｰﾄﾞ` (15 books), TXJAM100 keys (0 foreign); `PSJAO502`'s `GSJA501DE` (a
+     sheet serving two screens — 要確認 at most).
+   - **ｼｽﾃﾑ名**: the 表紙 `[6,6]` and every header ｼｽﾃﾑ名 (`[2,34]`/`[2,86]`) read `【UNICORN】川内生産管理ｼｽﾃﾑ再開発（工程管理）`
+     in 121 of 121 books (2,528 header cells; call-out 表紙 列47/行1 「再開発」). Any other value is one 低 line.
+
 5. **表紙's "Ⅱ．設計書構成" list vs the sheets actually present** (checklist item near 2-1) — run
    this as a **standard, always-on check**, not an optional one: compare every row's **Customer** marker (`●`/`-`) against whether a matching sheet genuinely
    exists in the workbook *and has real content* (not just an empty template), and every row's
