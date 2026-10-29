@@ -1,6 +1,8 @@
 ---
 name: design-doc-internal-consistency
-description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency: events vs the processing overview, response/screen-item/message IDs registered (and no other subsystem's message IDs), Ⅳ message text vs its ID, layout/Ⅴ/Ⅵ agreeing (Hidden items in Ⅵ, item order, ○/〇, yyyy/MM/dd), exclusive control, process/check order vs buttons, 区分名称 and in-text references resolving, pasted pictures and the 画面ｲﾒｰｼﾞ/《参考》画面項目遷移 sheets vs the design, copies edited on one side only, 必須/文字種 checks vs Ⅴ, and sub-program/transition parameters vs the callee. Not the Ⅲ．入出力定義 check nor the self-check writing rules. Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書 or whether it is internally consistent; for a full REV the entry point is `rev-program-review`.
+description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency: events vs the processing overview, response/screen-item/message IDs registered (and no other subsystem's message IDs), Ⅳ message text vs its ID, layout/Ⅴ/Ⅵ agreeing (Hidden items in Ⅵ, item order, ○/〇, yyyy/MM/dd), exclusive control, process/check order vs buttons, 区分名称 and in-text references resolving, pasted pictures and the 画面ｲﾒｰｼﾞ/《参考》画面項目遷移 sheets vs the design, copies edited on one side only, 必須/文字種 checks vs Ⅴ, sub-program/transition parameters vs the callee (including arguments the callee never uses, empty values for
+mandatory arguments, and decisions made on both sides), calls to and data shared with the XJC_ｼｽﾃﾑ共通設計書 common
+processes, per-区分 control tables vs the 更新条件表, and Ⅴ's per-event value lines vs Ⅳ's events. Not the Ⅲ．入出力定義 check nor the self-check writing rules. Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書 or whether it is internally consistent; for a full REV the entry point is `rev-program-review`.
 ---
 
 # design-doc-internal-consistency
@@ -969,8 +971,73 @@ PHASE1-3 books — confirm each in the dump before reporting.
         out (2)呼出→(3)戻り値, (4)→(5), (6)→(7)戻り値 `[258]`-`[262]`; not a fixed row window), the caller must receive the callee's 戻り値 (ErrList at least) and say what happens: error →
         stop/rollback/display, Url → how it is opened (`[261,21]` 「ﾀﾞｳﾝﾛｰﾄﾞURL 又は URLｽｷｰﾏの文字列を取得する」 with only the error case after it at
         `[262]` is 要確認; also A-⑥ 再印刷 `[363]`/`[364]`), ResultList/KanriNo → where it is used;
+        a caller that collects every call's 戻り値 in one later step (`PXJCO123` ⑧ `[391]`-`[416]` for SXJCB123 and SXJCB141)
+        has received them — look there before calling one missing;
       - **a callee definition without 引数名 — 要確認 on the callee** (`SXJCB178` `[47]`-`[62]` is `項目|説明|省略時`, so its 13
-        callers' `NyuryokuShubetsu`…`KoteiCd` cannot be verified); also confirm that the callee body still uses each argument.
+        callers' `NyuryokuShubetsu`…`KoteiCd` cannot be verified);
+      - **an argument the callee body never uses — 要確認 on the callee** (my-review-skills 「呼び出し先で処理を削除したのに
+        引数だけ渡していないか」; adopted 2026-10-29, validated on `SXJCB123`/`PXJCO123`). A callee body refers to an argument as
+        `Y.<名前>` (its Ⅳ 参照ｴﾝﾃｨﾃｨ row `Y | 引数`), `引数.<名前>`, `ﾌﾟﾛｸﾞﾗﾑ引数.<名前>` (`SXJCB123` `[128,4]`/`[136,4]` — the only
+        use of ﾛｯﾄｶｰﾄﾞ流用区分), `①.<名前>` / `① | <名前>` in a 更新条件表 (the circled number the 更新概要 assigns to ﾌﾟﾛｸﾞﾗﾑ引数 —
+        `SXJCB121` `更新条件表(TXJCM006)` `[26,74]`, `[263,16]`; also `①(代表統合元).X` and `①.X(隠し項目)`), the ﾁｪｯｸ項目 column of
+        its 【引数ﾁｪｯｸ】 (col 3; find the block by its heading, which sits in col 3 on `SXJCB123` `[9,3]`), or `取得元=引数 | <項目>`
+        in a 帳票設計書 (`SXJCB147` `帳票設計書(RSJC033)` `[786]`) — never by the English 引数名 (0 occurrences in the bodies). A
+        same-named item taken from a DB block (`②.品目ｺｰﾄﾞ`, `④.X`) is not a use. **Match the whole name**, `(1-N)` included —
+        `SXJCB123` defines both 管理No and 管理No(1-N), 製造ﾛｯﾄNo and 製造ﾛｯﾄNo(1-N), and its body tells them apart
+        (`①.管理No(1-N)`); a substring match makes 製造ﾛｯﾄNo look used through 統合後製造ﾛｯﾄNo. Normalise only the spelling: read
+        `仕掛数(個数)` as `(個数)仕掛数` (`SXJCB123` `ﾁｪｯｸ処理設計書(SXJCB123)` `[22]`), `～` as `-`, and accept `Y.加工手順ｺｰﾄﾞ` for
+        `加工手順ｺｰﾄﾞ(確認用)` (`SXJCB141` `帳票設計書(RXJC029_確認用)` `[32,28]`). A use only in a struck row does not count
+        (`SXJCB123` 統合後管理No `[93]`, whose one use `更新条件表(TSJCD302)` `[13,74]` `ﾊﾟﾗﾒｰﾀ⑤.X` is struck — and as 省略時 NULL
+        it is check 16 d's 低 「only referrer struck」, not this). Skip 共通 arguments that carry the call's context (機能ID,
+        ﾌﾟﾛｸﾞﾗﾑID, 画面ID, 会社ｺｰﾄﾞ, 部門GRP, 事業部ｺｰﾄﾞ, 言語, 作業者ｺｰﾄﾞ), list parent rows, and the 詳細設計書 (not in the live
+        dump). Report an unused argument whose 省略時 is **不可**, once on the callee, listing every caller's cell: `SXJCB123` `[67]`
+        取数, `[68]` 品目ｺｰﾄﾞ, `[69]` ﾃｰﾌﾟﾛｯﾄNo, `[71]` 製造ﾛｯﾄNo, `[73]` 移動ﾛｯﾄ状態, `[82]` 統合残個数, `[95]` 実績出力範囲, `[96]`
+        ﾛｯﾄｶｰﾄﾞ出力範囲, `[98]` 仕掛取数, `[110]` 残数(個数)(1-N) — passed by `PXJCO123` `[223]`-`[266]` and `PXJCO152` `[209]`-`[252]`
+        (`[83]`-`[85]` and `[93]` are 省略時 NULL: not reported); `SXJCB141` `[124]` 処置工程出力区分, passed by `PXJCO124`
+        `[187,21]`, `PSJAO401` `[176,21]`, `PXJCO161` `[881,23]`, `PXJCO123` `[379,21]`/`[451,21]`. When one caller table feeds two
+        callees (`PXJCO123` `[379]`/`[451]` serve SXJCB141 and SXJCB147, and SXJCB147 does use its copy, `RSJC033` `[128]`), never
+        suggest dropping the argument. Measured 2026-10-29 on 74 call tables / 10 callees: 353 callee arguments, 263 referenced,
+        90 not — 23 共通, 8 list parents, 39 matched by name only (read them), 5 whose only hits were outside the live body, 15
+        never. When reviewing a **caller**, add one 低 sentence to the line for that call (「渡している <引数> は呼び出し先で
+        使われていない」) rather than a finding of its own — it needs the callee's body, so do it only when check 18 already
+        opened that callee;
+      - **a value that can be empty passed to a 省略時 不可 / 必須ﾁｪｯｸ argument — 要確認** (「値が空になる場合、呼び出し先の
+        省略不可・必須ﾁｪｯｸに当たらないか」). Resolve each 設定値 `画面.X` / `G1).X` to its Ⅴ row (find 必須 and 初期値 by the
+        header labels — col 34/36 on `GXJC123A`, 33/35 on `GXJC152A`; drop `※n` from the Ⅴ name; when two rows share the name,
+        take the input (TextBox/ComboBox) over the Label — `GXJC152A` 備考 `[655]` Label, `[694]` TextBox; when no row has the name,
+        say so, 低 — `PXJCO123` `[251,21]` 「画面.実績出力範囲」 where Ⅴ has 実績出力区分 `[612]`). It can be empty when the item is an
+        input whose 必須 is blank or `-` and whose 初期値 is 空白 or `-`, a literal `-`/空白/NULL, a `※n` reading 「…に入力有の場合
+        …から取得」, or an item a `※n` clears (`GXJC123A` ※9 `[662]`-`[666]` sets Labels to 空白). Not empty: ﾛｸﾞｲﾝ情報, literals, a
+        ComboBox/Radio with a 初期値 (`PSJCO501` `[163,21]` 発行枚数 ← `画面設計書(GSJC501B)` `[919]` ※1); LEFT-joined aliases never
+        appear in these tables (0 of 2,063 rows). Then read the callee's requirement — its 省略時 (with any `※n`) **and** its
+        【引数ﾁｪｯｸ】 — against the caller's own ﾁｪｯｸ処理設計書: the call is fine when the caller blocks the empty case under the
+        same condition the callee's check uses (`PXJCO123` `[230,21]` 統合前個数 and 統合個数: `ﾁｪｯｸ処理設計書(GXJC123A)` `[55]` and
+        `SXJCB123`'s ﾁｪｯｸ `[16]` both say 「数量単位が個数の時」; `PSJCO201` `[185,21]` 製造ｵｰﾀﾞｰNo `-` with `SXJCB178` `[57]` ※2 / ﾁｪｯｸ `[13]`
+        「入力種別:2の時」 and `[183,21]` passing "1"). Report what nothing covers: `PXJCO123` `[244,21]` and `PXJCO152` `[230,21]`
+        画面.備考 (TextBox, 必須 `-`, 初期値 空白) → `SXJCB123` `[88]` 不可 with no check at all — once on the callee, suggesting
+        省略時 NULL. Separately, once on the callee (要確認): a 省略時 不可 whose own 【引数ﾁｪｯｸ】 is conditional or unconditional
+        the other way (`SXJCB123` `[74]`/`[78]`/`[108]`/`[109]` 不可 vs conditional checks `[16]`/`[37]`/`[22]`-`[25]`/`[33]`; `SXJCB122`
+        `[73]`-`[85]` ※1 全層時のみ vs unconditional `[29]`-`[36]`) — the definition contradicts itself even when every caller is
+        fine. Measured: 2,063 設定値 rows, 77 risky combinations — 28 (SXJCB122 層情報 `-`) and 12 (SXJCB178 製造ｵｰﾀﾞｰNo `-`)
+        resolve by the condition, 3 are list parents, 30 have a same-name 必須ﾁｪｯｸ on the caller side;
+      - **a decision the caller makes that the callee decides again — reading guideline** (「呼び出し元が自分で書いている判定
+        が、呼び出し先の本文の判定と同じか」). Decision-carrying 設定値 cells have `※n` beside the value, 「ﾒﾆｭｰﾊﾟﾗﾒｰﾀ="1"
+        (前工程)の場合：…」, 「画面.前後区分="1"の場合："0"…」, 「ﾁｪｯｸなしの場合"0"」, or `共通項目取得.共通ｺｰﾄﾞ(…,※n,…)` (92 cells
+        in 2026-10, 24 on 区分/ID/ﾓｰﾄﾞ arguments). Follow each into the callee: (a) a callee branch on the caller's ID
+        (`Y.ﾌﾟﾛｸﾞﾗﾑID="…"` / `①.ﾌﾟﾛｸﾞﾗﾑID="…"`) — check both that the named caller passes it and what happens for the **other**
+        callers: `SXJCB123` `更新条件表(TXJCM006)` `[98,18]`/`[98,36]` use 統合後保留区分 only when ﾌﾟﾛｸﾞﾗﾑID="PXJCO152", so
+        `PXJCO123`'s screen choice `[260,21]` (ComboBox `[602]`) is silently ignored — 要確認 on the caller (5 such literals in
+        2026-10, all passed by their named caller); (b) a caller encoding the decision in an ID the callee looks up —
+        `PSJAO401` `[163,21]`/`[189,5]` "GSJA401B_F", `PSJCO201` `[405,21]` "GSJC201B_S", `PXJCO161` `[919,23]` "GXJC161B_S" steer
+        `SXJCB141` `[138]`/`[152,30]` (共通ｺｰﾄﾞ ｷｰ3 = Y.画面ID) although `[110]` defines 画面ID as 呼出し元画面.画面ID — 要確認 on
+        the callee: the pseudo-ID contract is undocumented. This differs from check 19's 「caller-only switch」 not-finding: there
+        the caller reads a 共通ｺｰﾄﾞ for itself (`PSJCO504`; also `PXJCO123` `[386,21]`), here the callee reads it with a value only
+        some callers invent; (c) code values agree — `PXJCO122` `[79,21]` 全層区分 "0"/"1" vs `SXJCB122` `(TXJCM007)` `[49]` fine,
+        while the same walk found `SXJCB141` `[219]`-`[226]` 確認用 "1"/"2" against its own `[138]` "2"/"3" — 中 on the callee. A
+        callee that compares a label instead of a code (`SXJCB123` `[128,4]` 「="流用しない"」 while `PXJCO152` `[236,21]` passes
+        "1") is 要確認: the value cannot match as written. A caller rule the callee does not re-check (`PXJCO122` `[219,21]`
+        検査表発行区分 by 前後区分 vs `SXJCB141` `[198]`/`[200]`) is not a finding; values defined only in `XJC_ｼｽﾃﾑ共通設計書`
+        区分名称 (`PXJCO124` `[185,21]` ﾛｯﾄｶｰﾄﾞ出力範囲 vs `SXJCB141` `[122]`) get the 未確認 line.
       Out of scope: `PSJAO702` (【共通】ﾀﾞｳﾝﾛｰﾄﾞ) argument tables (71 of 150) — `file-output-spec-check` owns them. A table
       `…|引数名|…` under a 「戻り値」 heading is the caller's return-value table, not a call (`PXJCO165` `[109]`). Confirmed on
       validation: `PXJCO124` `[106,14]` `MotoEdaBan` vs `SSJCB211` `[70]` `MotoEdaban` — the caller's own return table `[134,14]`
@@ -992,6 +1059,202 @@ PHASE1-3 books — confirm each in the dump before reporting.
     2026-10-17: 75 sub-program call tables compared (6 case/spelling, 9 rename/extra/missing-mandatory, 5 empty-mandatory,
     5 return-value candidates of which 2 were handled later), 10 explicit transition lists (2 passed-not-defined, 2 order,
     1 wording).
+
+19. **XJC_ｼｽﾃﾑ共通設計書 の共通処理との照合** (my-review-skills 「共通処理との照合」; adopted 2026-10-29, measured the same
+    day on the 121 工程管理 PHASE1-3 books; validated on `PXJCO128` and `PSJCO201`). The eight common processes of
+    `01_Doc\08_機能定義書\11_工程管理\XJC_ｼｽﾃﾑ共通設計書.xlsx` — 前後工程設定 (SXJCB902), 着手完了判断 (903), 加工期限ﾁｪｯｸ (909),
+    ﾛｯﾄ停止ﾁｪｯｸ (907), QA判定 (908), 実績表項目設定 (911), 個数計算 (905), 製造ﾛｯﾄNo自動採番 (912, with its four
+    `ﾁｪｯｸ処理設計書(製造ﾛｯﾄNo自動採番_*)` sheets) — are the callee. The program under review always gets the finding: never
+    XJC_ itself (it is a reference file), and never a 共通ｺｰﾄﾞﾏｽﾀ key a process looks up by program ID (master data, not in
+    the docs — a condition that depends on such a key, e.g. 製造ﾛｯﾄNo自動採番's ﾁｪｯｸﾊﾟﾀｰﾝ `[122]`, is read from the process's
+    own usage notes (`[140,40]` 「ﾛｯﾄｶｰﾄﾞ発行=全ﾁｪｯｸ」) or left 未確認).
+    - **Which processes to read — the relation index.** Your prompt names it (built by the orchestrator with
+      `python _shared/scripts/build_relation_index.py <...\01_Doc\08_機能定義書\11_工程管理> <out.json>`, ~140 s, `--check`
+      for freshness; standalone, build it yourself). Read `programs[<PID>]` only; **no relation → skip this check** (77 of
+      121 books). Use only `calls` whose `state` is `visible`: a hit on a hidden sheet (`×ﾁｪｯｸ処理設計書`/`×画面設計書` — 18 on
+      `PSJCO201`) belongs to the leftover-sheet line (`agent-guide.md`), not to this check. A program relates by **呼び出し**
+      when a live cell holds 共通設計 and the process name, in 「」 or after `.` (`kind` `A`) or bare (`A'`), the 利用一覧 旧名称
+      「ﾛｯﾄ停止」 with 共通設計 (`A2` — the sheet is now `ﾛｯﾄ停止ﾁｪｯｸ`; 9 books), `(<name>)` (`B`), or a message code only that
+      process defines (`kind` `E <code>` — `XJC-100037` for ﾛｯﾄ停止ﾁｪｯｸ, `SJC-000107/108/117` and `SJC-1000xx` for
+      製造ﾛｯﾄNo自動採番, the 実績表項目設定 codes; the `XJZ-` system messages are excluded). The IDs `SXJCB90x` are never written
+      in a body (0 hits); a bare name without 共通設計 (`D`, 558 cells) is not a relation, though it helps find the screen
+      event that receives a return value. It relates by **データ** when one of its `更新条件表(<ID>)` tables is named by exactly
+      one process (`data`; 22 such tables — TXJCM501/TSJAM801 → ﾛｯﾄ停止ﾁｪｯｸ, TXJCD204… → QA判定, TXJCD404/407, TXJCA404/407,
+      TXJCV404/407, TXJAM063-067 → 実績表項目設定, TXJCM004/TSJCM005 → 製造ﾛｯﾄNo自動採番, TXJAM026 → 加工期限ﾁｪｯｸ); tables
+      named by two or more processes (TXJCM006 — 29 writers —, TXJCM007, TXJCM008, TXJCM003, TXJCD318, TXJCD104, TXJAM008 …,
+      `data_shared`) are not a relation. 44 books relate (20 to one process, 10 to two, 8 to three, 6 to four or more —
+      `PXJCO161`, `PSJCO308` to six). `共通機能利用一覧` is a hidden sheet keyed by JAGUR-era program names — the index uses it
+      only for the 旧名称 alias. `callers_listed` holds each process's 呼出元 program IDs and `※呼出なし`, not the events — read
+      the timing from the process sheet.
+    - **Where to read in XJC_.** Every process sheet: `[4,10]` own ID; Ⅰ-1 目的 and **呼出元** list (program ID col 5, name
+      col 10, timing col 20 — `[画面ID]イベント`; `製造ﾛｯﾄNo自動採番` `[14]`-`[47]` per 処理区分 "1"/"2"/"3" with the 設定先 and
+      `※呼出なし` in col 10; a row with a 「削除」 margin memo but live text — `ﾛｯﾄ停止ﾁｪｯｸ` `[123]` PXJCO902 — is still listed);
+      Ⅰ-2 **引数** and **戻り値** tables. **Find every column by its header label, never by number** — they differ per process:
+      ﾊﾟﾗﾒｰﾀ col 7 everywhere, but 内容/値 are col 17/38 on most sheets and col 15/27 on 製造ﾛｯﾄNo自動採番 (whose per-処理区分
+      ○/※n sit in cols 37/42/47, `[56]`-`[70]`); ﾛｯﾄ停止ﾁｪｯｸ heads the text 説明; the omission column is 省略可否 on QA判定 and
+      省略時 (不可/空白) on 実績表項目設定. Ⅱ data blocks follow a 画面設計書 Ⅲ (参照ｴﾝﾃｨﾃｨ col 12/14, 検索条件 left col 6,
+      operator col 24, right col 28, OR/brackets col 46, ※ col 48) with exceptions — 製造ﾛｯﾄNo自動採番's nested blocks
+      (`[341]`-`[345]`) use col 11/29/33, 実績表項目設定's 参照ｴﾝﾃｨﾃｨ col 13/15. Judgments are prose in col 7 followed by a
+      return-value table (`加工期限ﾁｪｯｸ` `[381,7]`). The 製造ﾛｯﾄNo自動採番 checks live on the `ﾁｪｯｸ処理設計書(製造ﾛｯﾄNo自動採番_*)`
+      sheets in the program-side column layout (message code col 53), and `補足)製造ﾛｯﾄNo自動採番_呼出元動作` describes the
+      caller's side. Dump just the sheets you need with `live_dump.py <XJC_> <out> --sheets "^<process>"`.
+    - **a. 呼び出し — the call against Ⅰ-1/Ⅰ-2.** (1) **Timing:** the caller's event is one the 呼出元 list gives for this
+      program. A program the list marks `※呼出なし` that calls — 要確認 (`PXJCO124` `ﾁｪｯｸ処理設計書(GXJC124A)` `[107,59]`/`[151,59]`
+      vs XJC_ `製造ﾛｯﾄNo自動採番` `[30,5]`/`[31,10]`); a caller absent from the list — one 要確認 line on the program, never per cell
+      (着手完了判断 lists only PXJCO161 while `PSJCO307`/`PSJCO308` call it; 実績表項目設定 omits PSJCO306-309; 前後工程設定 omits
+      PSJCO204/SXJCB121; QA判定 omits PSJCO205/PXJCO123/PXJCO904). (2) **Arguments:** split the caller's 「・<name>：<value>」
+      lines (ﾁｪｯｸ処理設計書 col 59 under 「XJC_ｼｽﾃﾑ共通設計書「…」の引数」, or a `以下ﾊﾟﾗﾒｰﾀを引数とする` block) and match names to
+      the process's ﾊﾟﾗﾒｰﾀ column, with check 18 (ii)'s severities: a name the process does not define (a rename included) —
+      中 (`PSJCO201` `[164,59]` 「前管理No」 vs XJC_ `[65,7]` 「前工程管理No」 — its five sibling call cells `[62]`/`[65]`/`[103]`/
+      `[106]`/`[161]` use the right name; the row's margin memo `[165,151]` NCRN-9763 「引数名を変更」 makes it also a check 16
+      case — report it once, here); order 低 (`[164,59]` puts 行番号 before 処置指示前管理No, XJC_ `[68,7]`/`[69,7]` the reverse);
+      a required argument passed as 「-」 — 中, reading a `※n` condition on the requirement first (製造ﾛｯﾄNo自動採番 ※2
+      前工程管理No 「ﾁｪｯｸﾊﾟﾀｰﾝ="1"の場合のみ必須」: `PSJCO201`'s 前工程 calls `[62]`/`[103]`/`[161]` pass 「-」 and a 前工程 lot
+      has no previous lot — fine), as check 18 (ii) does with 省略時 `※n`. The value sources (`ﾛｸﾞｲﾝ情報.`, `画面.G1.…(後)`,
+      fixed `"000"`/`"0000"`) are read for sense, not scanned. (3) **Return values:** within the same event the caller says
+      what it does with the return values it **relies on** — not every one the process defines (ﾛｯﾄ停止ﾁｪｯｸ returns five and
+      callers use only ｴﾗｰﾒｯｾｰｼﾞ; that is fine): 製造ﾛｯﾄNo自動採番's 製造ﾛｯﾄNo is set somewhere (`PSJCO201` `画面設計書(GSJC201A)`
+      `[705,24]`-`[707,24]` 「採番後の製造ﾛｯﾄNoをG2/G3.製造ﾛｯﾄNoにｾｯﾄ」), its ｴﾗｰ and 警告 outcomes (2-1 `[960]`, 2-2 `[974]`-`[976]`
+      — not in the 戻り値 table `[79]`) both have a row; ﾛｯﾄ停止ﾁｪｯｸ's 「戻り値「ｴﾗｰﾒｯｾｰｼﾞ」に値が設定されている場合ｴﾗｰ」 is
+      written. Missing — 要確認. Caller-side duties the process states: 製造ﾛｯﾄNo自動採番 `[966]`-`[969]` ※4/※5 (項目・行番号 set
+      by the caller). ﾛｯﾄ停止ﾁｪｯｸ `[983]`-`[985]` ※1 asks the caller's ﾁｪｯｸ項目 to name the field to highlight; most callers
+      write a heading such as 「ﾛｯﾄ停止(前工程)」 (`PSJCO201` `[32,3]`/`[58,3]`/`[59,3]`; about 12 of the 55 corpus rows name
+      管理No/製造ｵｰﾀﾞｰNo) — report only a row that uses two lot fields with nothing saying which to highlight, as 低, once per
+      book. (4) **Duplicated checks:** a message code of the process in the caller's own ﾁｪｯｸ row whose row text does not
+      name 共通設計 — 要確認, the same message may appear twice (`PSJCO203` `ﾁｪｯｸ処理設計書(GSJC203A)` `[62,53]`/`[63,53]` reuse
+      `SJC-100025` of `ﾁｪｯｸ処理設計書(製造ﾛｯﾄNo自動採番_SMD)` `[38,53]`/`[42,53]`/`[49,53]` for its own 8桁目 L/R check); a
+      process's code used for something else — 中 (`PSJCO206` `画面設計書(GSJC206A)` `[130,13]`, `[137,13]`, `[178,13]`,
+      `[184,13]`, `[190,13]`, `[196,13]` use `XJC-100037` — XJC_ `[980,8]`, the ﾛｯﾄ停止 error — as a log-line format; only the
+      `E` relation finds it). The 19 books citing `XJC-100037` in a ﾛｯﾄ停止 row are fine: every such row names 共通設計.
+    - **b. データ — what the program writes against what the process's 検索条件 expects.** First compare operations: the
+      process's own Ⅰ-3/Ⅰ-4 入出力定義 says how it uses the table (実績表項目設定 `[58]`-`[72]` has CRUD — TXJCA404 is C only
+      there); when the program only DELETEs rows, INSERTs history, or UPDATEs counts the process never reads, there is
+      nothing to compare — one line 「データ関係あり、照合対象なし」 at most (`PSJCO201`'s TXJCA404/TXJCD404/TXJCM004). Otherwise
+      read the process blocks that name the table against the program's `更新条件表(<ID>)` value column and ※ notes: 区分
+      constants (`PXJCO128` 停止区分 "1"-"9","A"-"D" written at `更新条件表(TXJCM501)` `[27,18]` with names `画面設計書(GXJC128B)`
+      `[521,26]` = XJC_ `ﾛｯﾄ停止ﾁｪｯｸ` "1" `[269,28]` … "A" `[706,28]`, "B" `[748]`/`[775]`, "C" `[820]`, "D" `[892]`; 即停止ﾌﾗｸﾞ `[50,2]` =
+      `[274,28]`/`[275,28]`); the NULL-vs-空白 convention the process relies on (`(A.層No = Y.層No OR A.層No IS NULL)` `[267]`/`[268]`
+      needs NULL — `[84,2]` ※3 「セット時のみ更新」 gives it; `COALESCE(A.処置指示No2/3,"0")` `[660,6]`-`[662,6]` and
+      `A.処置指示No2 = B.処置指示No` `[708]`-`[710]` need NULL for an empty 処置指示No2/3, while `[36,18]`/`[37,18]` say only ※2
+      ○ and Ⅴ's 初期値 is 空白 (`GXJC128B` `[526,36]`/`[528,36]`) — 要確認); the join key (汎用工程GRP 利用機能ID `"PXJCO128"` XJC_
+      `[280,28]` = `画面設計書(GXJC128C)` `[241,28]`); and that every column the process reads is written (QA判定 `[100,18]`-
+      `[105,18]` ↔ `SXJCB122` `更新条件表(TXJCD204)` `[28]`-`[31]` — all carried; `[29,18]` 「②.判定結果」 names a column TXJCD204
+      does not have, 低 — `xlsx-db-column-check`'s if it is in the run). **Re-implemented judgments:** wherever the program
+      repeats the process's selection — every such block, e.g. `PXJCO128` 「停止対象ﾛｯﾄ一覧」 `画面設計書(GXJC128C)` `[102]`-
+      `[124]` **and** (5)対象ﾛｯﾄ数取得 `画面設計書(GXJC128B)` `[300]`-`[340]` — align condition by condition: =/LIKE per 停止区分
+      (`[112,24]` 製造ﾛｯﾄNo LIKE = XJC_ `[454,24]`/`[822,24]`; the ※8/※9 notes `[176,4]`/`[178,4]` belong to KC品名 `[105,24]` and
+      品目ｺｰﾄﾞ `[107,24]` only), which side carries COALESCE (`GXJC128C` `[115,6]`-`[117,6]` and `GXJC128B` `[327,6]`-`[329,6]` put it
+      on the lot, XJC_ `[660,6]`-`[662,6]` on the stop record — for a lot whose 処置指示No is NULL the two disagree: 要確認, both
+      blocks in one line), AND vs OR where a check makes them equal (停止工程/停止工程GRP AND in `GXJC128C` `[123]`/`[124]` vs OR
+      in XJC_, but `ﾁｪｯｸ処理設計書(GXJC128B)` `[52,14]` forbids both — skip), date vs datetime (解除日 <= ｼｽﾃﾑ日付
+      `ﾁｪｯｸ処理設計書(GXJC128A)` `[55,59]` vs 解除日 > ｼｽﾃﾑ日時 `[273]` — equal, skip). Quote both cells in every finding.
+    - **Not findings:** a caller-only switch the process does not know (`PSJCO504` 共通ｺｰﾄﾞ SJC/23/"GSJC504A" `[96]`-`[109]`);
+      a caller-owned check the process only mentions as 「既存機能仕様変更」 (`PSJCO201` `[100,53]` SJC-000120 vs
+      `補足)製造ﾛｯﾄNo自動採番_概要` `[73,10]`); a pointer to the 旧名称 「ﾛｯﾄ停止」ｼｰﾄ (check 12's, 低, once per book); the
+      typo 「ﾛｸﾞｲﾝ情報.事業府ｺｰﾄﾞ」 in a call (`PSJCO201` `[62,59]`… — `design-doc-typo-check`'s); a 共通ｺｰﾄﾞﾏｽﾀ key by
+      program ID; tables in `data_shared`; return values the caller does not rely on. Validated 2026-10-29: `PXJCO128` 3
+      要確認 (処置指示No2/3 NULL, COALESCE side in GXJC128C and GXJC128B), `PSJCO201` 1 中 (rename) + 1 低 (order), `PSJCO504` 0.
+      Cost: a 呼び出し reads one 引数表 (≤ 15 rows) and one event block (~10 min on PSJCO201); a データ comparison reads every
+      block naming the table (ﾛｯﾄ停止ﾁｪｯｸ has 14 for TXJCM501, ~30 min on PXJCO128).
+
+Checks 20 and 21 come from my-review-skills' 「シート間の突き合わせ」 table (rows 「画面 区分別制御表 ↔ 更新条件表の区分別
+更新表」 and 「画面設計書 Ⅴ の初期値・説明に書いた「○○時:値」 ↔ 画面設計書 Ⅳ のそのｲﾍﾞﾝﾄ」, 〔汎用〕 and the 20261012
+PXJCO124 baseline comparison); adopted 2026-10-29, measured the same day on the 121 工程管理 PHASE1-3 books (210 画面設計書
+and 610 更新条件表 sheets, live text). Re-derive every verdict; the cells are the calibration.
+
+20. **Per-区分 control tables — Ⅵ ※n ↔ Ⅴ 必須 note ↔ 更新条件表 ※n — reading guideline.** Some screens switch their
+    inputs by a 区分 value and write it as a table: a `※n` note in Ⅵ whose columns are the 区分 values and whose cells
+    are ○/× per item (`PXJCO128` `GXJC128B` `[655,3]` 停止区分, header `[657]` and its continuation strip `[679]`;
+    `PSJCO304` `GSJC304B` `[513,12]` 引当区分, `[514]`/`[534]`), a Ⅴ note listing which items are 必須 for each value
+    (`GXJC128B` `[570,3]`-`[584,3]` — the last value's list wraps onto `[584]`), and a `※n` table in the 更新条件表 with the
+    same columns saying which columns are written (`PXJCO128` `更新条件表(TXJCM501)` `[56,2]`, legend `[57,2]` 「○：更新する
+    ×：更新しない(INSERTの場合、×は設定しない)」; `PSJCO304` `更新条件表(TXJCM406)` `[147,2]`, where No. sits in col 4 and
+    項目名 in col 6 — find the columns by their labels). Read the three as a chain: an item 必須 for a value is ○ in Ⅵ for
+    that value, and an input ○ in Ⅵ is ○ in the 更新条件表 (× there means not set / NULL by its own legend). A cell that
+    breaks the chain is 中, naming both cells. **Lining up the 区分 columns:** the Ⅴ note writes the value with its code
+    (`"1":KC品名`) while the two tables write the name only, and names can repeat (9 and A both read 品目ｺｰﾄﾞ+処置指示No once
+    `(※…)` is dropped); the tables split at different places (Ⅵ 10+3 columns, 更新条件表 7+6). Join each table's strips in
+    order first and pair columns by position in that joined order, using the names only to confirm; the code in the Ⅴ note
+    is that position. Not findings: an item ○ in both tables but absent from the 必須 note (層No, 処置指示No2/3 on `GXJC128B`
+    — optional inputs); ｽﾞｰﾑ buttons and name Labels that appear only in Ⅵ. Measured: only these 2 books carry the table
+    on both sides — 143 + 121 shared cells, 0 disagreements — so this is read, not scanned; 17 更新条件表 sheets in 6 books
+    write the same rule as prose (`PSJAO241` `更新条件表(TXJAM002)` `[292,16]`, `SXJCB122` `更新条件表(TXJCM006)` `[26,18]`) —
+    compare those by reading when the screen has a table. **Overlap with check 5:** check 5's 「Ⅵ usage conditions (※n)
+    against Ⅳ」 reads the same Ⅵ table against Ⅳ's events; this check reads it against Ⅴ and the 更新条件表. A cell that
+    fails both is one finding, written here at 中.
+    **Multi-screen 更新条件 — 低, one mechanical line.** When a 更新概要 names two or more screens — written `A/B`, `A,B`,
+    `A、B` or `(A)(B)` (32 blocks in 10 books) — the 更新条件 or a ※ row under it says which screen's event fires the block
+    (`PSJCO501` `更新条件表(TSJCD215)` `[59,16]` 「※(GSJC501A):…　(GSJC501B):…」 — a ※ row counts). Report a trigger
+    button that both screens have with neither the 更新条件 nor a ※ row naming the screen: `PSJAO704` `更新条件表(TSJAM732)`
+    `[37,16]`, `(TSJAM734)` `[35,16]`, `(TSJAM726)` `[61,16]`; `PSJCO501` `更新条件表(TSJCA311)` `[134,16]` 「削除ﾎﾞﾀﾝ押下時(削除)」
+    with 削除 on both A `[350]` and B `[798]`. A button only one of the screens has (TSJCA311's 実行, B only) names its screen
+    by itself — not a finding. `update-condition-completeness` C6 checks that the trigger exists on the screens the 更新概要
+    names; this line only asks which of two screens — when C6 already reports the trigger as missing, do not add this one.
+
+21. **Ⅴ 初期値/説明 event lines ↔ Ⅳ events.** A Ⅴ 初期値 or 説明 cell is written one line per trigger: `検索時:(4).品目ｺｰﾄﾞ`,
+    `実行時:ﾁｪｯｸなし`, `作業場ｺｰﾄﾞﾛｽﾄﾌｫｰｶｽ時:(1).作業場名`, `新規:空白⏎変更:(6).…`. Split each cell into lines, strip a leading
+    circled number (`①`…, which NFKC turns into a digit glued to the prefix), and take `^<prefix>[:：]<value>` (prefix ≤ 45
+    characters, not starting with `※`/`(`; skip ComboBox `Key:`/`Value:` lines and anything inside quotes, `"対象ﾛｯﾄ件数："`).
+    Measured: 7,214 lines in 85 books — 4,362 `<event>時:`, 1,303 mode lines (新規/変更/ｺﾋﾟｰ登録/一時保存/解除/修正,照会),
+    1,549 conditions (それ以外, ﾊﾟﾗﾒｰﾀ.処理区分…). **NFKC the patterns as well as the text** — NFKC turns half-width ｶﾅ
+    full-width, and a half-width `ﾛｽﾄﾌｫｰｶｽ` pattern against NFKC'd text silently matches nothing (the first measurement lost
+    1,934 lines this way).
+    - **Reading Ⅳ.** Find Ⅳ's columns by its header labels (画面項目, ｲﾍﾞﾝﾄ内容, 処理内容), not by number — ｲﾍﾞﾝﾄ内容 is col 13
+      on most books and col 12 on `PXJCO128`; the section title may read `Ⅳ.` with a half-width dot. Remove in-cell line
+      breaks before comparing (`検索⏎ﾎﾞﾀﾝ`, `PSJCO501`). Expand a range written in the item name (`(直行1-4)` covers
+      `(直行1)`…`(直行4)`) as well as `(1-N)`.
+    - **Matching.** Each `<event>時:` line needs an event in the same sheet's Ⅳ. Split a compound prefix on `、`/`・`/`/`/
+      `or`/`又は` first, and carry a trailing event word back to the earlier parts (`KC品名ｽﾞｰﾑ、品目ｺｰﾄﾞｽﾞｰﾑ値選択時` is
+      `KC品名ｽﾞｰﾑ値選択時` + `品目ｺｰﾄﾞｽﾞｰﾑ値選択時`; `PSJAO203` `GSJA203B` `[1277,43]` `検索or加工手順反映時`; 170 of the raw
+      misses were compound prefixes); a part that is a mode word is a mode line. Then: `起動時` → the 起動時 row; `<X>ﾛｽﾄﾌｫｰｶｽ時`
+      → a row whose 画面項目, with `G#)`, `(1-N)`, `※n` dropped, equals X or starts with it (Ⅳ's name may carry a suffix; never
+      the reverse — X starting with a shorter Ⅳ name matches `(直行2)` to the wrong row and `KC品名・品目ｺｰﾄﾞ` to KC品名 alone),
+      with ｲﾍﾞﾝﾄ内容 ﾛｽﾄﾌｫｰｶｽ — also accept 値変更時/変更時 on the same item and a row whose 画面項目 lists several items
+      joined by `、` (`PXJCO131` `GXJC131A` `[1540,5]`); `<X>変更時` / `<X>の値変更時` → any row on X; `検索時`/`実行時`/`<ﾎﾞﾀﾝ名>時`
+      (`行削除時`, `画像撮影時`)/`○○ﾎﾞﾀﾝ押下時` → a Button row whose name, normalised as check 9 does (ﾎﾞﾀﾝ/押下時/処理/【】 and
+      also ﾘﾝｸ dropped), equals it, or an ｲﾍﾞﾝﾄ内容 containing the word. **Not events, never matched:** `値入力時` (426 — the
+      upper-case rule, W1a), `F9ﾎﾞﾀﾝ押下時` (zoom key), `XX時` and `(XX).` placeholders (writing-rules W10a),
+      `ﾊﾟﾗﾒｰﾀ.処理区分="1"…の時`, and child-screen returns — `…画面から遷移時`, `…設定ﾎﾞﾀﾝ遷移時`, `…押下後値返却時` — which Ⅳ
+      writes under 起動時 or not at all.
+    - **a. An item-event line whose item has no Ⅳ row — 中.** `<X>ﾛｽﾄﾌｫｰｶｽ時:` or `<X>変更時:` where Ⅳ has no row on X at all
+      — typically a code input whose Ⅳ carries only the ｽﾞｰﾑ button, so the fill-in the Ⅴ line promises has no event:
+      `PSJCOB10` `GSJCB10A` `[185,43]`/`[188,43]`/`[191,43]` 資源/作業場/作業者ｺｰﾄﾞ (Ⅳ `[159]`/`[160]` ｽﾞｰﾑ only), and its
+      `GSJCB10C` `[152,43]`-`[169,43]` (7 ﾛｽﾄﾌｫｰｶｽ lines, none in its 6 Ⅳ rows) plus 11 `入力ﾓｰﾄﾞ変更時` lines with no 入力ﾓｰﾄﾞ row;
+      `PSJCO604` `GSJC604B` `[891,43]`/`[901,43]`/`[911,43]` (Ⅳ `[834]`/`[837]`/`[838]` ｽﾞｰﾑ only), `PXJCO123` `GXJC123A`
+      `[598,43]`-`[601,43]` 統合個数…ｼｰﾄ数, `PXJCO122` `GXJC122A` `[943,43]`-`[945,43]` `数量ﾛｽﾄﾌｫｰｶｽ時：※2` (Ⅳ `[664]` is the
+      個数計算ﾎﾞﾀﾝ), `PXJCO129` `GXJC129A` `[627,43]` 製造ｵｰﾀﾞｰNo — about 45 ﾛｽﾄﾌｫｰｶｽ lines in 10 books in the corpus measurement.
+      One line per sheet listing the items.
+    - **b. An event word Ⅳ never uses — 低.** `PXJCO192` `GXJC192A` `[1098,43]`… `処置指示選択時` ×34 (Ⅳ `[1032]` calls it
+      「編集処置指示(1-N) 値変更時」), `PXJCO131` `GXJC131A` `[1724,43]` `ﾁｪｯｸ時`/`ﾁｪｯｸ解除時` (no CheckBox row in Ⅳ), `PXJCO906`
+      `GXJC906A` `[545,43]` `+ﾎﾞﾀﾝ押下時`; `PXJCO128` `GXJC128A` `[506,43]` / `GXJC128B` `[534,43]` `…ｽﾞｰﾑ値選択時` where Ⅳ has
+      only the ｽﾞｰﾑ ﾎﾞﾀﾝ押下 rows (`[392]`/`[398]`, `[463]`/`[465]`) whose ③ sets the list. Name the Ⅳ row that probably means
+      it, when there is one.
+    - **c. A Ⅴ line naming the Label instead of the input — 低.** `送付先作業場名ﾛｽﾄﾌｫｰｶｽ時` / `送付元作業場名ﾛｽﾄﾌｫｰｶｽ時`
+      (`PSJCO501` `GSJC501A` `[398,43]`/`[401,43]`, Ⅳ rows `[357]`/`[359]` are the code inputs; `PSJCO502` `GSJC502A`
+      `[428,43]`/`[431,43]`) — name the Ⅳ row; not a missing event. A word-order slip in an item name (`送付先作業場(直行1)ｺｰﾄﾞ`,
+      `PSJCO501` `GSJC501B` `[948,43]`, item `[946,5]` 送付先作業場ｺｰﾄﾞ(直行1), Ⅳ `[824]`) is the same 低 line.
+    - **Not findings.** Ⅳ 処理内容 that does not name the item: of 3,453 matched lines only 721 are named in Ⅳ, 1,829 are
+      covered by the area (`G2)…領域の項目を表示する`) or the `(n)` number, and 903 by neither (`PSJAO704` `GSJA704A`
+      `[319,43]`-`[332,43]` ↔ Ⅳ `[244,24]` 「明細領域に検索結果を表示する」; `PSJAO203` `GSJA203B` `[1252,43]` ↔ Ⅳ `[975,20]`
+      「各画面項目の初期値設定…(Ⅴ.画面項目定義 参照)」) — the house style puts per-item values in Ⅴ and delegates from Ⅳ.
+      Mode lines likewise: Ⅳ 起動時 names the mode in 106 of 1,038 cases, so Ⅴ is the authority. Lines holding `(XX).`
+      (`PSJCO801`/`802`/`805`/`806`, 36 lines) are W10a's.
+    - **d. Reading guideline (要確認, not scanned).** When Ⅳ does write a value for an item, Ⅴ carries the same value for
+      that event, as a line or in its prose: `PXJCO121` `GXJC121A` Ⅳ `[738,20]` 検索 sets `G1.層No` to `000` while Ⅴ `[830,43]`
+      has no 検索時 line; `PXJCO122` `GXJC122A` Ⅳ `[626,20]` 検索 sets 工程ｺｰﾄﾞ to `(4).仕掛工程ｺｰﾄﾞ` while Ⅴ `[807,43]` says only
+      `管理Noﾛｽﾄﾌｫｰｶｽ時:(4).仕掛工程ｺｰﾄﾞ` (`PXJCO123` `GXJC123A` Ⅳ `[488,23]` ↔ Ⅴ `[569,43]` the same shape); `PSJAO203`
+      `GSJA203B` Ⅳ `[1008,20]` 一時保存 sets 状態 to `"00"(作成中)` while Ⅴ `[1273,43]` has only the per-処理区分 values;
+      `PXJCO128` `GXJC128A` Ⅳ `[374,23]` 起動時③ sets the 層No list while Ⅴ `[506,43]` has no 起動時 line. A Ⅴ that states the
+      clearing in prose instead of a line is fine (`GXJC128B` Ⅳ `[458]`/`[470]` clear items, Ⅴ `[543,43]` says so). A Hidden item
+      that mirrors a visible one (same name, or a `(ﾊﾟﾗﾒｰﾀ)`/`(区分値)` suffix — 73 of 1,510 Hidden items have such a twin)
+      takes its value from the same source: `PSJAO704` `GSJA704I` `[189,35]` `(2).加工GRP` vs `[194,35]` 空白; `PXJCO904`
+      `GXJC904A` `[656,36]` `ﾊﾟﾗﾒｰﾀ.工程ｺｰﾄﾞ` vs `[779,36]` `(6).工程ｺｰﾄﾞ`; `PSJCO201` `GSJC201A` `[979,35]` `(6)-2.層No` vs
+      `[848,35]` `(6)-1.層No`. A Hidden code beside a visible name, filled at a different event (`PXJCO161` `GXJC161A`
+      `[896,36]`-`[904,36]` 一覧検索時 vs ﾛｽﾄﾌｫｰｶｽ時), is the normal split. The reverse scan (Ⅳ sets X → Ⅴ X) resolves only a
+      third of its targets by regex, so it is not run mechanically.
+    Check 1 asks whether each 起動時/ﾎﾞﾀﾝ押下 event has a 処理概要 step and check 6 compares the Ⅳ/Ⅴ item order; this check
+    is the only one that reads Ⅴ's event lines against Ⅳ. Check 15 reads the same `実行時:` lines for the 《参考》 sheets —
+    parse them with this check's rules.
 
 **Hidden leftovers.** This check also writes the one 【非表示】 要確認 line for every leftover/withdrawn hidden sheet
 other than 更新条件表 / 帳票設計書 / ﾌｧｲﾙ仕様書 (画面設計書, ﾁｪｯｸ処理設計書, 機能定義書, 画面ｲﾒｰｼﾞ, scratch copies — the

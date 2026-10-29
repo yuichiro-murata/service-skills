@@ -14,7 +14,7 @@ wanted two wastes a lot of time and tokens. Ask first, then run only what was se
 
 | # | skill | what it checks |
 |---|-------|----------------|
-| 1 | `design-doc-internal-consistency` | 内部相互参照（ｲﾍﾞﾝﾄ⇔処理概要、ﾚｽﾎﾟﾝｽ/画面項目ID/ﾁｪｯｸID登録、他ｻﾌﾞｼｽﾃﾑのﾒｯｾｰｼﾞID、画面3点一致（Hidden項目のⅥ記載を含む）、排他制御）＋処理/ﾁｪｯｸ順⇔ﾎﾞﾀﾝ順、区分名称の09.区分名称突合、画面ｲﾒｰｼﾞ・《参考》画面項目遷移ｼｰﾄ⇔画面設計書、本文中の参照・※n、複製の片側修正、必須/文字種ﾁｪｯｸ⇔Ⅴ、ｻﾌﾞﾌﾟﾛ引数・遷移ﾊﾟﾗﾒｰﾀ |
+| 1 | `design-doc-internal-consistency` | 内部相互参照（ｲﾍﾞﾝﾄ⇔処理概要、ﾚｽﾎﾟﾝｽ/画面項目ID/ﾁｪｯｸID登録、他ｻﾌﾞｼｽﾃﾑのﾒｯｾｰｼﾞID、画面3点一致（Hidden項目のⅥ記載を含む）、排他制御）＋処理/ﾁｪｯｸ順⇔ﾎﾞﾀﾝ順、区分名称の09.区分名称突合、画面ｲﾒｰｼﾞ・《参考》画面項目遷移ｼｰﾄ⇔画面設計書、本文中の参照・※n、複製の片側修正、必須/文字種ﾁｪｯｸ⇔Ⅴ、ｻﾌﾞﾌﾟﾛ引数・遷移ﾊﾟﾗﾒｰﾀ（未使用引数・空値と省略不可・判定の重複を含む）、XJC_共通処理との照合、区分別制御表、Ⅴのｲﾍﾞﾝﾄ別値とⅣ |
 | 2 | `design-doc-io-table-check` | Ⅲ．入出力定義（CRUD一覧）の双方向網羅性 — 最重量・最高収穫のチェック |
 | 3 | `xlsx-db-column-check` | 参照ｶﾗﾑがﾃｰﾌﾞﾙﾚｲｱｳﾄに実在するか＋**画面の桁数とﾃｰﾌﾞﾙﾚｲｱｳﾄの桁数の整合**＋ｺｰﾄﾞ/名称の二重保持ｱﾝﾁﾊﾟﾀｰﾝ(名称がLabelの場合のみ指摘)＋検索条件のTXJAM100保存漏れ＋SQLの意味（NULL比較・COUNT・LEFT JOIN・存在ﾁｪｯｸ・状態ｸﾞﾙｰﾌﾟ・$$除外・停止日時・1件と主ｷｰ・EXISTS・TIMESTAMP範囲・GROUP BY・ｿｰﾄ一意） |
 | 4 | `naming-standard-compliance` | 各ID採番規則・ﾍｯﾀﾞｰ情報・表紙 |
@@ -160,6 +160,11 @@ to the next one unless the user says "同じ観点で" or similar.
      checks 12 and 18) — when `design-doc-internal-consistency` is selected:
      `python _shared/scripts/build_param_index.py <...\01_Doc\08_機能定義書\<WG>> idx_param_<WG>.json` (~50 s for the 122
      工程管理 books; reads the zip only; freshness by `--check`, which compares every book's mtime/size).
+   - **Relation index** (which programs call or feed which `XJC_ｼｽﾃﾑ共通設計書` common process — check 19) — when
+     `design-doc-internal-consistency` is selected and the WG folder holds `XJC_ｼｽﾃﾑ共通設計書.xlsx` (工程管理):
+     `python _shared/scripts/build_relation_index.py <..._Doc 8_機能定義書	_工程管理> idx_relation_11_工程管理.json`
+     (~140 s for the 121 books; `--check` also compares the XJC_ book). Pass its path; check 19 is skipped for a program
+     with no relation (77 of 121).
    - **Program-name list** (`機能ID → 機能名` from the 機能定義書 file names, all WGs) — when `design-doc-writing-rules`
      (W8) or `design-doc-internal-consistency` (check 12 resolves other programs' IDs with it) is selected: `python _shared/scripts/build_program_list.py <...\01_Doc\08_機能定義書> lookup_program-name_08_機能定義書_ALL.tsv`
      (~1 s; opens no workbook, so rebuild it every run).
