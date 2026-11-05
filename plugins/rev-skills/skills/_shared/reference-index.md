@@ -34,7 +34,7 @@ structural trap that a hand-rolled index gets wrong silently:
 - The table IDs a program cites include views and suffixed forms (`VXJCM004_31`, `TXJAM061WF`,
   `VXJCM004_31_ALL`); an index built from a `T`-only ID pattern silently omits them.
 
-Three checks read this file today, all because they need `id → 画面項目名`:
+Four checks read this file today, all because they need `id → 画面項目名` (`design-doc-writing-rules` W1b too):
 `design-doc-internal-consistency` (screen-item IDs registered in the dictionary),
 `report-design-check` (the `画面項目ID` column on a 帳票設計書's print items — same dictionary, same
 prefix routing, and a report's print labels routinely cite shared `XJZ`/`SJZ` items, so the

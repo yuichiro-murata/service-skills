@@ -118,7 +118,7 @@ against every sheet, and pass the resulting `.txt` file paths into each agent's 
 
 **In the same pre-launch step, build the reference-master index if any selected check needs it —
 see `_shared/reference-index.md`.** Today that means `design-doc-internal-consistency` (screen-item
-IDs), `report-design-check` (the `画面項目ID` column on print items) and `file-output-spec-check` — all
+IDs), `design-doc-writing-rules` (W1b), `report-design-check` (the `画面項目ID` column on print items) and `file-output-spec-check` — all
 read the 画面項目辞書 index, so build it once when any is selected. That doc tells the *agent* not to build the index and to stop if it is
 missing, so if you skip this step the check simply does not run. Build one index per dictionary file
 the program's IDs route to (the routing table in `agent-guide.md`; a program using shared `XJZ`/`SJZ` items needs
@@ -133,8 +133,8 @@ separately in `_DELETED_DIGEST.txt` for the one check that needs it (see `agent-
 old shape cost ~155k tokens per agent (raw dump ~105k + strikethrough scan ~49k); the live dump
 alone is ~89k (**-43%**), and live + digest is ~117k (-25%). Multiply that by 5-6 parallel agents.
 
-The one remaining exception is `design-doc-formatting-consistency`, which needs `Font.Size` and
-`MergeCells` — those still require live COM and are its own concern. Don't try to coordinate that
+The one remaining exception is `design-doc-formatting-consistency`, which needs font sizes and
+merges — it reads them itself (openpyxl preferred, COM as fallback; `xlsx-formatting-scan.md`). Don't try to coordinate that
 scan across agents; it costs more than it saves, and only one skill reads it.
 
 ## The dump script

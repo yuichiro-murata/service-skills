@@ -150,7 +150,7 @@ to the next one unless the user says "同じ観点で" or similar.
    - **Screen-name list** (`画面名 → 画面ID` for every visible 画面設計書 under `01_Doc\08_機能定義書\`, all
      WGs, minus the `agent-guide.md` exclusions) — when `design-doc-writing-rules` is selected (W5):
      `python _shared/scripts/build_screen_list.py <...\01_Doc\08_機能定義書> lookup_screen-name_08_機能定義書_ALL.tsv`
-     (4–9 min cold; finds the header row by its `画面ID` label, since row 4 is ﾌﾟﾛｸﾞﾗﾑID in 04_品質管理 /
+     (~1–2 min cold, 8 worker processes; finds the header row by its `画面ID` label, since row 4 is ﾌﾟﾛｸﾞﾗﾑID in 04_品質管理 /
      05_受注出荷; skips stale copies; writes the sheet-name ID as a 5th column for W5; prints `NON-SCREEN-ID`
      (a 画面ID cell holding a program ID) and `HEADER-MISMATCH` (header 画面ID ≠ the sheet's own ID) lines — doc defects
      worth passing to `naming-standard-compliance` — pass those lines in naming's prompt). Check freshness
@@ -158,12 +158,12 @@ to the next one unless the user says "同じ観点で" or similar.
      checks `# format-version`) — never by recounting the folder yourself.
    - **Parameter index** (sub-program 引数/戻り値, screen (1)ﾊﾟﾗﾒｰﾀ定義, and who names which program —
      checks 12 and 18) — when `design-doc-internal-consistency` is selected:
-     `python _shared/scripts/build_param_index.py <...\01_Doc\08_機能定義書\<WG>> idx_param_<WG>.json` (~50 s for the 122
+     `python _shared/scripts/build_param_index.py <...\01_Doc\08_機能定義書\<WG>> idx_param_<WG>.json` (~15 s for the 122
      工程管理 books; reads the zip only; freshness by `--check`, which compares every book's mtime/size).
    - **Relation index** (which programs call or feed which `XJC_ｼｽﾃﾑ共通設計書` common process — check 19) — when
      `design-doc-internal-consistency` is selected and the WG folder holds `XJC_ｼｽﾃﾑ共通設計書.xlsx` (工程管理):
-     `python _shared/scripts/build_relation_index.py <..._Doc 8_機能定義書	_工程管理> idx_relation_11_工程管理.json`
-     (~140 s for the 121 books; `--check` also compares the XJC_ book). Pass its path; check 19 is skipped for a program
+     `python _shared/scripts/build_relation_index.py <...\01_Doc\08_機能定義書\11_工程管理> idx_relation_11_工程管理.json`
+     (~50 s for the 121 books; `--check` also compares the XJC_ book). Pass its path; check 19 is skipped for a program
      with no relation (78 of 121).
    - **Program-name list** (`機能ID → 機能名` from the 機能定義書 file names, all WGs) — when `design-doc-writing-rules`
      (W8) or `design-doc-internal-consistency` (check 12 resolves other programs' IDs with it) is selected: `python _shared/scripts/build_program_list.py <...\01_Doc\08_機能定義書> lookup_program-name_08_機能定義書_ALL.tsv`
@@ -177,7 +177,7 @@ to the next one unless the user says "同じ観点で" or similar.
      freshness by the same `--check` flag). Pass its path; the agent runs
      `kind_consistency.py` on it for the program.
    A check run standalone builds what it needs itself. **Launch order:** the screen-name list can take
-   5–9 minutes cold — launch every other check first and launch `design-doc-writing-rules` (and give
+   1–2 minutes cold (it was 5–9 before 1.33.2 read books in parallel) — launch every other check first and launch `design-doc-writing-rules` (and give
    naming the HEADER-MISMATCH / NON-SCREEN-ID lines) when the build finishes, instead of letting an agent
    start against a missing file.
 3. Run the selected checks as one combined pass — in parallel background agents when there are

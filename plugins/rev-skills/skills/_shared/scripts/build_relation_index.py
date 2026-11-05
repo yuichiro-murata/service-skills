@@ -21,9 +21,9 @@ Also records each process's 呼出元 list (Ⅰ-1, program ID in col 5, 「※�
 
 usage: python build_relation_index.py <ROOT> <out.json>
        python build_relation_index.py <ROOT> <out.json> --check     (prints FRESH or STALE)
-ROOT = the WG folder holding XJC_ｼｽﾃﾑ共通設計書.xlsx (01_Doc\\08_機能定義書\\11_工程管理). ~150 s for 121 books.
+ROOT = the WG folder holding XJC_ｼｽﾃﾑ共通設計書.xlsx (01_Doc\\08_機能定義書\\11_工程管理). ~50 s for 121 books (8 worker processes).
 """
-import collections, json, os, re, sys
+import collections, json, multiprocessing as mp, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from xlsx_zip import iter_sheets  # noqa: E402
@@ -36,6 +36,7 @@ ALIAS = {"ﾛｯﾄ停止ﾁｪｯｸ": re.compile("「ﾛｯﾄ停止」")}   #
 TBL = re.compile(r"\b([TV][SX]J[A-Z][A-Z]\d{3}(?:_\d+)?)\b")
 MSG = re.compile(r"\b[SX]J[CZ]-\d{6}\b")
 PID = re.compile(r"[PS][SX]J[A-Z]{2}\w{3}$")
+ANY_PROC = re.compile("|".join(re.escape(p) for p in PROC))   # one pass decides whether the per-process tests can hit
 
 
 def base_of(sheet):
@@ -78,8 +79,8 @@ def read_xjc(path):
         if nm in PROC and re.match(r"S[SX]JCB\d{3}$", i):
             id2proc.setdefault(i, nm)
     count = collections.Counter(t for s in proc_tables.values() for t in s)
-    single = {t: p for p, s in proc_tables.items() for t in s if count[t] == 1}
-    shared = {t: sorted(p for p, s in proc_tables.items() if t in s) for t in count if count[t] >= 2}
+    single = {t: p for p, s in proc_tables.items() for t in sorted(s) if count[t] == 1}
+    shared = {t: sorted(p for p, s in proc_tables.items() if t in s) for t in sorted(count) if count[t] >= 2}
     # XJZ-xxxxxx are the system-wide messages every screen uses — never a sign of a call
     code2proc = {m: next(iter(ps)) for m, ps in codes.items() if len(ps) == 1 and not m.startswith("XJZ")}
     return {"proc_id": proc_id, "id2proc": id2proc, "proc_tables": {p: sorted(s) for p, s in proc_tables.items()},
@@ -99,7 +100,7 @@ def scan_program(path, x):
         for r, cs in rows.items():
             for c, t in cs.items():
                 hits = []
-                for p, rx in names.items():
+                for p, rx in (names.items() if ANY_PROC.search(t) else ()):
                     if not rx.search(t):
                         continue
                     if "共通設計" in t:
@@ -110,7 +111,7 @@ def scan_program(path, x):
                         hits.append((p, "D"))
                 if "共通設計" in t:
                     hits += [(p, "A2") for p, rx in ALIAS.items() if rx.search(t) and not names[p].search(t)]
-                hits += [(x["code2proc"][m], "E " + m) for m in set(MSG.findall(t)) if m in x["code2proc"]]
+                hits += [(x["code2proc"][m], "E " + m) for m in sorted(set(MSG.findall(t))) if m in x["code2proc"]]
                 if ids:
                     hits += [(x["id2proc"][i], "C " + i) for i in ids.findall(t)]
                 rec["calls"] += [{"proc": p, "kind": k, "sheet": name, "state": state, "r": r, "c": c, "text": t[:160]}
@@ -122,6 +123,21 @@ def scan_program(path, x):
         elif tb in x["tbl_shared"]:
             rec["data_shared"].append({"table": tb, "procs": x["tbl_shared"][tb], "sheet": ut["sheet"]})
     return rec
+
+
+_X = None
+
+
+def _init(x):
+    global _X
+    _X = x
+
+
+def _scan(p):
+    try:
+        return p, scan_program(p, _X), None
+    except Exception as e:
+        return p, None, e
 
 
 def main():
@@ -144,11 +160,13 @@ def main():
         return
     x = read_xjc(xjc)
     programs = {}
-    for p in progs_paths:
-        try:
-            programs[os.path.basename(p).split("_")[0]] = scan_program(p, x)
-        except Exception as e:  # one unreadable book must not stop the index
-            print(f"WARNING: {os.path.basename(p)}: {e}", file=sys.stderr)
+    # books are read in parallel; results are merged in book order, so the JSON is the same as a serial run
+    with mp.Pool(min(8, os.cpu_count() or 4), initializer=_init, initargs=(x,)) as pool:
+        for p, rec, err in pool.map(_scan, progs_paths):
+            if err:   # one unreadable book must not stop the index
+                print(f"WARNING: {os.path.basename(p)}: {err}", file=sys.stderr)
+            else:
+                programs[os.path.basename(p).split("_")[0]] = rec
     json.dump({"format-version": FORMAT, "root": root, "books": found, "xjc": xstamp, **x, "programs": programs},
               open(outp, "w", encoding="utf-8"), ensure_ascii=False)
     sys.stdout.reconfigure(encoding="utf-8")

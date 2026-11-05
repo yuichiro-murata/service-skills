@@ -20,7 +20,7 @@ section.
 `_DELETED_DIGEST.txt`), reporting conventions. W5 uses the all-WG screen-name list: use the one your
 prompt names, and build it yourself (see W5) when none was handed to you. W7 and W8 use the zoom list and
 the program-name list the same way. Hidden rows and columns of a live sheet (`_HIDDEN.txt`) are read like the
-rest: a W1-W8 finding there is reported with 【非表示】 (this check owns hidden Ⅴ rows, `agent-guide.md`); a
+rest: a W1-W10 finding there is reported with 【非表示】 (this check owns hidden Ⅴ rows, `agent-guide.md`); a
 whole hidden leftover sheet is not this check's.
 
 ## Checks
@@ -209,8 +209,7 @@ Include `右記参照` rows as W1e resolves them. **Vocabulary**: a value outsid
 (`文字列(半英数)`, `文字列(半英数記号)`, `文字列(全角)`, `数値(整数)正数`, `年月日(8桁)` …) — `半角英数` with no
 `文字列(…)` (`PXJCO161` `GXJC161D` `[291,30]`), `数値(少数)` — is one 低 line per workbook. `文字列(半数)` is a
 house form (18 uses in 10 PHASE workbooks, no alternative spelling; designers cite the self-check sheet),
-not a vocabulary outlier — compare it only in the cross-screen check below
-listing the cells, and still compared below by its evident meaning.
+not a vocabulary outlier — compare it only in the cross-screen check below, by its evident meaning.
 Two comparisons:
 - **Against other programs** — report a row whose 文字種 differs from the value other programs use
   for the same item **when that value is dominant**: ≥ 5 rows from ≥ 3 distinct other programs, and
@@ -812,7 +811,7 @@ always-shown-first layout, and anything judged against the designer's intent rat
 ### W10 — 書きかけ・旧用語・用語の統一 (my-review-skills 〔項目3〕〔汎用〕, call-outs 機能定義書 列35/行57, 画面設計書 列81/行209, ﾁｪｯｸ処理設計書 列13/行28; adopted 2026-10-28)
 
 Measured 2026-10-28 over the 121 工程管理 PHASE1-3 books (1,571 live sheets; 詳細設計*/画面ｲﾒｰｼﾞ/参考 sheets and
-the revision margin from col 105 left out — a memo there is never a finding). Scope: every live cell of a design
+the revision margin (col ≥ 100, as in W2/W6/W8) left out — a memo there is never a finding). Scope: every live cell of a design
 sheet; 表紙 is naming's. Hidden rows follow `agent-guide.md`: a hidden block that is an old copy of a whole section is
 `design-doc-internal-consistency`'s one 「Hidden leftovers」 line and W10 does not repeat its cells (`PSJCO404` `GSJC404A`
 rows 711-1288 and 1625-1634 are such copies); a placeholder in a hidden row of a live section is reported with 【非表示】.

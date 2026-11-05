@@ -88,7 +88,7 @@ From the shared dump (standalone: `python _shared/scripts/live_dump.py <workbook
 
 ### 2. Read the 帳票一覧 registry for the report IDs' WG
 
-Route by the **report ID's own JOBコード**, exactly as `_shared/reference-index.md` routes
+Route by the **report ID's own JOBコード**, exactly as `_shared/agent-guide.md` routes
 screen-item IDs: `R` + `XJC`/`SJC` → `01_Doc\06_システム設計書（一覧、管理台帳）\06-03_帳票一覧_工程管理.xlsm`,
 `XJA`/`SJA` → `_基準情報`, `XJB`/`SJB` → `(XJB_受注出荷)`/`(SJB_受注出荷)`, `XJD`/`SJD` → `_品質管理`,
 `XJZ`/`SJZ` → `_共通`. A program's own reports can span two prefixes and still live in one file —
@@ -107,8 +107,8 @@ The `備考` column carries the **owning program's name** (`処置指示発行(�
 cross-checks. Trailing rows can carry an ID with an empty name (`RSJC037`, `RSJC038`) — reserved
 slots, not registrations.
 
-**A partially-struck name cell is a rename-in-place, not a dead row.** Apply
-`_shared/reference-index.md`'s `LiveText` cascade. This exact registry is where the mistake was made
+**A partially-struck name cell is a rename-in-place, not a dead row.** The live read keeps
+the live part of such a cell (`live_dump.py`). This exact registry is where the mistake was made
 for real: `RSJC033` and `RSJC035` were reported as 帳票一覧未登録 by three separate agents when their
 rows existed and had merely been renamed (`前工程処置指示書（CP1,CMOS）` → `処置指示書(前工程)`). Drop a
 row only when the **帳票ID** cell has no live text left. With the cascade applied, those two rows

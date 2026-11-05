@@ -116,8 +116,8 @@ renamed-in-place name reads as old+new text concatenated. The registry's header 
 工程管理 file, data from row 5; locate it by the `ファイル名称` label after stripping whitespace — the cell
 actually reads `フ　ァ　イ　ル　名　称` with full-width spaces). `備考` names
 the owning function (`損金一覧`, or `付属機能/損金一覧` for an 付属機能 program), and `編成` is
-`TSV` / `CSV` / `EXCEL`. Apply the same `LiveText` cascade as `report-design-check` step 2: a
-partially-struck name is a rename in place, not a dead row.
+`TSV` / `CSV` / `EXCEL`. As in `report-design-check` step 2, a
+partially-struck name is a rename in place, not a dead row (the live read keeps its live part).
 
 ### 3. Run the checks
 

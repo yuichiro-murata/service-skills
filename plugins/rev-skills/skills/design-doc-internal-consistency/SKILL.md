@@ -12,8 +12,8 @@ Reviews a single program's design-doc workbook (機能定義書 + 画面設計�
 consistency, grounded in this project's own checklist:
 `01_Doc/99.共通資料/設計書記述ルール/05.設計書記述ルール_チェックリスト.xlsx` (sheet
 "ﾁｪｯｸﾘｽﾄ"). Read that sheet at the start of a review — it is short (~57 rows) and is the
-authoritative list of what "correct" means here; the checks below are the checklist's
-programmatically-verifiable items 3-4 through 5-4 (item 3-2/3-3, the Ⅲ．入出力定義 completeness
+authoritative list of what "correct" means here; the checks below restate its
+programmatically-verifiable items, plus 観点 taken from the self-check workbook and my-review-skills (item 3-2/3-3, the Ⅲ．入出力定義 completeness
 check, now lives in the separate `design-doc-io-table-check` skill — see below), restated as
 concrete diffing steps. The checklist also has purely-manual/subjective items (e.g. "列幅は2、
 行幅は14.3か" 1-4) — skip those, they aren't worth automating.
@@ -942,7 +942,7 @@ PHASE1-3 books — confirm each in the dump before reporting.
     引数と一致しているか」; 「受け取るﾊﾟﾗﾒｰﾀが、遷移元が渡すﾊﾟﾗﾒｰﾀ（項目・順番・値の出所・型）と一致しているか」, 課題1606). The
     callee is usually in another workbook: read only its definition, from the **parameter index** your prompt names (built by
     the orchestrator with `python _shared/scripts/build_param_index.py <...\01_Doc\08_機能定義書\<WG>> <out.json>` — program →
-    引数/戻り値 rows, screen → Ⅱ (1)ﾊﾟﾗﾒｰﾀ定義 rows, ~50 s for 122 books, `--check` for freshness). Standalone, build it yourself.
+    引数/戻り値 rows, screen → Ⅱ (1)ﾊﾟﾗﾒｰﾀ定義 rows, ~15 s for 122 books, `--check` for freshness). Standalone, build it yourself.
     Then open the callee's cell in its workbook only to quote it. A callee outside the index (`GXJZ…`, `GSJA…` screens,
     `SXJCB184`) is one line 「呼び出し先の設計書が未入手のため未確認」, not a finding. **When the program under review is itself a
     sub-program, run (ii) in reverse over its callers** — the index's `callers` lists every row of another book
@@ -988,8 +988,8 @@ PHASE1-3 books — confirm each in the dump before reporting.
         (`①.管理No(1-N)`); a substring match makes 製造ﾛｯﾄNo look used through 統合後製造ﾛｯﾄNo. Normalise only the spelling: read
         `仕掛数(個数)` as `(個数)仕掛数` (`SXJCB123` `ﾁｪｯｸ処理設計書(SXJCB123)` `[22]`), `～` as `-`, and accept `Y.加工手順ｺｰﾄﾞ` for
         `加工手順ｺｰﾄﾞ(確認用)` (`SXJCB141` `帳票設計書(RXJC029_確認用)` `[32,28]`). A use only in a struck row does not count
-        (`SXJCB123` 統合後管理No `[93]`, whose one use `更新条件表(TSJCD302)` `[13,74]` `ﾊﾟﾗﾒｰﾀ⑤.X` is struck — and as 省略時 NULL
-        it is check 16 d's 低 「only referrer struck」, not this). Skip 共通 arguments that carry the call's context (機能ID,
+        (`SXJCB123` 統合後管理No `[93]`, whose one use `更新条件表(TSJCD302)` `[13,74]` `ﾊﾟﾗﾒｰﾀ⑤.X` is struck — and, being 省略時 NULL,
+        it is not reported either). Skip 共通 arguments that carry the call's context (機能ID,
         ﾌﾟﾛｸﾞﾗﾑID, 画面ID, 会社ｺｰﾄﾞ, 部門GRP, 事業部ｺｰﾄﾞ, 言語, 作業者ｺｰﾄﾞ), list parent rows, and the 詳細設計書 (not in the live
         dump). Report an unused argument whose 省略時 is **不可**, once on the callee, listing every caller's cell: `SXJCB123` `[67]`
         取数, `[68]` 品目ｺｰﾄﾞ, `[69]` ﾃｰﾌﾟﾛｯﾄNo, `[71]` 製造ﾛｯﾄNo, `[73]` 移動ﾛｯﾄ状態, `[82]` 統合残個数, `[95]` 実績出力範囲, `[96]`
@@ -1071,7 +1071,7 @@ PHASE1-3 books — confirm each in the dump before reporting.
     the docs — a condition that depends on such a key, e.g. 製造ﾛｯﾄNo自動採番's ﾁｪｯｸﾊﾟﾀｰﾝ `[122]`, is read from the process's
     own usage notes (row `[140]`: `[140,7]` "1"(全ﾁｪｯｸ) for `[140,40]` ﾛｯﾄｶｰﾄﾞ発行) or left 未確認).
     - **Which processes to read — the relation index.** Your prompt names it (built by the orchestrator with
-      `python _shared/scripts/build_relation_index.py <...\01_Doc\08_機能定義書\11_工程管理> <out.json>`, ~140 s, `--check`
+      `python _shared/scripts/build_relation_index.py <...\01_Doc\08_機能定義書\11_工程管理> <out.json>`, ~50 s, `--check`
       for freshness; standalone, build it yourself). Read `programs[<PID>]` only; **no relation → skip this check** (78 of
       121 books). Use only `calls` and `data` whose `state` is `visible`: a hit on, or a 更新条件表 that is, a hidden sheet (`×ﾁｪｯｸ処理設計書`/`×画面設計書` — 18 on
       `PSJCO201`) belongs to the leftover-sheet line (`agent-guide.md`), not to this check. A program relates by **呼び出し**
@@ -1153,7 +1153,7 @@ PHASE1-3 books — confirm each in the dump before reporting.
       `ﾁｪｯｸ処理設計書(GXJC128A)` `[55,59]` vs 解除日 > ｼｽﾃﾑ日時 `[273]` — equal, skip). Quote both cells in every finding.
     - **Not findings:** a caller-only switch the process does not know (`PSJCO504` 共通ｺｰﾄﾞ SJC/23/"GSJC504A" `[96]`-`[109]`);
       a caller-owned check the process only mentions as 「既存機能仕様変更」 (`PSJCO201` `[100,53]` SJC-000120 vs
-      `補足)製造ﾛｯﾄNo自動採番_概要` `[73,10]`); a pointer to the 旧名称 「ﾛｯﾄ停止」ｼｰﾄ (check 12's, 低, once per book); the
+      `補足)製造ﾛｯﾄNo自動採番_概要` `[73,10]`); a pointer to the 旧名称 「ﾛｯﾄ停止」ｼｰﾄ (the 利用一覧 still lists the 旧名称; check 4b skips it as a delegation too); the
       typo 「ﾛｸﾞｲﾝ情報.事業府ｺｰﾄﾞ」 in a call (`PSJCO201` `[62,59]`… — `design-doc-typo-check`'s); a 共通ｺｰﾄﾞﾏｽﾀ key by
       program ID; tables in `data_shared`; return values the caller does not rely on. Validated 2026-10-29: `PXJCO128` 3
       要確認 (処置指示No2/3 NULL, COALESCE side in GXJC128C and GXJC128B), `PSJCO201` 1 中 (rename) + 1 低 (order), `PSJCO504` 0.
@@ -1281,13 +1281,8 @@ change-history memos are skipped (`agent-guide.md`, "Hidden sheets, rows and col
   slash-joined unit series (`不良数(ｼｰﾄ数/作業基板数/基板数/個数)`, `GXJC161B` `[1852]`-`[1855]`) and a Ⅳ name
   written without its `(1-N)`.
 - Ⅰ．画面ﾚｲｱｳﾄ is a floating picture (usually EMF), so its empty cells in the dump are not a
-  missing layout. For check 5's three-way match, get the picture via `agent-guide.md` "Seeing the
-  actual screen layout" (unzip `xl/media/*.emf`, convert to PNG, Read it — no Excel); this completed
-  the Ⅰ/Ⅴ/Ⅵ comparison on `PXJCO125`. Report only items clearly drawn or clearly absent, as a
-  visual comparison. When the workbook has several screen sheets, map picture → sheet from the zip,
-  not COM: `xl/workbook.xml` (sheet name → `r:id`) → `xl/_rels/workbook.xml.rels` (→ `worksheets/sheetN.xml`)
-  → `xl/worksheets/_rels/sheetN.xml.rels` (→ `drawings/drawingN.xml`) → `xl/drawings/_rels/drawingN.xml.rels`
-  (→ `media/imageK.emf`). Worked on `PSJCO403` and `PXJCO161`.
+  missing layout. Check 5 reads the picture through `extract_images.py`, which also maps each picture to its sheet;
+  report only items clearly drawn or clearly absent, as a visual comparison.
 - A digest row that looks deleted may have been **moved** (struck at the old place, live elsewhere);
   search the live dump for its text before reporting a removal-driven asymmetry.
 

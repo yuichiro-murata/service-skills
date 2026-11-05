@@ -187,7 +187,7 @@ registered item as unregistered.
 A `MENU`-prefixed ID carries its routing prefix immediately after `MENU` — `MENUXJCP00` → 工程管理,
 `MENUXJZP00` → 共通.
 
-This is the routing rule `04.ﾒｯｾｰｼﾞ管理_*.xlsx` already follows (see `xlsx-excel-com-dump.md`): a
+This is the routing rule `04.ﾒｯｾｰｼﾞ管理_*.xlsx` already follows: a
 foreign prefix routes to that other WG's own file, **never** to a same-named sheet embedded in the
 copy you happen to have open. In this file that matters twice over, because the sheets the 品質管理
 and 受注出荷 copies carry under other WGs' names are not dictionaries at all — see the builder's

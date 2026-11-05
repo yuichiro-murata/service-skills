@@ -21,7 +21,7 @@ usage: python build_screen_list.py <...\\01_Doc\\08_機能定義書> <out.tsv> [
        --check: print FRESH/STALE for an existing <out.tsv> (format-version, file count with this
        script's own scope rules, newest mtime as a value) and exit 0/1 without rebuilding.
 """
-import datetime, glob, os, re, sys, time, warnings
+import datetime, glob, multiprocessing as mp, os, re, sys, time, warnings
 import openpyxl
 warnings.filterwarnings("ignore")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -56,6 +56,34 @@ def workbooks(root):
         files += [p for p in cands if not STALE_DIR.search(p) and not STALE_FILE.search(os.path.basename(p))]
     return files
 
+def scan(p, root):
+    """One workbook -> (rows, NON-SCREEN-ID/HEADER-MISMATCH lines, error or None, skipped count). Worker process."""
+    rows, lines, skipped = [], [], 0
+    try:
+        wb = openpyxl.load_workbook(p, read_only=True, data_only=True, rich_text=True)
+    except Exception as e:
+        return rows, lines, f"{p}\t{type(e).__name__}: {e}", skipped
+    for ws in wb.worksheets:
+        m = SHEET.match(ws.title)
+        if not m or ws.sheet_state != "visible": continue
+        hit = None
+        for r in ws.iter_rows(min_row=3, max_row=5, max_col=20):
+            v = {c.column: (classify(c)[0] or "").strip() for c in r if getattr(c, "value", None) is not None}
+            if v.get(5) == "画面ID": hit = v; break
+        if not hit: skipped += 1; continue
+        sid, name = hit.get(10, ""), hit.get(15, "")
+        if not sid or sid == "-" or not name or name == "-": skipped += 1; continue
+        rel = os.path.relpath(p, root)
+        tok = re.match(r"[A-Z]{3,4}\d{3}[A-Z0-9]?", m.group(1).strip())   # GSJA241B-基本情報 -> GSJA241B
+        sheet_id = tok.group(0) if tok else m.group(1).strip()
+        if not sid.startswith("G"):   # e.g. GXJD601A's 画面ID cell holds PXJDO601 — a doc defect
+            lines.append(f"NON-SCREEN-ID\t{sid}\t{ws.title}\t{rel}"); skipped += 1; continue
+        if sid != sheet_id:
+            lines.append(f"HEADER-MISMATCH\theader={sid}\t{ws.title}\t{rel}")
+        rows.append((name, sid, ws.title, rel, sheet_id))
+    wb.close()
+    return rows, lines, None, skipped
+
 def main():
     args = [a for a in sys.argv[1:] if a != "--check"]
     if len(args) != 2: sys.exit(__doc__)
@@ -65,30 +93,12 @@ def main():
     if "--check" in sys.argv: check_fresh(out, files)
     newest = max(os.path.getmtime(p) for p in files)
     t0 = time.time(); rows = []; errs = []; skipped = 0
-    for p in sorted(files):
-        try:
-            wb = openpyxl.load_workbook(p, read_only=True, data_only=True, rich_text=True)
-        except Exception as e:
-            errs.append(f"{p}\t{type(e).__name__}: {e}"); continue
-        for ws in wb.worksheets:
-            m = SHEET.match(ws.title)
-            if not m or ws.sheet_state != "visible": continue
-            hit = None
-            for r in ws.iter_rows(min_row=3, max_row=5, max_col=20):
-                v = {c.column: (classify(c)[0] or "").strip() for c in r if getattr(c, "value", None) is not None}
-                if v.get(5) == "画面ID": hit = v; break
-            if not hit: skipped += 1; continue
-            sid, name = hit.get(10, ""), hit.get(15, "")
-            if not sid or sid == "-" or not name or name == "-": skipped += 1; continue
-            rel = os.path.relpath(p, root)
-            tok = re.match(r"[A-Z]{3,4}\d{3}[A-Z0-9]?", m.group(1).strip())   # GSJA241B-基本情報 -> GSJA241B
-            sheet_id = tok.group(0) if tok else m.group(1).strip()
-            if not sid.startswith("G"):   # e.g. GXJD601A's 画面ID cell holds PXJDO601 — a doc defect
-                print(f"NON-SCREEN-ID\t{sid}\t{ws.title}\t{rel}"); skipped += 1; continue
-            if sid != sheet_id:
-                print(f"HEADER-MISMATCH\theader={sid}\t{ws.title}\t{rel}")
-            rows.append((name, sid, ws.title, rel, sheet_id))
-        wb.close()
+    # workbooks are read in parallel; results (and the printed lines) are merged in file order, as a serial run
+    with mp.Pool(min(8, os.cpu_count() or 4)) as pool:
+        for r_rows, r_lines, r_err, r_skipped in pool.starmap(scan, [(p, root) for p in sorted(files)]):
+            rows += r_rows; skipped += r_skipped
+            for line in r_lines: print(line)
+            if r_err: errs.append(r_err)
     with open(out, "w", encoding="utf-8") as f:
         f.write("# lookup: screen-name -> screen-id (header row by its 画面ID label; sheet-name ID in the last column)\n")
         f.write("# scope: 01_Doc\\08_機能定義書, per WG: PHASE* top level where present, else recursive; stale copies skipped\n")

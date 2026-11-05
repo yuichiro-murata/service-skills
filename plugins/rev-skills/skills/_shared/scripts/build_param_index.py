@@ -1,7 +1,7 @@
 """Parameter index for design-doc-internal-consistency check 18 (calls across workbooks).
 
 Reads every workbook of ROOT (a WG folder such as 01_Doc\\08_機能定義書\\11_工程管理) in build_screen_list.py's scope
-— the PHASE* folders' top level when the WG has them, else recursive; stale folders/files skipped, from the zip only (seconds per book, no Excel, never saves), live
+— the PHASE* folders' top level when the WG has them, else recursive; stale folders/files skipped, from the zip only (8 worker processes, ~15 s for 122 books, no Excel, never saves), live
 text only (struck runs/cells dropped), visible sheets only, and writes JSON:
 
     {"format-version": 2, "root": ..., "books": {file: [mtime, size]},
@@ -20,7 +20,7 @@ anywhere in the row → common); null when the sheet has no (1).
 usage: python build_param_index.py <ROOT> <out.json>
        python build_param_index.py <ROOT> <out.json> --check     (prints FRESH or STALE)
 """
-import glob, json, os, re, sys
+import glob, json, multiprocessing as mp, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from xlsx_zip import iter_sheets  # noqa: E402
@@ -119,6 +119,28 @@ def books(root):
                   if not STALE_DIR.search(q) and not re.search(r"^(~\$|完了_)|XXXXX000", os.path.basename(q)))
 
 
+def scan_book(p):
+    """One book -> (basename, PID, events in reading order, warning or None). Runs in a worker process."""
+    b = os.path.basename(p)
+    pid = b.split("_")[0]
+    events = []
+    try:
+        for name, rows in sheets(p):
+            for r, row in rows.items():   # who mentions which program ID (for check 18's reverse run)
+                for cid in sorted(set(PID.findall(" ".join(row.values()))) - {pid}):
+                    events.append(("caller", name, cid, r))
+            if name.startswith("機能定義書"):
+                a, r = program_defs(rows)
+                if a or r:
+                    events.append(("defs", name, a, r))
+            m = re.match(r"^画面設計書\(([GZ][XS]J[A-Z]\d{3}[A-Z])\)", name)
+            if m:
+                events.append(("screen", name, m.group(1), screen_params(rows)))
+    except Exception as e:  # one unreadable book must not stop the index (what was read before the error is kept)
+        return b, pid, events, f"WARNING: {b}: {e}"
+    return b, pid, events, None
+
+
 def main():
     if len(sys.argv) < 3:
         sys.exit(__doc__)
@@ -133,25 +155,23 @@ def main():
         print("FRESH" if ok else "STALE")
         return
     progs, screens, callers = {}, {}, {}
-    for p in books(root):
-        b = os.path.basename(p)
-        pid = b.split("_")[0]
-        try:
-            for name, rows in sheets(p):
-                for r, row in rows.items():   # who mentions which program ID (for check 18's reverse run)
-                    for cid in set(PID.findall(" ".join(row.values()))) - {pid}:
-                        callers.setdefault(cid, []).append({"book": b, "sheet": name, "r": r})
-                if name.startswith("機能定義書"):
-                    a, r = program_defs(rows)
-                    if a or r:
-                        d = progs.setdefault(pid, {"book": b, "sheet": name, "args": [], "rets": []})
-                        d["args"] += a
-                        d["rets"] += r
-                m = re.match(r"^画面設計書\(([GZ][XS]J[A-Z]\d{3}[A-Z])\)", name)
-                if m:
-                    screens[m.group(1)] = {"book": b, "sheet": name, "params": screen_params(rows)}
-        except Exception as e:  # one unreadable book must not stop the index
-            print(f"WARNING: {b}: {e}", file=sys.stderr)
+    # books are read in parallel; their results are merged in book order, so the JSON is the same as a serial run
+    with mp.Pool(min(8, os.cpu_count() or 4)) as pool:
+        results = pool.map(scan_book, books(root))
+    for b, pid, events, warn in results:
+        for kind, name, *val in events:
+            if kind == "caller":
+                cid, r = val
+                callers.setdefault(cid, []).append({"book": b, "sheet": name, "r": r})
+            elif kind == "defs":
+                a, r = val
+                d = progs.setdefault(pid, {"book": b, "sheet": name, "args": [], "rets": []})
+                d["args"] += a
+                d["rets"] += r
+            else:
+                screens[val[0]] = {"book": b, "sheet": name, "params": val[1]}
+        if warn:
+            print(warn, file=sys.stderr)
     json.dump({"format-version": FORMAT, "root": root, "books": found, "programs": progs, "screens": screens,
                "callers": callers},
               open(outp, "w", encoding="utf-8"), ensure_ascii=False)

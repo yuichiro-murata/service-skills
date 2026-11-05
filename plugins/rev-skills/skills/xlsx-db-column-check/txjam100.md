@@ -142,7 +142,7 @@ Scope note: step 3 keys on the area title containing `検索条件`. An input ar
 Measured on 2026-09-30 / 10-01 across the 34 工程管理 PHASE1-3 screens that save to TXJAM100: 439 of
 469 search conditions are saved. Of the 30 left, grade by kind:
 - **code/name inputs → 中** (6): `PXJCO129` `GXJC129A` KC品名 `[637]` (every other condition on that
-  screen is saved — and it merges into step 6's slot-mismatch 高 below), `PSJAO502` `GSJA502A` 単位ｺｰﾄﾞ `[260]`, `PXJCO164` `GXJC164A` 作業者名 `[714]`,
+  screen is saved — and it merges into step 6's slot-mismatch 高 above), `PSJAO502` `GSJA502A` 単位ｺｰﾄﾞ `[260]`, `PXJCO164` `GXJC164A` 作業者名 `[714]`,
   `PSJCO309` `GSJC309A` 作業場ｺｰﾄﾞ/作業者ｺｰﾄﾞ/焼成条件 (that screen saves only 3 items, so ask whether
   the omission is deliberate before calling it a defect);
 - **date/time ranges and range-type numbers (案内書No(From)/(To)) → 要確認** (20): 67 date

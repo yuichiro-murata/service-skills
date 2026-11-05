@@ -24,7 +24,7 @@ sheets do carry it (PXJCO125's batch, 2026-10-01: `TXJCM006` `[81,40]` dead, `TX
 
 ### 1. Get the target workbook dump
 
-Use the dump you were handed; standalone, dump the target per `_shared/xlsx-excel-com-dump.md`.
+Use the dump you were handed; standalone, dump the target with `_shared/scripts/live_dump.py <wb> <out> --hidden` (`agent-guide.md`).
 
 ### 2. Extract the referenced tables and columns from the design doc
 
@@ -114,7 +114,7 @@ the subquery's table for that cell only.
   `(8)-④`, whose map is one letter later (G=依頼先, I=(8)-②) — there `[867,19]`/`[868,19]` are right and
   `(8)-①`'s three rows are the alias-shift defect (中).
 
-**Three more reference shapes** (`PSJCO403` `画面設計書(GSJC403A)`, 2026-10-06):
+**Four more reference shapes** (`PSJCO403` `画面設計書(GSJC403A)`, 2026-10-06):
 - **Colon instead of dot** — `[867,19]=G:依頼先事業所ｺｰﾄﾞ`. Treat `<alias>:<x>` as `<alias>.<x>` and note the
   notation once at 低. When `<x>` is not a column of a table alias, check the block's col-54 SQL first: there
   `G:依頼先事業所ｺｰﾄﾞ` is `A6S.JIGYOSHO_CD IRAISAKI_JIGYOSHO_CD` (column AS label) — 低 notation, not a miss.
@@ -210,7 +210,7 @@ unchecked and say so — never against a guessed table.
    snapshot path in that line so the designer can see where the old copy sits.
 5. For a table owned by **11_工程管理WG**, trust its own WG-folder copy — no further
    cross-checking needed. For a table owned by **any other WG**, also check the flat `01_Doc\...`
-   copy from step 4; if the two disagree, prefer the one with a strict column superset (treat a
+   copy from rule 4; if the two disagree, prefer the one with a strict column superset (treat a
    non-superset disagreement — renamed/reordered columns — as a discrepancy to report, not resolve
    yourself). Other WGs have no WG folder of their own (rule 1), so the comparison is always
    `11_工程管理WG` copy vs flat copy; when only one of the two exists, use it.
@@ -457,7 +457,7 @@ from col 54 on is out of scope. Calibrated 2026-10-17 on the 122 工程管理 PH
 Origin: my-review-skills' PXJCO124 baseline comparison (2026-10-11/12; adopted 2026-10-17) — the cells below.
 S6-S12 (adopted 2026-10-28) come from its チェック観点 SQL rules (`$$`, 停止日時, 1件, EXISTS, TIMESTAMP, GROUP BY, ｿｰﾄ一意),
 measured 2026-10-28 over the same books (3,042 blocks, 3,123 queries after the 取得件数 split). They need the layout's
-属性 column (col 19 — not 14) for S10 and the unique key (above) for S8/S9/S12 — find `＜ｲﾝﾃﾞｯｸｽ情報＞` in col 1 only (a 備考
+属性 column (col 19 — not 14) for S10 and the unique key (below) for S8/S9/S12 — find `＜ｲﾝﾃﾞｯｸｽ情報＞` in col 1 only (a 備考
 cell mentioning ｲﾝﾃﾞｯｸｽ, `TSJCA311` `[8,105]`, is not the marker). Validated 2026-10-28 on `PSJCO502` (S1, S8, S9, S12
 reproduced; the exclusions below come from that run). "Main table" throughout = the first alias of the query's
 参照ｴﾝﾃｨﾃｨ that is a real table; when it is a block reference (`A=①`, `A=(19)` 共通項目取得) the key-based rules S8/S9/S12
@@ -688,7 +688,7 @@ of 検索条件 and 結合条件 without checking that the joined side is unique
 ### 8. Reporting
 
 **Every cell coordinate quoted in this file is from one dated snapshot of a live workbook and drifts
-as rows are inserted and deleted** — the `PXJCO128` examples in steps 5 and 6 are the 2026/9/14
+as rows are inserted and deleted** — the `PXJCO128` examples in step 5 and in `txjam100.md` are the 2026/9/14
 version, and the Ⅴ rows had already moved by one since the previous REV. Resolve columns by header
 label and items by 画面項目名; treat every `[row,col]` here as illustration, never as an anchor to
 match on.
