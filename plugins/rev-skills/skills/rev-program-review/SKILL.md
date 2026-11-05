@@ -164,7 +164,7 @@ to the next one unless the user says "同じ観点で" or similar.
      `design-doc-internal-consistency` is selected and the WG folder holds `XJC_ｼｽﾃﾑ共通設計書.xlsx` (工程管理):
      `python _shared/scripts/build_relation_index.py <..._Doc 8_機能定義書	_工程管理> idx_relation_11_工程管理.json`
      (~140 s for the 121 books; `--check` also compares the XJC_ book). Pass its path; check 19 is skipped for a program
-     with no relation (77 of 121).
+     with no relation (78 of 121).
    - **Program-name list** (`機能ID → 機能名` from the 機能定義書 file names, all WGs) — when `design-doc-writing-rules`
      (W8) or `design-doc-internal-consistency` (check 12 resolves other programs' IDs with it) is selected: `python _shared/scripts/build_program_list.py <...\01_Doc\08_機能定義書> lookup_program-name_08_機能定義書_ALL.tsv`
      (~1 s; opens no workbook, so rebuild it every run).

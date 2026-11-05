@@ -152,8 +152,10 @@ def main():
     json.dump({"format-version": FORMAT, "root": root, "books": found, "xjc": xstamp, **x, "programs": programs},
               open(outp, "w", encoding="utf-8"), ensure_ascii=False)
     sys.stdout.reconfigure(encoding="utf-8")
+    # same rule as check 19: hits on hidden sheets (leftover copies) are not a relation
     related = sum(1 for r in programs.values()
-                  if r["data"] or any(c["kind"][0] in "ABCE" for c in r["calls"]))
+                  if any(d["state"] == "visible" for d in r["data"])
+                  or any(c["kind"][0] in "ABCE" and c["state"] == "visible" for c in r["calls"]))
     print(f"books={len(found)} related={related} single-process tables={len(x['tbl_single'])} "
           f"shared tables={len(x['tbl_shared'])} process codes={len(x['code2proc'])}")
 
