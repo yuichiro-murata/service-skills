@@ -917,8 +917,17 @@ PHASE1-3 books — confirm each in the dump before reporting.
       入力可文字種 is not `文字列`, `ﾊﾟｽﾜｰﾄﾞ`, `-` or `※n` needs a 文字種ﾁｪｯｸ; `年月日`/`年月`/`月日` types need a 日付ﾌｫｰﾏｯﾄﾁｪｯｸ.
       `時間(4桁)` is exempt (no screen in the corpus writes a time-format check). Judge **per event that submits the item**
       (検索, 実行, ﾀﾞｳﾝﾛｰﾄﾞ …): an event that uses the input without the check is the finding, even when another event has it
-      — 要確認 when the check was deliberately removed from that event (`PXJCO165` 【ﾀﾞｳﾝﾛｰﾄﾞﾎﾞﾀﾝ押下時】 lost its 日付ﾌｫｰﾏｯﾄﾁｪｯｸ
-      rows `[30]`/`[32]`/`[38]`/`[39]` on 2026/9/3 while 【検索ﾎﾞﾀﾝ押下時】 keeps `[13]`/`[15]`/`[18]`/`[19]`). Also confirmed:
+      — 要確認 when the check was deliberately removed from that event. **Exception — no 日付ﾌｫｰﾏｯﾄﾁｪｯｸ is needed on a download
+      event** (my-review-skills 回答 20261023 PSJCO304 No.76; self-check call-out ﾁｪｯｸ処理設計書 列26/行20 「日付ﾌｫｰﾏｯﾄﾁｪｯｸは日付ﾓｼﾞｭｰﾙ
+      内で実施するため不要 ※ﾀﾞｳﾝﾛｰﾄﾞﾎﾞﾀﾝにｼｮｰﾄｶｯﾄｷｰが設定されていない場合のみ」): under an event heading that contains ﾀﾞｳﾝﾛｰﾄﾞ
+      (【ﾀﾞｳﾝﾛｰﾄﾞﾎﾞﾀﾝ押下時】, 【取込ﾌｧｲﾙﾀﾞｳﾝﾛｰﾄﾞﾎﾞﾀﾝ押下時】, 【ﾀﾞｳﾝﾛｰﾄﾞ時】) a missing 日付ﾌｫｰﾏｯﾄﾁｪｯｸ is not a finding — its
+      文字種ﾁｪｯｸ is still judged, and a 日付ﾌｫｰﾏｯﾄﾁｪｯｸ that is there is left alone (10 download events carry one, `PXJCO131`
+      `GXJC131A` `[26]`-`[36]`). The exception lapses when that screen's download button has a shortcut key (the call-out 列19/行14:
+      a shortcut key bypasses the date module) — read the button's Ⅳ `ｷｰ割当` cell (find the column by that label after NFKC; a key such
+      as `Enter`/`F4`, not `-`/blank) and, as a second sign, a key hint in its Ⅴ 表示 like the search button's `検索(ENT)`. In
+      2026-11-09 none had one: all 62 Ⅳ ﾀﾞｳﾝﾛｰﾄﾞﾎﾞﾀﾝ rows read `-`/blank (the 検索ﾎﾞﾀﾝ rows: `Enter` 97, `F4` 8), and all 61 Ⅴ 表示 plain `ﾀﾞｳﾝﾛｰﾄﾞ`. So `PXJCO165` 【ﾀﾞｳﾝﾛｰﾄﾞﾎﾞﾀﾝ押下時】 `[28]`, which dropped
+      its 日付ﾌｫｰﾏｯﾄﾁｪｯｸ rows on 2026/9/3 while 【検索ﾎﾞﾀﾝ押下時】 keeps `[13]`/`[15]`/`[18]`/`[19]`, is right, not 要確認 (of 46
+      download events in the ﾁｪｯｸ処理設計書, 18 lack the check while their 検索 has it — none is a finding). Also confirmed:
       `PXJCO124` `GXJC124A` 識別ｶｰﾄﾞ発行枚数(1-N) G4 `[1043]` / G5 `[1205]` (TextBox `数値(整数)正数`) have no check row at all,
       while their sibling 振向先数 has XJZ-000051 at `[91]`/`[136]` — 中. Confirmed: `PXJCO129` `GXJC129B` `[617]`-`[644]`
       (仕掛工程ｺｰﾄﾞ…依頼先ｺｰﾄﾞ, `文字列(半英数)`) have 入力必須 + ﾏｽﾀ存在 only, while 事業所ｺｰﾄﾞ on the same sheet has `[25]` 文字種ﾁｪｯｸ
