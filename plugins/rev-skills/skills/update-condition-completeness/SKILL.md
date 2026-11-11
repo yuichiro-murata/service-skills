@@ -1,6 +1,6 @@
 ---
 name: update-condition-completeness
-description: Check a program's 更新条件表(<TableID>) sheets against the table's ﾃｰﾌﾞﾙﾚｲｱｳﾄ: every column present in order (C1), notnull columns set on INSERT (C2), primary keys set on INSERT and [KEY] on UPDATE/DELETE (C3), 共通項目 conventions (登録者/登録日時 INSERT only, 更新者/更新日時, 排他ﾌﾗｸﾞ, 更新ﾌﾟﾛｸﾞﾗﾑID) (C4), optimistic lock specified (C5), 更新条件 trigger matching a real screen event (C6), ①②… sources defined (C7), ｼｽﾃﾑ日時 format notes (C8), and 更新概要「①画面(画面ID)、②ﾛｸﾞｲﾝ情報」(C9). Asks whether the UPDATE/INSERT/DELETE spec is complete enough to code from — not whether a column exists (xlsx-db-column-check) or the table is declared (design-doc-io-table-check). Use when the user asks to check 更新条件表 completeness, NOT NULL/主キー/共通項目の設定漏れ or ｼｽﾃﾑ日時の書式注記漏れ. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Check a program's 更新条件表(<TableID>) sheets against the table's ﾃｰﾌﾞﾙﾚｲｱｳﾄ: every column present in order (C1), notnull columns set on INSERT (C2), primary keys set on INSERT and [KEY] on UPDATE/DELETE (C3), 共通項目 conventions (登録者/登録日時 INSERT only, 更新者/更新日時, 排他ﾌﾗｸﾞ, 更新ﾌﾟﾛｸﾞﾗﾑID) (C4), optimistic lock specified (C5), 更新条件 trigger matching a real screen event (C6), ①②… sources defined (C7), ｼｽﾃﾑ日時 format notes (C8), 更新概要「①画面(画面ID)、②ﾛｸﾞｲﾝ情報」(C9), and 「※DELETE→INSERT」 noted on a delete-then-insert block (C10). Asks whether the UPDATE/INSERT/DELETE spec is complete enough to code from — not whether a column exists (xlsx-db-column-check) or the table is declared (design-doc-io-table-check). Use when the user asks to check 更新条件表 completeness, NOT NULL/主キー/共通項目の設定漏れ or ｼｽﾃﾑ日時の書式注記漏れ. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # update-condition-completeness
@@ -412,6 +412,40 @@ not findings. Flag:
 - **`ﾛｸﾞｲﾝ` not followed by `情報`** — none in the current corpus, but the call-out names it explicitly;
   keep it.
 Report one line per sheet when every block on it has the same deviation.
+
+**C10 — DELETE→INSERT の記載「※DELETE→INSERT」 — 低.** (my-review-skills チェック観点 〔課題165-214〕, 回答
+20261023 PSJCO304 No.109; adopted 2026-11-11.) A block that updates by DELETE→INSERT — the definition in step 3's
+ﾗﾝﾀﾞﾑ値 rule: one trigger runs a DELETE and an INSERT of the same table — says so, the house form being a second
+line in its 更新概要 cell: `PXJCO128` `更新条件表(TXJAM100)` `[9,16]` `①画面(GXJC128A)、②ﾛｸﾞｲﾝ情報⏎※DELETE→INSERT`.
+- **Written** = the words `DELETE` and `INSERT` in that order on one line **of one cell** (any joiner — `→`, `⇒`,
+  `/`, `-`, `&`, words: `PSJCO403` `TSJCD401` `[43,16]` `※常時洗替(DELETE→INSERT)`, `PSJCO309` `TXJCD407`
+  「DELETE→表示されている実績表項目毎にINSERTを行う」), in the 更新概要 cell or in a cell from the 更新条件 cell down to
+  the row above the `No.` header row (the label under 更新条件, `PXJCO163` `TXJCM013` `[13,16]`) — left part only, not
+  the 取得ﾃｰﾌﾞﾙ/取得条件 sub-block on the right (col 53/54 on). The header row's operation labels are what make the
+  block DELETE→INSERT, never its note — separate `DELETE` and `INSERT` labels, or one `DELETE　INSERT` label, are not
+  written. A `※n` in those cells whose note at the bottom of the sheet says it (`PSJAO401` `TXJAM027WF` `[13,16]`
+  `編集時 ※3` → `[41]` 「…DELETE & INSERTを実施」) is written. Prose that describes the rewrite without the two words
+  (`PSJCO307` `TSJCD117` `[49,16]` 「前回入力情報の削除後、…件数分登録する」) is not.
+- **Which blocks.** Step 3's definition, with two readings settled: a DELETE limited to 編集時 beside an INSERT on
+  編集時/新規登録時 under the same button is DELETE→INSERT (on edit the row is rewritten — `PSJAO401` `TXJAM027WF`
+  `[13,16]`/`[13,34]`); a DELETE of a different table on the same trigger (the WF table deleted when its master is
+  inserted on ﾜｰｸﾌﾛｰ承認) is not.
+- **In 更新概要 only** — fine; never ask for it in 更新条件 as well (No.109). **In 更新条件 only** — not a finding
+  either (my-review-skills' own pattern check accepts it anywhere on the sheet); when you report a missing one,
+  the fix goes in 更新概要.
+- **Flag** a DELETE→INSERT block where it is written nowhere, `TXJAM100` (検索条件保存ﾏｽﾀ, rewritten on 検索ﾎﾞﾀﾝ)
+  included — its exemption is from the ﾗﾝﾀﾞﾑ値 rule, not from this note: `PSJCO204` `更新条件表(TXJAM100)` `[9,16]`
+  `①画面(GSJC204A)、②ﾛｸﾞｲﾝ情報`, against `PXJCO128`'s above. Not this check: a block whose operations run on
+  different triggers (`PSJAO502` `TXJAM065` `[43,16]`/`[44]`: INSERT/UPDATE on 更新ﾎﾞﾀﾝ by mode, DELETE on
+  削除ﾎﾞﾀﾝ; `PSJCO308` `TSJCD014` `[12,16]`; `PSJCO204` `TXJCM058`… INSERT on 実行ﾎﾞﾀﾝ, DELETE on 構成取消ﾎﾞﾀﾝ), and a batch sheet whose operation columns carry different 更新ﾀｲﾐﾝｸﾞ
+  above each label (`PXJCB101` `TXJCM004` `[13,16]`/`[13,28]`/`[13,40]`).
+
+Measured 2026-11-11 over the 122 工程管理 books: 176 blocks have a DELETE and an INSERT column; 35 note it in
+更新概要, 96 in 更新条件 only (4 of them on hidden sheets), 6 through a `※n` note (`PSJAO401` `TXJAM025WF`/`026WF`/
+`027WF`, `PXJCO192` `TSJCM139WF`/`TXJAM025WF`/`TXJCM838WF`), 39 nowhere — 12 of those are `TXJAM100`, about 8 run on
+separate triggers, the remaining ~19 (e.g. `PSJCO606` `TSJCD428` `[49]`/`[83]`, `PSJCO404` `TSJCD401` `[14]`,
+`PSJCO607` `TSJAM402` `[14]`, `PSJCO311` `TSJCD010` `[46]`) are findings. Report one line per sheet (blocks listed); on a hidden
+sheet follow the hidden-sheet rule.
 
 ### 5. Verify before reporting
 

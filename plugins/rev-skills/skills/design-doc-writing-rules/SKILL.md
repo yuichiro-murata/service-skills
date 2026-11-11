@@ -1,6 +1,6 @@
 ---
 name: design-doc-writing-rules
-description: Check a design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules: Ⅴ per-item rules (upper-case note on code inputs, button IDs (共通 XJZ/SJZ 9xxx first, else the WG's 9xxx), 選択 = □, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea carry 桁数 and 入力可文字種, 入力可文字種 consistent across screens, zoom buttons 表示 Z + Ⅳ参照), 項番 gaps/duplicates, 取得件数 at the end of each 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, screen names followed by their 画面ID, and 画面表示仕様 search conditions (LIKE needs a match mode, 名称 searches 部分一致) and join order (INNER before LEFT), zoom names/IDs vs the ledger, other programs' names vs their file names, the 工程管理 order of quantity/lot/sort items, and leftover placeholders (`？`, `XXX` IDs), renamed terms and ﾕｰｻﾞｰID→作業者ｺｰﾄﾞ. How a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name. Also W7 (zoom names/IDs vs 03.ｽﾞｰﾑ管理台帳) and W8 (other programs' names = their 機能定義書 file names).
+description: Check a design-doc workbook against the self-check workbook's (XXXXX000_ｾﾙﾌﾁｪｯｸ用.xlsx) writing rules: Ⅴ per-item rules (upper-case note on code inputs, button IDs (共通 XJZ/SJZ 9xxx first, else the WG's 9xxx), 選択 = □, No = ZZ9/1から連番/XJZ0425, TextBox/TextArea carry 桁数 and 入力可文字種, 入力可文字種 consistent across screens, zoom buttons 表示 Z + Ⅳ参照), 項番 gaps/duplicates, 取得件数 at the end of each 画面表示仕様 block, the standard ﾚｽﾎﾟﾝｽ wording, screen names followed by their 画面ID, and 画面表示仕様 search conditions (LIKE needs a match mode, 名称 searches 部分一致) and join order (INNER before LEFT), zoom names/IDs vs the ledger, other programs' names vs their file names, the 工程管理 order of quantity/lot/sort items, and leftover placeholders (`？`, `XXX` IDs), renamed terms and ﾕｰｻﾞｰID→作業者ｺｰﾄﾞ. How a doc is written, not cross-references (design-doc-internal-consistency) or ID numbering (naming-standard-compliance). Use when the user asks for 記述ルール/セルフチェック観点 compliance. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name. Also W7 (zoom names/IDs vs 03.ｽﾞｰﾑ管理台帳), W8 (other programs' names = their 機能定義書 file names) and W11 (明細 items named 項目(1-N), never the marker on 表示).
 ---
 
 # design-doc-writing-rules
@@ -20,7 +20,7 @@ section.
 `_DELETED_DIGEST.txt`), reporting conventions. W5 uses the all-WG screen-name list: use the one your
 prompt names, and build it yourself (see W5) when none was handed to you. W7 and W8 use the zoom list and
 the program-name list the same way. Hidden rows and columns of a live sheet (`_HIDDEN.txt`) are read like the
-rest: a W1-W10 finding there is reported with 【非表示】 (this check owns hidden Ⅴ rows, `agent-guide.md`); a
+rest: a W1-W11 finding there is reported with 【非表示】 (this check owns hidden Ⅴ rows, `agent-guide.md`); a
 whole hidden leftover sheet is not this check's.
 
 ## Checks
@@ -157,7 +157,8 @@ confirmed in `82.画面項目辞書_共通` `XJZ(共通_JAGUR)` on 2026-10-19), 
 other buttons' correct number to the designer.
 
 **W1c — 選択 (No.48).** ("明細-type area" below = any area of repeating rows — titles with
-`明細`/`一覧`/`履歴`/`通知先`…, or any area that has a `No` or `選択` item.) A `選択` item in a 明細-type area should be `表示` = `□` (`CheckBox`) with
+`明細`/`一覧`/`履歴`/`通知先`…, or any area that has a `No` or `選択` item; `選択(1-N)`/`No(1-N)` are the same items —
+W11 asks for that marker.) A `選択` item in a 明細-type area should be `表示` = `□` (`CheckBox`) with
 画面項目ID `-`. Measured: 72 comply. Flag `表示` `-`/blank on a CheckBox 選択 (6 — e.g.
 `PSJCO302` `GSJC302A` `[567]`; `PSJCO502` `GSJC502B` has two with every column blank), and a
 画面項目ID on 選択 (10 — 6 of them `XJC8032`, so the designer may say it is a deliberate convention;
@@ -168,7 +169,7 @@ name difference between a Ⅳ `選択(ﾍｯﾀﾞｰ)` event and the area's Ⅴ
 `選択(ﾍｯﾀﾞｰ)` row) is the intended way to tell the header event from the row event — never report the
 name difference or the Ⅳ name as absent from Ⅴ (`design-doc-internal-consistency` check 6).
 
-**W1d — No (No.49).** A `No` / `No.` item in a 明細 area should be `Label`, 表示形式 `ZZ9`, 初期値
+**W1d — No (No.49).** A `No` / `No.` item (`No(1-N)` too) in a 明細 area should be `Label`, 表示形式 `ZZ9`, 初期値
 `1から連番`, 画面項目ID `XJZ0425`. Measured over 159 No rows: 51 fully comply, and the literal rule
 over-fires on all three fields:
 - **表示形式**: `-` in 74 rows, nearly as common as `ZZ9`. Still a finding (the rule is explicit and
@@ -893,9 +894,50 @@ or brackets 47; designers' answer 2026-10-06 No.61). The ≈8 genuinely ambiguou
 operands and the または does not join two values of the same item — report such a line only when you are reading
 that cell anyway.
 
+### W11 — 明細項目の「(1-N)」 (my-review-skills チェック観点 〔課題1580〕〔回答 20261002 No.97〕, call-out 画面設計書 列24/行348 「明細項目で取得数が可変の項目の場合、項目名には「項目(1-N)」の記載を行う。」; adopted 2026-11-11)
+
+Ⅴ only, parsed as W1 parses it (areas, header labels, Ⅴ ends at `Ⅵ．`); hidden rows with 【非表示】. Match the marker
+after NFKC: `(1-N)`, and as the same marker `(0-N)`, `(1-M)`/`(0-M)` (a second level of repetition — `PXJCO192`
+`GXJC192D` `[171]` `処置指示No(1-M)`). Both rules are 低.
+
+**W11a — 表示 に (1-N).** The marker belongs on 画面項目名; 表示 is the caption shown. Flag a 表示 that carries it:
+`PSJAO401` `GSJA401F` `[782]`/`[879]` 工程ﾍｯﾀﾞｰ(1-N) / 表示 `工程(1-N)`, `PSJCO302` `GSJC302A` `[653]` 工程ﾍｯﾀﾞｰ / 表示
+`工程(1-N)` (its 画面項目名 lacks the marker as well — say both in one line). These three are the corpus (2026-11-11).
+A 表示 of `-` means "show the 画面項目名" and is never a finding (回答 20261023 PSJCO304 No.123) — do not ask to copy
+`(1-N)` into it.
+
+**W11b — 取得数が可変の明細の項目に (1-N) がない.** In an area of repeating rows whose count comes from the data (a
+list: rows numbered by a `No` item, ticked by a per-row `選択`, drawn as a list in Ⅰ, fed by a Ⅲ block that returns
+several rows), every per-row item is named `項目(1-N)`. Rows the user adds (行追加/追加ﾎﾞﾀﾝ) are a variable count
+too. Per-row items include `No` and `選択` — in the lists that use the marker, `No(1-N)` outnumbers `No` 32 to 12
+and `選択(1-N)` `選択` 25 to 11 — controls drawn in each row (a row's 詳細ﾎﾞﾀﾝ/ﾘﾝｸ/RadioButton, `PSJAO401`
+`GSJA401B` `詳細ﾎﾞﾀﾝ(1-N)`), and Hidden items that hold a value of each row's record (its 排他ﾌﾗｸﾞ, keys — the 説明
+or 初期値 names a per-row source, or a sibling screen names the same item with the marker: `GSJA401F` `[823]`
+`排他ﾌﾗｸﾞ(加工手順構成)(1-N)` beside `GSJA401B` `[1208]` without). A Hidden item holding one value for the whole area
+is not per row; when you cannot tell, leave it out. Never flagged: items that are not per row — buttons above or
+below the list (行追加/行削除/Excel取込…), the header select-all (`選択(ﾍｯﾀﾞｰ)`, `全選択` `PSJAO203` `GSJA203A`
+`[469]`), heading and legend Labels (`通常工程`, `振向元⏎(ﾍｯﾀﾞ1段目)`, `入炉対象一覧`, `■橙：変更箇所`), one-value
+items of the area (合計, 件数, an area-wide RadioButton/ComboBox). Not variable, so not this rule: repeats of a fixed
+count named by their own numbers (`不良数①～⑤`, `(直行1)`…`(直行4)`, `1～15`), a totals area (`PXJCO131`
+`GXJC131A` G2)明細合計領域 `[1967]`), an area showing one record (`PXJCO122` `GXJC122A` G3)明細表示領域; also a list
+area whose Ⅲ block takes only the first record, `※ 先頭ﾚｺｰﾄﾞのみ取得`, whatever its 取得件数 says).
+- **Where the marker goes**: last, after the item's own brackets and before `※n` — `No(変更前)(1-N)`, `処置指示No(1-M)⏎※2`.
+  One marker is enough for an item repeated two ways (rows × columns, `工程ｺｰﾄﾞ(1-N)` in `GSJA401F`'s 層No × 工程
+  grid), and `(1-N)×(1-M)` is fine; a column repeated across (`工程ﾍｯﾀﾞｰ(1-N)`) takes the marker like a row.
+- **Mixed area** — some per-row items carry the marker, some don't: name the ones without. `PSJCO207` `GSJC207A`
+  G2)明細領域 `[233]` `No` (its other 18 items carry it); `PSJCO503` `GSJC503A` G3)受入明細領域 `[530]` 選択 / `[531]` No.
+- **Whole area without it**: one entry for the area, not its items — `PSJAO203` `GSJA203A` G2)明細領域 (header row
+  `[468]`).
+
+Measured 2026-11-11 over the visible 画面設計書 sheets of the 122 books: of the Ⅴ areas that look like lists (title
+明細/一覧/履歴/ﾘｽﾄ, or a `No`/`選択` item), 17 mark every item, 77 are mixed (mostly buttons and headings — not
+findings), and 176 carry no marker at all — an upper bound, since that heuristic also catches fixed and one-record
+areas. The rule is stated, the practice is uneven: **one line per sheet**, listing its areas (whole area / named
+items), so it does not bury the rest of the report.
+
 ## Reporting
 
-Group by check (W1-W10), then by sheet. Every rule here is low severity on its own unless the check
+Group by check (W1-W11), then by sheet. Every rule here is low severity on its own unless the check
 says otherwise (a duplicate/misfiled circled section that another doc cites by number is 中; a
 placeholder ID such as `XXXXｽﾞｰﾑ(XXXXXXX)` is 中 (W7d) — a bare col-54 `XXXXXXX` is not reported, W10a). When one deviation repeats across a whole sheet, report it
 once per sheet with the cells listed, as each section says — these rules fire widely and a row-by-row
