@@ -748,9 +748,15 @@ designers' answers behind them; adopted 2026-10-16, when the shared dump started
       Report, against the state the drawing shows: `*` on an item that is not 必須 in that state, a
       required item with no `*`, or `*` on a Label whose Ⅴ 必須 is not ○ (課題1599; self-check call-out
       画面設計書 列64/行5 — a Label that is 必須 ○ in Ⅴ, such as a file-name field filled by a file dialog,
-      `PSJCO404` `[120,4]` *取込ﾌｧｲﾙ / `GSJC403D` `[58,33]`, may carry `*`). A 必須
-      written `※n` is evaluated in that state; an either-one-required pair may both carry `*`. A required
-      item that changes with a 区分 whose `*` does not change is 要確認 (call-out 列67/行6). An input item
+      `PSJCO404` `[120,4]` *取込ﾌｧｲﾙ / `GSJC403D` `[58,33]`, may carry `*`). An item
+      that is 必須 only under a condition (Ⅴ 必須 `※n` — not `○ ※n` — or a conditional 未入力ﾁｪｯｸ in its ﾁｪｯｸ処理設計書)
+      carries `*` and pink wherever the drawing shows it usable (my-review-skills call-out 画面設計書(B) 列49/行15 「ﾛｯﾄ停止指示
+      登録や、着手ﾒｯｾｰｼﾞﾒﾝﾃﾅﾝｽのように、条件によって必須入力箇所が可変になる場合、項目には「*」とピンク色をつける」 — the two
+      screens name the kind of screen; in 2026-11 neither draws it so: `PSJCO304` `画面ｲﾒｰｼﾞ` has no `*` or pink on its 13
+      conditional G2 headings): its `*` is never a finding, a missing `*` is 中, missing pink 低. Where Ⅵ makes the item 非活性 in the drawn state, its `*` is not judged (call-out 列64/行5 keeps `*` off
+      inactive items) and its colour follows the gray rule below (`PXJCO128` 新規 drawing, 停止区分 C: 管理No … ﾃｰﾌﾟﾛｯﾄNo,
+      Ⅴ ※2, no `*`, drawn white — only the colour line). An either-one-required pair may both carry `*`. Only on a sheet that draws one picture per 区分 is such an item judged in each picture's state, and one whose `*`
+      does not change between those pictures is 要確認 (call-out 列67/行6). An input item
       (Ⅴ 属性 TextBox / ComboBox / …) drawn gray although usable in that state, or a Label drawn as a white
       field (課題208-289), is 低; so is an input drawn white although Ⅵ makes it 非活性 in that state, when
       the same sheet draws inactive inputs gray elsewhere (`PXJCO128` 新規 drawing, 停止区分 C: 管理No
@@ -1147,8 +1153,9 @@ PHASE1-3 books — confirm each in the dump before reporting.
       `[521,26]` = XJC_ `ﾛｯﾄ停止ﾁｪｯｸ` "1" `[269,28]` … "A" `[706,28]`, "B" `[748]`/`[775]`, "C" `[820]`, "D" `[892]`; 即停止ﾌﾗｸﾞ `[50,2]` =
       `[274,28]`/`[275,28]`); the NULL-vs-空白 convention the process relies on (`(A.層No = Y.層No OR A.層No IS NULL)` `[267]`/`[268]`
       needs NULL — `[84,2]` ※3 「セット時のみ更新」 gives it; `COALESCE(A.処置指示No2/3,"0")` `[660,6]`-`[662,6]` and
-      `A.処置指示No2 = B.処置指示No` `[708]`-`[710]` need NULL for an empty 処置指示No2/3, while `[36,18]`/`[37,18]` say only ※2
-      ○ and Ⅴ's 初期値 is 空白 (`GXJC128B` `[526,36]`/`[528,36]`) — 要確認); the join key (汎用工程GRP 利用機能ID `"PXJCO128"` XJC_
+      `A.処置指示No2 = B.処置指示No` `[708]`-`[710]` need NULL for an empty 処置指示No2/3, which Ⅴ's 初期値 「新規:空白」 (`GXJC128B` `[530,36]`/`[532,36]`) supplies — 「空白」 as
+      a value is NULL (my-review-skills 回答 20261023 PSJCO304 No.108), so not a finding; raise the point only when the program
+      writes a non-NULL empty value (`""`, `"0"`, a space) where the process tests NULL); the join key (汎用工程GRP 利用機能ID `"PXJCO128"` XJC_
       `[280,28]` = `画面設計書(GXJC128C)` `[241,28]`); and that every column the process reads is written (QA判定 `[100,18]`-
       `[105,18]` ↔ `SXJCB122` `更新条件表(TXJCD204)` `[28]`-`[31]` — all carried; `[29,18]` 「②.判定結果」 names a column TXJCD204
       does not have, 低 — `xlsx-db-column-check`'s if it is in the run). **Re-implemented judgments:** wherever the program
@@ -1165,7 +1172,7 @@ PHASE1-3 books — confirm each in the dump before reporting.
       `補足)製造ﾛｯﾄNo自動採番_概要` `[73,10]`); a pointer to the 旧名称 「ﾛｯﾄ停止」ｼｰﾄ (the 利用一覧 still lists the 旧名称; check 4b skips it as a delegation too); the
       typo 「ﾛｸﾞｲﾝ情報.事業府ｺｰﾄﾞ」 in a call (`PSJCO201` `[62,59]`… — `design-doc-typo-check`'s); a 共通ｺｰﾄﾞﾏｽﾀ key by
       program ID; tables in `data_shared`; return values the caller does not rely on. Validated 2026-10-29: `PXJCO128` 3
-      要確認 (処置指示No2/3 NULL, COALESCE side in GXJC128C and GXJC128B), `PSJCO201` 1 中 (rename) + 1 低 (order), `PSJCO504` 0.
+      要確認 (処置指示No2/3 NULL, COALESCE side in GXJC128C and GXJC128B — 0 since 空白 = NULL, re-run 2026-11-11), `PSJCO201` 1 中 (rename) + 1 低 (order), `PSJCO504` 0.
       Cost: a 呼び出し reads one 引数表 (≤ 15 rows) and one event block (~10 min on PSJCO201); a データ comparison reads every
       block naming the table (ﾛｯﾄ停止ﾁｪｯｸ has 14 for TXJCM501, ~30 min on PXJCO128).
 
@@ -1257,8 +1264,10 @@ and 610 更新条件表 sheets, live text). Re-derive every verdict; the cells a
       has no 検索時 line; `PXJCO122` `GXJC122A` Ⅳ `[626,20]` 検索 sets 工程ｺｰﾄﾞ to `(4).仕掛工程ｺｰﾄﾞ` while Ⅴ `[807,43]` says only
       `管理Noﾛｽﾄﾌｫｰｶｽ時:(4).仕掛工程ｺｰﾄﾞ` (`PXJCO123` `GXJC123A` Ⅳ `[488,23]` ↔ Ⅴ `[569,43]` the same shape); `PSJAO203`
       `GSJA203B` Ⅳ `[1008,20]` 一時保存 sets 状態 to `"00"(作成中)` while Ⅴ `[1273,43]` has only the per-処理区分 values;
-      `PXJCO128` `GXJC128A` Ⅳ `[374,23]` 起動時③ sets the 層No list while Ⅴ `[506,43]` has no 起動時 line. A Ⅴ that states the
-      clearing in prose instead of a line is fine (`GXJC128B` Ⅳ `[458]`/`[470]` clear items, Ⅴ `[543,43]` says so). A Hidden item
+      `PXJCO128` `GXJC128A` Ⅳ `[375,23]` 起動時③ sets the 層No list while Ⅴ `[507,43]` has no 起動時 line. A Ⅴ that states the
+      clearing in prose instead of a line is fine (`GXJC128B` Ⅳ `[474]` clears the 停止工程 items, Ⅴ `[547,43]` says so). A 名称
+      item (作業場名, 工程名, 取引先名 …) set by a ｽﾞｰﾑ値選択時 event that Ⅳ describes needs no Ⅴ line for it (my-review-skills
+      回答 20261023 PSJCO304 No.71); its ﾛｽﾄﾌｫｰｶｽ時 value still belongs in Ⅴ. A Hidden item
       that mirrors a visible one (same name, or a `(ﾊﾟﾗﾒｰﾀ)`/`(区分値)` suffix — 73 of 1,510 Hidden items have such a twin)
       takes its value from the same source: `PSJAO704` `GSJA704I` `[189,35]` `(2).加工GRP` vs `[194,35]` 空白; `PXJCO904`
       `GXJC904A` `[656,36]` `ﾊﾟﾗﾒｰﾀ.工程ｺｰﾄﾞ` vs `[779,36]` `(6).工程ｺｰﾄﾞ`; `PSJCO201` `GSJC201A` `[979,43]` `検索時:(6)-②.層No` vs
