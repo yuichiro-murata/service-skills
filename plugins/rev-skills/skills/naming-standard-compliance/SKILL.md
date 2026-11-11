@@ -206,15 +206,22 @@ and so on; the routing table is in `_shared/agent-guide.md`), which is
    - **Expected** (per doc type — `●` when **any** sheet of that type has content: `PSJCO203` has 10 of 17
      更新条件表 with a 取得 block): content → `●`; no content, including a sheet whose BA-CZ holds only 画面項目IDs →
      `-`. Report `●` without content as 低 「Developer を「-」に」 (更新条件表 with no 取得 block,
-     機能定義書, ID-only 画面設計書/ﾌｧｲﾙ出力仕様書, `PSJCO403` ﾁｪｯｸ処理設計書 with only the row-8 headers), and
-     `-` with content as 低 「Developer を「●」に」, citing up to three cells (`PXJCO131`
-     `画面設計書(GXJC131A)` `[1636,58]` `sagyobaCd`; `PSJCO203` `更新条件表(TXJCA003)` `[8,54]` 取得ﾃｰﾌﾞﾙ名).
+     機能定義書, ID-only ﾌｧｲﾙ出力仕様書, a ﾁｪｯｸ処理設計書 with only the row-8 headers), and
+     `-` with content as 低 「Developer を「●」に」, citing up to three cells (`PSJCO203`
+     `更新条件表(TXJCA003)` `[8,54]` 取得ﾃｰﾌﾞﾙ名).
      When the only content is one to three stray memo cells (`固定で大丈夫`, `ﾎﾞﾀﾝは9000番台`, an image
      caption), report 要確認: move the memo out of BA-CZ or set `●`.
-   - **Not a finding:** Developer `-` on a sheet whose BA-CZ holds only 画面項目IDs (ﾌｧｲﾙ出力仕様書 BB,
-     画面設計書 Ⅳ/Ⅴ BB) — No.92.
-   - Measured 2026-10-19 over PHASE1-3 (121 表紙): 349 rows agree, 59 `●` without content (38 of them
-     ID-only), 54 `-` with content (11 of them memo-only). 詳細設計, 画面遷移図 and ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ follow the
+   - **画面設計書 is the exception: its Developer is always `●`** (my-review-skills 回答 20261023 PSJCO304 No.37), whatever
+     BA-CZ holds — 画面項目IDs only, ﾒｯｾｰｼﾞIDs only, or nothing. When the workbook has a visible 画面設計書 sheet, `●` is never a
+     finding and `-` is one 低 「Developer を「●」に」 citing the 表紙 cell (`[26,23]` on the 工程管理 cover; find it by the
+     `画面設計書` row and the `Developer` column) — one line, never a second one from the content test above, and no
+     BA-CZ cell needs to be cited (BA-CZ content such as `PXJCO131` `画面設計書(GXJC131A)` `[1636,58]` `sagyobaCd` may be named
+     as a reason, not required). Measured 2026-11-11: 97 books have a
+     画面設計書 sheet, 48 mark it `●`, 49 `-` (`PSJAO203`, `PSJCO403`, `PXJCO131` …) — those 49 are findings now.
+   - **Not a finding:** Developer `-` on a sheet whose BA-CZ holds only 画面項目IDs (ﾌｧｲﾙ出力仕様書 BB, 帳票設計書 Ⅱ BB) —
+     No.92; this no longer covers 画面設計書 (above).
+   - Measured 2026-10-19 over PHASE1-3 (121 表紙), before the 画面設計書 exception: 349 rows agree, 59 `●` without content
+     (38 of them ID-only), 54 `-` with content (11 of them memo-only). 詳細設計, 画面遷移図 and ｽﾍﾟｰｼﾝｸﾞﾁｬｰﾄ follow the
      convention bullets below, not this test.
    **A hidden sheet does not count as present**
    (the dump now includes hidden sheets — `_HIDDEN.txt` lists them): a doc type whose only sheet is
