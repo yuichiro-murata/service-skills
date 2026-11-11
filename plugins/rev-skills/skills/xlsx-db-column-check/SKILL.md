@@ -1,6 +1,6 @@
 ---
 name: xlsx-db-column-check
-description: Check whether a design doc (機能定義書/画面設計書/更新条件表) references DB columns that do not exist in the table's ﾃｰﾌﾞﾙﾚｲｱｳﾄ, and whether each screen item's 桁数 matches the column's length (e.g. a 工程名 TextBox of 30 against NVARCHAR2(60)). For 検索条件保存ﾏｽﾀ (TXJAM100) it also flags a saved master-derived name shown as a Label (only the code should be stored) and a typed search condition that is not saved (self-check No.47). It also reads each 参照ｴﾝﾃｨﾃｨ block as SQL (step 7): NULL compared with =/<>, COUNT counting the wrong unit, a LEFT-joined column in WHERE, existence checks not narrowed to the business unit, one =/<> against a multi-valued 移動ﾛｯﾄ状態 group, 共通ｺｰﾄﾞﾏｽﾀ read without excluding the $$ row, 停止日時 masters read without excluding stopped rows, 取得件数 1件 not guaranteed by the key, existence checks as INNER JOIN, TIMESTAMP ranges without 00:00:00/23:59:59, GROUP BY vs 取得項目, and ｿｰﾄ順 that leaves the order non-unique. Distinct from design-doc-io-table-check, which asks whether a table is declared at all. Use when the user asks to verify a program's design doc against the DB design files, e.g. 「使っているカラムがDB設計書に存在するか確認して」「存在しないカラムを使っていたら教えて」. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
+description: Check whether a design doc (機能定義書/画面設計書/更新条件表) references DB columns that do not exist in the table's ﾃｰﾌﾞﾙﾚｲｱｳﾄ, and whether each screen item's 桁数 matches the column's length (e.g. a 工程名 TextBox of 30 against NVARCHAR2(60)). For 検索条件保存ﾏｽﾀ (TXJAM100) it also flags a saved master-derived name shown as a Label (only the code should be stored) and a typed search condition that is not saved (self-check No.47). It also reads each 参照ｴﾝﾃｨﾃｨ block as SQL (step 7): NULL compared with =/<>, COUNT counting the wrong unit, a LEFT-joined column in WHERE, existence checks not narrowed to the business unit, one =/<> against a multi-valued 移動ﾛｯﾄ状態 group, 共通ｺｰﾄﾞﾏｽﾀ read without excluding the $$ row, a written 停止日時 condition with the wrong direction or a broken pair, 取得件数 1件 not guaranteed by the key, existence checks as INNER JOIN, TIMESTAMP ranges without 00:00:00/23:59:59, GROUP BY vs 取得項目, and ｿｰﾄ順 that leaves the order non-unique. Distinct from design-doc-io-table-check, which asks whether a table is declared at all. Use when the user asks to verify a program's design doc against the DB design files, e.g. 「使っているカラムがDB設計書に存在するか確認して」「存在しないカラムを使っていたら教えて」. For a full REV without named checks the entry point is `rev-program-review`; run this standalone only when selected there or asked for by name.
 ---
 
 # xlsx-db-column-check
@@ -580,22 +580,33 @@ declare 1件 with ｷｰ3 the only free key column — there the definition row 
 written under S6 (S8 leaves them out). Not S6: an alias listed in the block but unused by the query after the 取得件数 split (59),
 `TXJAM008_B`/`TXJAM008_IN` (other tables), a ｷｰ3 fixed through a resolved `※n`.
 
-**S7 — a 停止日時 master read without excluding stopped rows — 要確認.** Masters moved from JAGUR (品目 TXJAM002,
-取引先 TXJAM007, 工程 TXJAM023, 加工手順 TXJAM025, 資源 TXJAM601, 加工GRP VSJAM003 — an open list: the rule is driven by
-every layout step 3 dumped that has a 停止日時 column) are logically deleted through 停止日時; a query that lists, joins or validates against them carries the house template `(X.停止日時 = NULL OR
-X.停止日時 => ｼｽﾃﾑ日時)` (29 queries, `PSJAO401` `画面設計書(GSJA401B)` `[428]` (5)工程ﾏｽﾀ — its `= NULL`/`=>` halves are
-S1/W6e) or another row on a column starting `停止日` (`X.停止日時`, `X.停止日`; 6; 15 more in a sibling query of the same block). A
-delegation to 共通項目取得 with `有効期限ﾌﾗｸﾞ="1"` is outside S7 (the stop-date filter lives in 07). Flag an alias whose layout has
-停止日時 and whose query reads it in 取得項目 as the main table or through an INNER JOIN with no `X.停止日` condition
-anywhere in the block, worded 「ﾚｲｱｳﾄに停止日時があるが条件にない。停止済みを含める意図か確認」 (PH2-444・548・549・554:
-JAGUR processes assumed physical deletion). Measured: 452 alias-query pairs, 56 reported in 21 programs: `PSJAO404`
-`画面設計書(GSJA404B)` `[142,4]` (6)工程一覧検索 (TXJAM023 listed), `PSJCO304` `画面設計書(GSJC304A)` `[257,4]`
-③品目ﾘｽﾄ取得 (TXJAM002 → ComboBox), `PSJCO501` `画面設計書(GSJC501C)` `[53,4]` (3)加工手順情報(最新)取得 (TXJAM025),
-`PSJAO601` `画面設計書(GSJA601A)` `[219,4]` (7)取引先ﾏｽﾀ取得(更新用). Not S7: name-display-only lookups (取得項目 all
-名/名称/略/ﾎﾞﾃﾞｨ — 180) and LEFT-joined attribute reads (39); the ﾛｯﾄ停止 programs `PXJCO128`/`PXJCO134` (10 — designers'
-answer 2026-10-06 No.8/21/57/58: they ignore 加工手順/品目/工程 stop dates, and then the 共通項目取得 argument 有効期限ﾌﾗｸﾞ
-is not needed either); the master's own ﾒﾝﾃﾅﾝｽ program (27 — stopped rows are what it edits); aliases used only in
-WHERE (45 — existence checks, read with S4); 更新条件表 side blocks (13).
+**S7 — a written 停止日時 condition that does not do what it should — 中.** Masters moved from JAGUR (品目 TXJAM002,
+取引先 TXJAM007, 工程 TXJAM023, 加工手順 TXJAM025, 資源 TXJAM601, 加工GRP VSJAM003 …) are logically deleted through 停止日時,
+and a query that wants live rows only carries the house pair `(X.停止日時 = NULL OR X.停止日時 => ｼｽﾃﾑ日時)` — two rows of one
+alias, `(` before the first, `OR` and `)` in the logic column (cols 3 and 46 on `PSJAO241` `画面設計書(GSJA241B-基本情報)` `[329]`/`[330]`; its `= NULL` /
+`=>` spellings are S1 / W6e, not S7). **Judge only the conditions that are written** (my-review-skills 回答 20261023 PSJCO304
+No.24・73・94, 回答 20261006 No.8・21・57・58): a query with no stop condition, and a 共通項目取得 call without 有効期限ﾌﾗｸﾞ, mean
+"stop dates not looked at" and are never a finding — designers add the condition only where it is needed. For each written
+condition on a column starting `停止日` against ｼｽﾃﾑ日時 or NULL — in 検索条件 or 結合条件 alike — report one line per
+condition, under the first bullet that fits, and say what it does where it stands (in 検索条件 or an INNER JOIN the rows go;
+in a LEFT JOIN the rows stay and the joined table's columns come back NULL):
+- **the wrong direction** — `<`/`<=` ｼｽﾃﾑ日時 keeps only stopped rows: `PSJCO309` `画面設計書(GSJC309A)` `[343]`
+  `B.停止日時 <= ｼｽﾃﾑ日時` on the 資源 list joined INNER to 資源ﾏｽﾀ. Not a finding when the block's title, a `※n` or the Ⅳ of the
+  same sheet or of the 機能定義書 says the query is after stopped rows (a 停止済/停止中 list);
+- **a broken pair** — the NULL half and the ｼｽﾃﾑ日時 half not on the same alias and column, or not joined by `OR` inside one
+  bracket: `PSJCO403` `画面設計書(GSJC403A)` `[339,8]` `D.停止日時 IS NULL` followed by `[340,8]` `D.資源ｺｰﾄﾞ >= ｼｽﾃﾑ日時` with
+  no `OR`/bracket (rows as of 2026-11-11; in `A LEFT JOIN D` it needs a NULL stop date **and** a 資源ｺｰﾄﾞ after today, so
+  D.資源名 comes back NULL on nearly every row);
+- **one half alone** — `>`/`>=` ｼｽﾃﾑ日時 without the NULL half drops every never-stopped row (中); `IS NULL` alone treats a
+  row with a future stop date as already stopped (要確認 — it may be meant).
+Not S7: a range the user enters (`X.停止日時 >= Y.停止日(FROM)+" 00:00:00"`, a TO-only `<= Y.停止日(TO)+" 23:59:59"` — the
+time suffix is S10's), including the
+bracketed `(X.停止日時 >= Y.停止日(FROM)+" 00:00:00" OR X.停止日時 IS NULL)` that a ※n uses when only FROM is entered
+(`PSJAO241` `画面設計書(GSJA241A)` `[289]`/`[290]` ※2; 8 in 5 screen sheets and the ﾌｧｲﾙ出力仕様書 `FSJA003`/`FXJA014`) — its NULL half is right there; `>` vs `>=` at the boundary, a display rule in a `※n` (`PSJAO203` `GSJA203B` `[1786,3]` 「停止日時<ｼｽﾃﾑ
+日時の場合、表示」), a check-sheet sentence that writes the pair in prose (`PXJCO101` `ﾁｪｯｸ処理設計書(GXJC101C)` `[22,59]`), and other
+validity columns (`有効期限日`, `PSJCO304` `ﾁｪｯｸ処理設計書(GSJC304B)` `[197]` — the 回答 is about 停止日時 only).
+Measured 2026-11-11 on the 121 工程管理 books: 38 NULL halves — 29 in the live-rows pair, 8 in the FROM-only bracket, 1
+broken pair — plus 36 user-range rows and 1 wrong direction; no half stood alone. The two findings are the two cited above.
 
 **S8 — 取得件数「1件」 that the conditions cannot guarantee — 中; 低 when a ｿｰﾄ順 or a 先頭 note already exists.**
 Take the main table's unique key (the same I01 reading as S2/S4) and remove every column fixed by `=` in 検索条件 or
@@ -682,8 +693,7 @@ hands the sort to the ﾀﾞｳﾝﾛｰﾄﾞ画面's arguments (`PSJCO502` `FS
 free key column: name the key column directly.
 
 **Limits of the 2026-10-28 measurement, to keep in mind when re-deriving:** "fixed by `=`" was taken from both sides
-of 検索条件 and 結合条件 without checking that the joined side is unique, so S8/S12 under-count; the S7 classes
-(name-only / LEFT-joined / main) are mechanical. Re-read the block before reporting.
+of 検索条件 and 結合条件 without checking that the joined side is unique, so S8/S12 under-count. Re-read the block before reporting.
 
 ### 8. Reporting
 
@@ -706,7 +716,7 @@ suspicious cross-references, and redundant code+name pairs first, likely-renames
 labeled as lower-confidence judgment calls rather than confirmed defects.
 
 An S-finding (step 7) carries its evidence: the unique key and the fixed columns for S2/S4/S8/S9/S12, the join label
-for S3/S9, the resolved footnote and the 07 group for S5, the layout's 停止日時/TIMESTAMP column for S7/S10, the group row
+for S3/S9, the resolved footnote and the 07 group for S5, the condition rows (and the pair's other half) for S7, the layout's TIMESTAMP column for S10, the group row
 for S11. S1, S6 and the 先頭 sentence (S8) are one line per sheet listing every cell.
 
 A 桁数 finding carries its own evidence: give both numbers and both sources (`画面桁数=30` /
