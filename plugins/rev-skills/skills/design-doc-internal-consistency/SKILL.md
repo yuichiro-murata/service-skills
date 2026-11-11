@@ -2,7 +2,7 @@
 name: design-doc-internal-consistency
 description: Review one program's design-doc set (機能定義書/画面設計書/ﾁｪｯｸ処理設計書/更新条件表) for internal cross-reference consistency: events vs the processing overview, response/screen-item/message IDs registered (and no other subsystem's message IDs), Ⅳ message text vs its ID, layout/Ⅴ/Ⅵ agreeing (Hidden items in Ⅵ, item order, ○/〇, yyyy/MM/dd), exclusive control, process/check order vs buttons, 区分名称 and in-text references resolving, pasted pictures and the 画面ｲﾒｰｼﾞ/《参考》画面項目遷移 sheets vs the design, copies edited on one side only, 必須/文字種 checks vs Ⅴ, sub-program/transition parameters vs the callee (including arguments the callee never uses, empty values for
 mandatory arguments, and decisions made on both sides), calls to and data shared with the XJC_ｼｽﾃﾑ共通設計書 common
-processes, per-区分 control tables vs the 更新条件表, and Ⅴ's per-event value lines vs Ⅳ's events. Not the Ⅲ．入出力定義 check nor the self-check writing rules. Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書 or whether it is internally consistent; for a full REV the entry point is `rev-program-review`.
+processes, per-区分 control tables vs the 更新条件表, Ⅴ's per-event value lines vs Ⅳ's events, Ⅴ list orders and enumerations vs Ⅲ, and 権限ﾁｪｯｸ on DB-updating events (present, No.1). Not the Ⅲ．入出力定義 check nor the self-check writing rules. Use when the user asks to レビュー/REV a 機能定義書 or 画面設計書 or whether it is internally consistent; for a full REV the entry point is `rev-program-review`.
 ---
 
 # design-doc-internal-consistency
@@ -1277,6 +1277,88 @@ and 610 更新条件表 sheets, live text). Re-derive every verdict; the cells a
     Check 1 asks whether each 起動時/ﾎﾞﾀﾝ押下 event has a 処理概要 step and check 6 compares the Ⅳ/Ⅴ item order; this check
     is the only one that reads Ⅴ's event lines against Ⅳ. Check 15 reads the same `実行時:` lines for the 《参考》 sheets —
     parse them with this check's rules.
+
+22. **Ⅴ list order and enumerations ↔ Ⅲ** (my-review-skills チェック観点 2026-11-04; 回答 20261023 PSJCO304 No.61・81,
+    課題193-965・971; adopted 2026-11-11). Measured 2026-11-11 over the 画面設計書 of the 工程管理 books (482 Ⅴ ComboBox,
+    408 CheckBox, 113 RadioButton rows). A list's source is usually named in **表示形式** (col 25/26), not 説明 — read
+    表示形式, 初期値 and 説明 (and the ※n they point to) together.
+    - **22a — a stated list order agrees with its source — 中.** When a ComboBox/CheckBox/RadioButton row states the
+      order of its own choices (「承認状態(ﾜｰｸﾌﾛｰ)の区分降順で画面に表示」, 「先頭の"全て"の後に順に並べる」, 「層Noでｿｰﾄ」), it must
+      agree with the source: the Ⅲ(n) block's ｿｰﾄ順 (item and ASC/DESC, with its ※ notes), or the 区分値 order. A row
+      that states no order is in 区分値 ascending order by convention and is **never** a finding — that is ~479 of the
+      482 ComboBox rows; nor is a DESC or other-key sort written only in Ⅲ (`PXJAO701` `GXJA701B` `[1319]` → (12) `[688]`
+      `資源情報Rev DESC`, `PXJCO161` `GXJC161B` `[2233]` → (22) `[1208]` `工程No DESC`), Ⅲ ｿｰﾄ順 `なし`, or a parent block's
+      order given in its ※ note. Only 3 rows state an order today and none disagrees: `PXJCO313` `GSJC313A` `[563]`
+      agrees with (8) `[463]` `A.ｷｰ3 ASC`; `PSJAO401` `GSJA401A` `[323]` (区分降順) has its source in 共通設計書 — not
+      checkable here, no line; `PXJCO130` `GXJC130B` `[763]` 「層Noを集約し、層Noでｿｰﾄ」 gives no direction while the
+      project's 層No order is 「001→002～999→00A→00B～ZZZ」 (spelled out under a ※1 「層Noの昇順で取得」 on `PSJCO304`
+      `GSJC304A` `[266]`/`[267]`, `PXJCO128` `GXJC128A` `[352]`/`[353]` and 7 more sheets), which a plain ascending string sort does not give — **要確認**, write which
+      order. Not an order statement: sort-selector items whose name or values are 表示順/出力順/並び替え/昇順/降順
+      (18, `PSJCO604` `GSJC604B` `[914]`-`[918]`), 「順番」/「表示順」 as a column name, tab-order notes 「…の順にﾀﾌﾞ遷移」.
+    - **22b — an enumeration's `(n).項目k` / `(n).条件k` takes the item that slot really holds — 中.** An 初期値パターン表
+      (a ※1-style `No.|画面項目名|…` table in Ⅴ) that takes each item from a numbered slot of a Ⅲ block must take the
+      slot that holds that item. The slots are defined by what writes them — for 検索条件保存ﾏｽﾀ, the program's
+      `更新条件表(TXJAM100)` (項目k row, value column): **read it whenever the program has one**, and compare both the Ⅴ
+      table and Ⅲ's slot annotations (when Ⅲ writes them) against it. Report the side that disagrees with TXJAM100;
+      when there is no TXJAM100, compare Ⅴ with Ⅲ's annotations and report the mismatch 要確認 without picking a side.
+      `PSJCO304` `GSJC304A`: the Ⅴ table `[393]`-`[418]` (`品目ｺｰﾄﾞ` `[395]` → `(5).項目2`, `層No` `[396]` → `(5).項目3`) agrees
+      with `更新条件表(TXJAM100)` `[29,36]` `G1)品目ｺｰﾄﾞ`, `[30,36]` `G1)層No` (changed 2026/11/10), while Ⅲ(5)'s col-24 notes
+      `[184]`-`[205]` still read 項目2 `(表示ﾌﾗｸﾞ)`, 項目3 `(品目ｺｰﾄﾞ)` — 20 of the 22 slots — so the line goes to Ⅲ(5):
+      「Ⅲ(5) 取得項目の注記が TXJAM100 の項目割当と違う」. One line per table or block, listing the rows. Most `項目k`
+      references (≈417) have no annotation in Ⅲ and the program's TXJAM100 agrees or is absent — no line.
+    - **22c — an enumeration not in screen order says what order it is in — 要確認.** A `No.|画面項目名` note table
+      or an inline list of items whose order does not follow the Ⅴ order and says no other basis (a list of
+      events or triggers in a 説明 cell — 「KC品名・品目ｺｰﾄﾞﾛｽﾄﾌｫｰｶｽ時、KC品名ｽﾞｰﾑ、…」 — is not an enumeration of items): `PSJCO303` `GSJC303A` `[693]`
+      (follows Ⅲ(3)'s 項目 numbering, so 表示方法 comes last though it is 11th on screen); `PSJCO604` `GSJC604B` `[924]`
+      ※2 「"KC品名"、"完成割合"、"作業場ｺｰﾄﾞ"、"製伝No"、"単価"」 (neither G3's order nor code order). Of 59 such tables,
+      38 follow the screen; most of the rest are false — the same name in two areas, or one item with several
+      condition rows (`PXJCO164` `[1030]`/`[1098]`, `PXJCO313` `[575]`) — so confirm by reading before writing a line.
+
+23. **権限ﾁｪｯｸ in ﾁｪｯｸ処理設計書 ↔ the events that update the DB** (my-review-skills チェック観点 2026-11-04; self-check
+    call-outs on its ﾁｪｯｸ処理設計書 sample: 列76/行24 and (B) 列62/行35 「DB更新に関連する場合は権限ﾁｪｯｸを入れる。共通項目
+    取得.操作権限より対応するﾌﾗｸﾞを取得。」, 列5/行23 「権限ﾁｪｯｸは、各ボタン押下時のﾁｪｯｸ処理の1つ目(No.1)に記載する。(権限
+    判定に画面入力の作業者ｺｰﾄﾞを使用する場合に限り、作業者ｺｰﾄﾞの単項目ﾁｪｯｸ(入力必須・文字種・ﾏｽﾀ存在)を権限ﾁｪｯｸより前に
+    記載して良い。)」, 列80/行28 「※共通項目取得.操作権限.更新権限ﾌﾗｸﾞ参照(作業者ｺｰﾄﾞ)の記載は不要」; adopted 2026-11-11).
+    Measured 2026-11-11 on the visible ﾁｪｯｸ処理設計書 sheets of the 工程管理 books (200 sheets, 834 event blocks).
+    **A 権限 row** = ﾁｪｯｸ内容 (col 14) 「更新権限/削除権限/承認権限がない場合ｴﾗｰ」, ﾒｯｾｰｼﾞ 「権限がありません。」 `XJZ-000029`
+    (275 of 280; `SJA-000029` 3), ﾁｪｯｸ項目 (col 3) `ﾛｸﾞｲﾝ.作業者ｺｰﾄﾞ` (229) or a screen 作業者ｺｰﾄﾞ, ﾁｪｯｸ詳細 (col 59)
+    `※共通項目取得.操作権限.更新権限ﾌﾗｸﾞ参照`. Data-scope rows (権限加工GRP, 権限区分, 編集区分 — 13, `PSJAO701`) are not
+    権限 rows. **An event block** = a 【…】 heading in col 3 down to the next, merged with its continuation headings
+    (「【X】上記ﾁｪｯｸ処理でｴﾗｰが1件もなかった場合…」 `PSJCO501` `GSJC501B` `[15,3]`, 【X】【共通】 + 【X】【新規…】).
+    - **23a — an update event has no 権限 row — 中 (要確認 when the book has none at all).** An update event is a
+      button whose name a 更新条件 cell of the same book names (screen IDs respected), plus the list screen's
+      新規登録/ｺﾋﾟｰ登録 buttons that open an update screen (48 of 52 carry one, as the sample does). Leave out events
+      that update only helper tables — `TXJAM100` 検索条件保存ﾏｽﾀ (検索ﾎﾞﾀﾝ), `TSJAM007` ﾀﾞｳﾝﾛｰﾄﾞ条件ﾏｽﾀ, 検索/照会 ﾄﾗﾝ
+      (`TXJCV002`, `TSJCV501`) — 54 events, none with a 権限 row; and 起動時, 引数ﾁｪｯｸ, ﾊﾞｯﾁ, 排他ﾁｪｯｸ headings, 画面ｸﾘｱ/
+      閉じる/戻る, 行追加/行削除, 印刷/発行, 反映 to a parent screen. Of 163 update events, 125 have one; of the 38
+      without, 9 are in books that check 権限 elsewhere — 中 (`PSJAO401` `GSJA401B` `[210,3]` 【製造ｵｰﾀﾞｰ反映ﾎﾞﾀﾝ押下時】,
+      `GSJA401F` `[104,3]`, `PSJCO403` `GSJC403A` `[53,3]` 【削除ﾎﾞﾀﾝ押下時】, `PSJCO405` `GSJC405A` `[60,3]` 【ﾌｧｲﾙ取込ﾎﾞﾀﾝ
+      押下時】, `PXJCO906` `GXJC906B` `[70,3]` 【削除ﾎﾞﾀﾝ押下】, `PSJAO701` `GSJA701A` `[9,3]` 【条件登録ﾎﾞﾀﾝ押下時】 with only a
+      権限加工GRP row). That split is mechanical — read the block and the 更新条件 before writing the line: a
+      second heading of the same button (`PSJCO203` `GSJC203A` `[59,3]` 【実行ﾎﾞﾀﾝ押下時】※製造ﾛｯﾄNo自動採番実施時) is covered
+      by the main block's 権限 row, and a 【検索ﾎﾞﾀﾝ押下時】 matched through a ﾄﾗﾝ name (`PSJCO602` `GSJC602A` `[9,3]`) is
+      a helper update. The other 29 are in 11 books with no 権限 row anywhere —
+      one 要確認 line per book, asking whether that is intended: 7 of them are 共通ﾕｰｻﾞｰ programs (`PXJCO161`,
+      `PSJCO306`-`309`, `PSJCO204`, `PXJCO152` — `agent-guide.md`), where a login-keyed check cannot work and one keyed on
+      the entered 作業者ｺｰﾄﾞ would (as `PSJCO501`/`502`/`504` do); the rest are `PXJCO101`, `PXJCO129`, `PXJCO904`,
+      `PSJAO702`. A sub-screen's own commit button (`PSJAO401` `GSJA401D` 【実行ﾎﾞﾀﾝ押下時】 `[9,3]`, opened by ｺﾋﾟｰ登録
+      buttons that carry a 権限 row — `GSJA401A` `[34]`, `GSJA401B` `[212]`, `GSJA401F` `[106]`) is still an update event:
+      the opener's row does not cover it, 中, but say in the line that the opener checks. A 権限 row on a non-update event (9, link clicks such as `PSJCO304`, 【検索】 `PSJCO205`) is not a finding.
+    - **23b — the 権限 row is not No.1 of its event — 低.** 244 of 265 are No.1. Allowed before it, and only these:
+      the entered 作業者ｺｰﾄﾞ's own single-item checks — 必須, 文字種/半角, ﾏｽﾀ存在 — and its 所属 check (「ﾛｸﾞｲﾝﾕｰｻﾞｰが所属する
+      自社内以外の作業者が指定された場合はｴﾗｰ」, `PSJCO501` `GSJC501B` `[11]`-`[14]` before the 権限 row in the `[15]`
+      continuation; same in `PSJCO502`, `PSJCO504`, `PSJCO205` — 8 events). Flag anything else before it (13 events):
+      選択 (`PSJAO704` `GSJA704E`, `PXJAO253` `GXJA253A`), 排他 (`PXJAO802` `GXJA802A` 【停止ﾎﾞﾀﾝ押下時】 `[25,3]`: 選択 `[26]`,
+      排他 `[27]`, 権限 No.3 `[28]` — the self-check's own sample has the same order, the call-out still asks for No.1),
+      whole input-check blocks (`PXJAO701` `GXJA701B` `[9,3]`, 権限 No.59), 処理区分/状態 (`PSJAO401` `GSJA401B` 【一時保存
+      ﾎﾞﾀﾝ押下時】 `[216,3]`: 処理区分 `[217]`, 権限 No.2 `[218]`; `GSJA401F` `[110,3]`-`[112]` the same). One line per sheet.
+    - **23c — 「(作業者ｺｰﾄﾞ)」 on a login-user 権限 note — 低.** The call-out sits on the sample's col-59 note, which itself
+      reads `※共通項目取得.操作権限.更新権限ﾌﾗｸﾞ参照`: what is not needed is the `(作業者ｺｰﾄﾞ)` argument, not the note — the
+      note is the only place the docs show which flag is read (275 of 280 rows carry it), so never ask to delete it.
+      The argument is needed when the ﾁｪｯｸ項目 is a screen/parameter 作業者ｺｰﾄﾞ (31 cells; introduced deliberately,
+      `PXJCO163` `GXJC163A` `[10,106]` 「NCRN-6535(共通項目取得.操作権限(作業者ｺｰﾄﾞ)に変更)」). Flag it only beside
+      `ﾛｸﾞｲﾝ(情報).作業者ｺｰﾄﾞ`, wherever it sits in the note (`操作権限 (作業者ｺｰﾄﾞ).更新権限ﾌﾗｸﾞ参照`): `PSJCO203` `GSJC203A`
+      `[18,59]`/`[75,59]` — the corpus's two, one line for the sheet (`[75,105]` records an edit, NCRN-9601, that kept it).
 
 **Hidden leftovers.** This check also writes the one 【非表示】 要確認 line for every leftover/withdrawn hidden sheet
 other than 更新条件表 / 帳票設計書 / ﾌｧｲﾙ仕様書 (画面設計書, ﾁｪｯｸ処理設計書, 機能定義書, 画面ｲﾒｰｼﾞ, scratch copies — the

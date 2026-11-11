@@ -117,6 +117,22 @@ Omit: "確認済み・問題なし" lines, tallies of what was checked, and narr
 one exception: a section or master you could not check at all — one line, because that is a coverage
 gap the designer should know about.
 
+**共通ﾕｰｻﾞｰ — findings that assume 作業者ｺｰﾄﾞ is NULL go only to the programs that use it** (my-review-skills
+チェック観点 2026-11-04; 回答 20261023 PSJCO304 No.34; PH3 共通外注想定 2026/9/9 確認). Logged in as the 共通ﾕｰｻﾞｰ, a user
+has no 作業者ｺｰﾄﾞ (`ﾛｸﾞｲﾝ情報.作業者ｺｰﾄﾞ` is NULL). A finding that rests on that — a key or NOT NULL column (ﾕｰｻﾞｰID,
+登録者, 更新者) set from `ﾛｸﾞｲﾝ情報.作業者ｺｰﾄﾞ` alone with no fallback, a 検索条件 or a callee's 省略不可 argument fed by
+it, a 権限 check keyed on it — is raised only for these programs; elsewhere the user always has one, so it is not a
+finding (do not soften it to 要確認 either):
+- PH2: `PSJCO201` ﾛｯﾄｶｰﾄﾞ発行 (A・B画面), `PSJCO302` 製造ﾛｯﾄNo別進捗状況照会, `PSJCO501` 送品案内入力, `PSJCO502` 納品案内入力,
+  `PSJCO503` 受入入力, `PSJCO504` 作業場移動, `PSJCO505` 送品納品実績照会, `PSJCO509` 受入入力(ﾓﾊﾞｲﾙ), `PXJCO121` ﾛｯﾄ作成,
+  `PXJCO122` ﾛｯﾄ分割, `PXJCO123` ﾛｯﾄ統合, `PXJCO125` ﾛｯﾄ取消, `PXJCO161` 実績入力 (A・B画面), `PXJCO906` 不良項目入力 (A・B画面);
+- PH3: `PXJCO152` 処置指示発行, `PSJCO205` 返品処置指示発行, `PXJCO124` ﾛｯﾄ振向け, `PSJCO306` 焼成入炉入力, `PSJCO307` 焼成ばらし
+  入力, `PSJCO308` 焼成ｻﾔ詰め組み, `PSJCO309` 焼成入炉帳ｻﾔ組み, `PSJCO311` 設備作業履歴入力, `PSJCO204` 不良ﾛｯﾄ統合 (共通PC で
+  使う可能性あり), `PSJCO305` 【共通】着手前数量入力.
+The PH3 ｲﾝｸ・部材・外注集計・QA・DMC programs (`PSJCO801` on) are undecided: not in the list, so no such finding.
+The house fallback 「作業者ｺｰﾄﾞがNULLの場合はﾕｰｻﾞID」 (`PSJCO201` TXJAM100 `[16,36]`) is the cure on a listed program,
+and a program off the list that writes it is not a finding either.
+
 ## Common reference files (where things live)
 
 | Master | Path (under the Unicorn root) |
